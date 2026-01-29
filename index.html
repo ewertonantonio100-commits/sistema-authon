@@ -56,17 +56,42 @@
             });
         }
         
-        // --- GUARDA DE SEGURANÇA ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const loginScreen = document.getElementById('login-screen');
-                if(loginScreen) loginScreen.style.display = 'none';
-                iniciarSistema(); // Só inicia se tiver usuário
-            } else {
-                const loginScreen = document.getElementById('login-screen');
-                if(loginScreen) loginScreen.style.display = 'flex';
-            }
-        });
+        // --- GUARDA DE SEGURANÇA (ATUALIZADA) ---
+onAuthStateChanged(auth, (user) => {
+    const splash = document.getElementById('loading-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const appNav = document.querySelector('.bottom-nav'); // O menu de baixo
+
+    if (user) {
+        // --- USUÁRIO LOGADO ---
+        // 1. Inicia o sistema (baixa dados)
+        iniciarSistema();
+        
+        // 2. Garante que o login continue escondido
+        if(loginScreen) loginScreen.style.display = 'none';
+        
+        // 3. Mostra o menu de navegação
+        if(appNav) appNav.style.display = 'flex';
+
+        // 4. Remove a tela de carregamento suavemente
+        if(splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500); // Espera a transição
+        }
+
+    } else {
+        // --- USUÁRIO NÃO LOGADO ---
+        // 1. Mostra a tela de login
+        if(loginScreen) loginScreen.style.display = 'flex';
+        
+        // 2. Esconde o menu de navegação (para não vazar o app)
+        if(appNav) appNav.style.display = 'none';
+
+        // 3. Remove a tela de carregamento (agora o usuário vê o login)
+        if(splash) splash.style.display = 'none';
+    }
+});
+
 
         // --- SISTEMA BLINDADO (MODELO SAAS) ---
         function iniciarSistema() {
@@ -595,6 +620,10 @@
             </table>
         </div>
     </div>
+<button class="btn-action" style="background: #1d6f42; margin: 20px 15px; width: calc(100% - 30px);" onclick="exportToExcel()">
+    <i class="fas fa-file-csv"></i> BAIXAR RELATÓRIO P/ CONTADOR (EXCEL)
+</button>
+
 
     </div>
 
@@ -1164,7 +1193,7 @@
                     if(item.status === 'pendente') {
                         badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
                         let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                        const zapMsg = `Olá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
+                        const zapMsg =  `Olá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
                         const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
                         
                         // Botão Receber chama markAsPaid com ID DA NUVEM (docId)
@@ -1237,13 +1266,8 @@
                 console.error("Erro ao desenhar gráficos:", e);
             }
         }
+          
 
-
-
-
-
-
-                // --- PDF CORRIGIDO (SEM CONFIG_CLIENTE) ---
         function generatePDF(data) {
             document.getElementById('pdf-overlay').style.display = 'block';
             
@@ -1347,6 +1371,50 @@
                 window.open(`https://wa.me/55${data.phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`); 
             };
         }
+function exportToExcel() {
+    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+    const start = document.getElementById('filterStart').value;
+    const end = document.getElementById('filterEnd').value;
+
+    if(!start || !end) return alert("Selecione o período no filtro para exportar.");
+
+    // Filtra os dados (mesma lógica do PDF)
+    const filtered = db.filter(x => {
+        const isPeriod = x.date >= start && x.date <= end;
+        const isPaidVenda = x.type === 'venda' && x.status === 'pago';
+        const isExpense = x.type === 'expense';
+        return isPeriod && (isPaidVenda || isExpense);
+    }).sort((a, b) => a.date.localeCompare(b.date));
+
+    if(filtered.length === 0) return alert("Sem dados para exportar.");
+
+    // Cabeçalho do CSV (Excel entende o ponto e vírgula como separador no Brasil)
+    let csvContent = "Data;Tipo;Descricao;Metodo Pagamento;Valor\n";
+
+    filtered.forEach(item => {
+        const isVenda = item.type === 'venda';
+        const dataFormatada = item.date.split('-').reverse().join('/');
+        const tipo = isVenda ? "ENTRADA" : "SAIDA";
+        const descricao = isVenda ? item.client : item.vehicle;
+        const metodo = isVenda ? item.payment : (item.client || "Despesa");
+        const valor = isVenda ? (item.netTotal || item.total) : item.total;
+        
+        // Formata o valor com vírgula para o Excel reconhecer como número
+        const valorExcel = valor.toFixed(2).replace('.', ',');
+
+        csvContent += `${dataFormatada};${tipo};${descricao};${metodo};${valorExcel}\n`;
+    });
+
+    // Cria o arquivo para download
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Contabilidade_${start}_a_${end}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 
         function downloadCurrentPDF() { 
@@ -1475,7 +1543,7 @@
 
     </script>
 </body>
-    <div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); z-index:99999; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+    <div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); z-index:99999; display:none; align-items:center; justify-content:center; flex-direction:column;">
         
         <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 40px 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
             
@@ -1503,6 +1571,17 @@
 
         <p style="color: rgba(255,255,255,0.3); font-size: 10px; margin-top: 30px;">Sistema Authon Seguro © 2026</p>
     </div>
+<div id="loading-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background: #2c3e50; z-index:100000; display:flex; align-items:center; justify-content:center; flex-direction:column; transition: opacity 0.5s ease;">
+    <div style="background: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.3); animation: pulse 1.5s infinite;">
+        <i class="fas fa-bolt" style="font-size: 35px; color: #c0392b;"></i>
+    </div>
+    <h2 style="color: white; font-family: 'Oswald', sans-serif; letter-spacing: 2px;">SISTEMA AUTHON</h2>
+    <p style="color: #95a5a6; font-size: 12px; margin-top: 10px;">Carregando...</p>
+</div>
+
+<style>
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+</style>
 
 </html>
 

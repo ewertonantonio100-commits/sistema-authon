@@ -36,6 +36,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        window.auth = auth;
 
         // --- FUNÇÃO DE LOGIN ---
         window.doLogin = function() {
@@ -96,15 +97,14 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// --- SISTEMA BLINDADO (MODELO SAAS) + SINCRONIZAÇÃO DE DADOS ---
+// --- SISTEMA BLINDADO (LEITURA DE DADOS + LOGO NA NUVEM) ---
 function iniciarSistema() {
     const user = auth.currentUser;
     if (!user) return;
 
     console.log("Baixando dados para:", user.email);
     
-    // 1. DADOS DAS OPERAÇÕES (Mantém a Blindagem de Usuário)
-    // O 'where' garante que este usuário só veja as vendas DELE
+    // 1. DADOS DAS OPERAÇÕES (Vendas/Orçamentos)
     const q = query(
         collection(db, "operacoes"), 
         where("uid", "==", user.uid), 
@@ -123,27 +123,30 @@ function iniciarSistema() {
         if(window.renderAgenda) window.renderAgenda();
         if(window.updateDashboard) window.updateDashboard();
         if(window.renderExpensesList) window.renderExpensesList();
-    }, (error) => {
-        console.error("Erro ops:", error);
     });
 
-    // 2. DADOS DA EMPRESA (NOVO - Sincronização)
-    // Também usa 'where' para garantir que pegue apenas a empresa DESTE usuário
+    // 2. CONFIGURAÇÕES DA EMPRESA (DADOS + LOGO)
     const qConfig = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
     
     onSnapshot(qConfig, (snapshot) => {
         snapshot.forEach((doc) => {
             const cfg = doc.data();
             
-            // Salva na memória do celular/PC para o PDF usar rápido
+            // Salva na memória local para acesso rápido
             if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
             if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
             if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
+            
+            // --- AQUI ESTÁ A CORREÇÃO DA LOGO ---
+            if(cfg.logo) {
+                localStorage.setItem('oficina_logo', cfg.logo);
+            }
+            // ------------------------------------
 
-            // Se a tela de configurações estiver aberta, preenche os campos sozinho
+            // Preenche os campos na tela automaticamente
             if(document.getElementById('cfgName')) {
                 document.getElementById('cfgName').value = cfg.name || '';
                 document.getElementById('cfgCnpj').value = cfg.cnpj || '';
@@ -153,11 +156,12 @@ function iniciarSistema() {
                 document.getElementById('cfgWarranty').value = cfg.warranty || '';
             }
             
-            // Guarda o ID para saber onde atualizar depois
+            // Guarda o ID para atualizar o mesmo documento depois
             localStorage.setItem('authon_config_doc_id', doc.id);
         });
     });
 }
+
 
         
         // --- FUNÇÃO DE SAIR ---
@@ -909,28 +913,34 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             updateDashboard(true);
         }
 
-        // --- SALVAR CONFIGURAÇÕES NA NUVEM (Mantendo Blindagem) ---
+        // --- FUNÇÃO DE SALVAR CONFIGURAÇÕES (VERSÃO UNIVERSAL) ---
 window.saveSettingsCustom = async function() {
-    const user = auth.currentUser;
-    if(!user) return alert("Erro: Você precisa estar logado.");
+    // 1. Verifica se tem usuário logado usando a ponte global
+    const user = window.auth ? window.auth.currentUser : null;
     
-    // Feedback visual no botão
+    if(!user) {
+        alert("Erro: O sistema não detectou seu login. Recarregue a página.");
+        return;
+    }
+    
+    // Feedback no botão
     const btn = event ? event.target : null;
     const originalText = btn ? btn.innerText : "SALVAR";
     if(btn) btn.innerText = "Salvando...";
 
-    // 1. Pega os dados dos campos
+    // 2. Pega os dados
     const cfgData = {
-        uid: user.uid, // <--- AQUI ESTÁ A BLINDAGEM (Carimba o dono dos dados)
+        uid: user.uid,
         name: document.getElementById('cfgName').value,
         cnpj: document.getElementById('cfgCnpj').value,
         addr: document.getElementById('cfgAddr').value,
         phone: document.getElementById('cfgPhone').value,
         pix: document.getElementById('cfgPix').value,
-        warranty: document.getElementById('cfgWarranty').value
+        warranty: document.getElementById('cfgWarranty').value,
+        logo: localStorage.getItem('oficina_logo') || '' 
     };
 
-    // 2. Salva Localmente (para o PDF funcionar instantaneamente)
+    // 3. Salva no Celular (Backup Rápido)
     localStorage.setItem('authon_cfg_name', cfgData.name);
     localStorage.setItem('authon_cfg_cnpj', cfgData.cnpj);
     localStorage.setItem('authon_cfg_addr', cfgData.addr);
@@ -938,21 +948,20 @@ window.saveSettingsCustom = async function() {
     localStorage.setItem('authon_cfg_pix', cfgData.pix);
     localStorage.setItem('authon_cfg_warranty', cfgData.warranty);
 
-    // 3. Salva na Nuvem (Sincroniza com outros aparelhos)
+    // 4. Salva na Nuvem (Usando ferramentas globais window.)
     const docId = localStorage.getItem('authon_config_doc_id');
 
     try {
+        // Usa window.db, window.doc, etc para garantir que funcione
         if(docId) {
-            // Se já existe, atualiza
-            await updateDoc(doc(db, "configuracoes", docId), cfgData);
+            await window.updateDoc(window.doc(window.db, "configuracoes", docId), cfgData);
         } else {
-            // Se é a primeira vez, cria
-            await addDoc(collection(db, "configuracoes"), cfgData);
+            await window.addDoc(window.collection(window.db, "configuracoes"), cfgData);
         }
-        alert("Configurações salvas e sincronizadas na Nuvem!");
+        alert("✅ Configurações salvas com sucesso!");
     } catch(e) {
         console.error("Erro config:", e);
-        alert("Salvo no aparelho, mas erro na nuvem: " + e.message);
+        alert("Salvo no celular, mas erro na nuvem: " + e.message);
     }
     
     if(btn) btn.innerText = originalText;
@@ -1609,7 +1618,31 @@ window.downloadCurrentPDF = function() {
         
         function openModal() { document.getElementById('modal-config').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal-config').style.display = 'none'; }
-        function saveLogo(event) { const reader = new FileReader(); reader.onload = function(){ localStorage.setItem('oficina_logo', reader.result); alert("Logo salva!"); closeModal(); }; reader.readAsDataURL(event.target.files[0]); }
+        // --- CORREÇÃO: ADICIONADO 'window.' PARA A LOGO ---
+window.saveLogo = function(event) { 
+    const file = event.target.files[0];
+    if(!file) return;
+
+    // Verifica tamanho (Máximo 700KB para não travar o Firebase)
+    if(file.size > 700000) {
+        alert("A imagem é muito grande! Tente uma menor ou tire um print dela.");
+        return;
+    }
+
+    const reader = new FileReader(); 
+    reader.onload = function(){ 
+        const base64 = reader.result;
+        localStorage.setItem('oficina_logo', base64); 
+        
+        // Mostra um aviso rápido
+        alert("Logo selecionada! Agora clique em 'SALVAR CONFIGURAÇÕES' para enviar."); 
+        
+        // Fecha o modal
+        closeModal(); 
+    }; 
+    reader.readAsDataURL(file); 
+}
+
         function backupSystem() { const data = { db: localStorage.getItem('oficina_db_master'), cat: localStorage.getItem('catalog_v1'), logo: localStorage.getItem('oficina_logo'), pix: localStorage.getItem('authon_cfg_pix'), war: localStorage.getItem('authon_cfg_warranty'), km: localStorage.getItem('authon_cfg_km') }; const blob = new Blob([JSON.stringify(data)], {type: 'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'backup_authon.json'; a.click(); }
         function restoreSystem(event) { const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if(data.db) localStorage.setItem('oficina_db_master', data.db); if(data.cat) localStorage.setItem('catalog_v1', data.cat); if(data.logo) localStorage.setItem('oficina_logo', data.logo); if(data.pix) localStorage.setItem('authon_cfg_pix', data.pix); if(data.war) localStorage.setItem('authon_cfg_warranty', data.war); if(data.km) localStorage.setItem('authon_cfg_km', data.km); alert("Sistema restaurado!"); location.reload(); } catch(err) { alert("Erro ao ler arquivo."); } }; reader.readAsText(event.target.files[0]); }
         

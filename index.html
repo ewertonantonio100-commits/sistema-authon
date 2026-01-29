@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema Authon (Cloud)</title>
+    <title>Sistema Authon</title>
     <meta name="theme-color" content="#2c3e50"> <meta name="apple-mobile-web-app-capable" content="yes"> <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes"> <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1048/1048339.png">
-<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1048/1048339.png">
+<meta name="mobile-web-app-capable" content="yes"> <link rel="apple-touch-icon" href="https://i.postimg.cc/BbNhz9j4/Screenshot-20260129-111746-Google.png">
+<link rel="icon" type="image/png" href="https://i.postimg.cc/BbNhz9j4/Screenshot-20260129-111746-Google.png">
 
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
@@ -97,41 +97,69 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-        // --- SISTEMA BLINDADO (MODELO SAAS) ---
-        function iniciarSistema() {
-            const user = auth.currentUser;
-            if (!user) return;
+// --- SISTEMA BLINDADO (MODELO SAAS) + SINCRONIZAÇÃO DE DADOS ---
+function iniciarSistema() {
+    const user = auth.currentUser;
+    if (!user) return;
 
-            console.log("Baixando dados para:", user.email);
+    console.log("Baixando dados para:", user.email);
+    
+    // 1. DADOS DAS OPERAÇÕES (Mantém a Blindagem de Usuário)
+    // O 'where' garante que este usuário só veja as vendas DELE
+    const q = query(
+        collection(db, "operacoes"), 
+        where("uid", "==", user.uid), 
+        orderBy("id", "desc")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        const dbLocal = [];
+        snapshot.forEach((doc) => {
+            dbLocal.push({ ...doc.data(), docId: doc.id });
+        });
+        localStorage.setItem('oficina_db_master', JSON.stringify(dbLocal));
+        
+        // Atualiza as telas
+        if(window.renderHistory) window.renderHistory('all');
+        if(window.renderAgenda) window.renderAgenda();
+        if(window.updateDashboard) window.updateDashboard();
+        if(window.renderExpensesList) window.renderExpensesList();
+    }, (error) => {
+        console.error("Erro ops:", error);
+    });
+
+    // 2. DADOS DA EMPRESA (NOVO - Sincronização)
+    // Também usa 'where' para garantir que pegue apenas a empresa DESTE usuário
+    const qConfig = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
+    
+    onSnapshot(qConfig, (snapshot) => {
+        snapshot.forEach((doc) => {
+            const cfg = doc.data();
             
-            // AQUI ESTÁ A MÁGICA: where("uid", "==", user.uid)
-            // Isso garante que o Cliente A nunca veja os dados do Cliente B
-            const q = query(
-                collection(db, "operacoes"), 
-                where("uid", "==", user.uid), 
-                orderBy("id", "desc")
-            );
+            // Salva na memória do celular/PC para o PDF usar rápido
+            if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
+            if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
+            if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
+            if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
+            if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
+            if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
 
-            onSnapshot(q, (snapshot) => {
-                const dbLocal = [];
-                snapshot.forEach((doc) => {
-                    dbLocal.push({ ...doc.data(), docId: doc.id });
-                });
-                localStorage.setItem('oficina_db_master', JSON.stringify(dbLocal));
-                
-                // Atualiza a tela
-                if(window.renderHistory) window.renderHistory('all');
-                if(window.renderAgenda) window.renderAgenda();
-                if(window.updateDashboard) window.updateDashboard();
-                if(window.renderExpensesList) window.renderExpensesList();
-            }, (error) => {
-                console.error("Erro no download:", error);
-                // Se der erro de índice, o link aparece no console do navegador (F12)
-                if(error.code === 'failed-precondition') {
-                    alert("Aviso Técnico: Necessário criar índice no Firebase. Abra o Console (F12) e clique no link gerado.");
-                }
-            });
-        }
+            // Se a tela de configurações estiver aberta, preenche os campos sozinho
+            if(document.getElementById('cfgName')) {
+                document.getElementById('cfgName').value = cfg.name || '';
+                document.getElementById('cfgCnpj').value = cfg.cnpj || '';
+                document.getElementById('cfgAddr').value = cfg.addr || '';
+                document.getElementById('cfgPhone').value = cfg.phone || '';
+                document.getElementById('cfgPix').value = cfg.pix || '';
+                document.getElementById('cfgWarranty').value = cfg.warranty || '';
+            }
+            
+            // Guarda o ID para saber onde atualizar depois
+            localStorage.setItem('authon_config_doc_id', doc.id);
+        });
+    });
+}
+
         
         // --- FUNÇÃO DE SAIR ---
         window.logout = function() {
@@ -307,20 +335,27 @@ onAuthStateChanged(auth, (user) => {
                     <td style="padding:10px; text-align:right; color:${totalProfit >=0 ? '#27ae60' : '#c0392b'}; font-size:11px;">R$ ${totalProfit.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
                 </tr>`;
         }
-        // --- CORREÇÃO: ESCONDER MENU QUANDO O TECLADO ABRE ---
-        // Isso evita que o menu fique sambando na tela ou cubra o botão de salvar
-        
-        const bottomNav = document.querySelector('.bottom-nav');
-        const originalHeight = window.innerHeight; // Guarda a altura original da tela
+// --- CORREÇÃO SEGURA DO MENU (Traz o menu de volta) ---
+const bottomNav = document.querySelector('.bottom-nav');
 
-        window.addEventListener('resize', () => {
-            // Se a tela diminuiu muito (mais de 20%), é provável que o teclado abriu
-            if (window.innerHeight < originalHeight * 0.8) {
-                if(bottomNav) bottomNav.style.display = 'none'; // Esconde o menu
-            } else {
-                if(bottomNav) bottomNav.style.display = 'flex'; // Mostra o menu de volta
-            }
-        });
+// 1. Força o menu a aparecer assim que carregar
+if(bottomNav) {
+    bottomNav.style.display = 'flex';
+    bottomNav.style.zIndex = '9999'; // Garante que fique na frente
+}
+
+// 2. Só esconde se você clicar num campo de texto (Segurança)
+document.querySelectorAll('input, textarea, select').forEach(element => {
+    element.addEventListener('focus', () => {
+        if(bottomNav) bottomNav.style.display = 'none';
+    });
+    element.addEventListener('blur', () => {
+        setTimeout(() => {
+            if(bottomNav) bottomNav.style.display = 'flex';
+        }, 200);
+    });
+});
+
 
         // Segurança Extra: Garante que ao focar num campo, o menu suma
         document.querySelectorAll('input, textarea, select').forEach(element => {
@@ -875,19 +910,55 @@ onAuthStateChanged(auth, (user) => {
             updateDashboard(true);
         }
 
-                function saveSettingsCustom() {
-            // Salva Configurações Gerais
-            localStorage.setItem('authon_cfg_pix', document.getElementById('cfgPix').value);
-            localStorage.setItem('authon_cfg_warranty', document.getElementById('cfgWarranty').value);
-            
-            // Salva Dados da Empresa
-            localStorage.setItem('authon_cfg_name', document.getElementById('cfgName').value);
-            localStorage.setItem('authon_cfg_cnpj', document.getElementById('cfgCnpj').value);
-            localStorage.setItem('authon_cfg_addr', document.getElementById('cfgAddr').value);
-            localStorage.setItem('authon_cfg_phone', document.getElementById('cfgPhone').value);
-            
-            alert("Configurações e Dados da Empresa salvos!");
+        // --- SALVAR CONFIGURAÇÕES NA NUVEM (Mantendo Blindagem) ---
+window.saveSettingsCustom = async function() {
+    const user = auth.currentUser;
+    if(!user) return alert("Erro: Você precisa estar logado.");
+    
+    // Feedback visual no botão
+    const btn = event ? event.target : null;
+    const originalText = btn ? btn.innerText : "SALVAR";
+    if(btn) btn.innerText = "Salvando...";
+
+    // 1. Pega os dados dos campos
+    const cfgData = {
+        uid: user.uid, // <--- AQUI ESTÁ A BLINDAGEM (Carimba o dono dos dados)
+        name: document.getElementById('cfgName').value,
+        cnpj: document.getElementById('cfgCnpj').value,
+        addr: document.getElementById('cfgAddr').value,
+        phone: document.getElementById('cfgPhone').value,
+        pix: document.getElementById('cfgPix').value,
+        warranty: document.getElementById('cfgWarranty').value
+    };
+
+    // 2. Salva Localmente (para o PDF funcionar instantaneamente)
+    localStorage.setItem('authon_cfg_name', cfgData.name);
+    localStorage.setItem('authon_cfg_cnpj', cfgData.cnpj);
+    localStorage.setItem('authon_cfg_addr', cfgData.addr);
+    localStorage.setItem('authon_cfg_phone', cfgData.phone);
+    localStorage.setItem('authon_cfg_pix', cfgData.pix);
+    localStorage.setItem('authon_cfg_warranty', cfgData.warranty);
+
+    // 3. Salva na Nuvem (Sincroniza com outros aparelhos)
+    const docId = localStorage.getItem('authon_config_doc_id');
+
+    try {
+        if(docId) {
+            // Se já existe, atualiza
+            await updateDoc(doc(db, "configuracoes", docId), cfgData);
+        } else {
+            // Se é a primeira vez, cria
+            await addDoc(collection(db, "configuracoes"), cfgData);
         }
+        alert("Configurações salvas e sincronizadas na Nuvem!");
+    } catch(e) {
+        console.error("Erro config:", e);
+        alert("Salvo no aparelho, mas erro na nuvem: " + e.message);
+    }
+    
+    if(btn) btn.innerText = originalText;
+}
+
 
 
         function toggleCatType(type) {
@@ -1175,40 +1246,57 @@ onAuthStateChanged(auth, (user) => {
             });
         }
 
-        // --- HISTÓRICO (MENSAGENS + AÇÕES NUVEM) ---
-        function renderHistory(filter) { 
-            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); const list = document.getElementById('history-list'); list.innerHTML = ''; 
-            let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
-            if(filter === 'venda') filtered = filtered.filter(x => x.type === 'venda');
-            if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
-            if(filter === 'pendente') filtered = filtered.filter(x => x.status === 'pendente');
-            if(filter === 'pago') filtered = filtered.filter(x => x.status === 'pago');
+// --- HISTÓRICO ATUALIZADO (COM NOME DA EMPRESA NO ZAP DE "PRONTO") ---
+function renderHistory(filter) { 
+    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
+    const list = document.getElementById('history-list'); 
+    list.innerHTML = ''; 
+    
+    // Pega o nome da empresa salvo nas configurações
+    const compName = localStorage.getItem('authon_cfg_name') || "SUA OFICINA";
 
-            const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
+    let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
+    if(filter === 'venda') filtered = filtered.filter(x => x.type === 'venda');
+    if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
+    if(filter === 'pendente') filtered = filtered.filter(x => x.status === 'pendente');
+    if(filter === 'pago') filtered = filtered.filter(x => x.status === 'pago');
 
-            filtered.forEach(item => { 
-                let badgeClass = ''; let statusText = item.type.toUpperCase(); let actionBtn = '';
-                let priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
-                if(item.netTotal && item.netTotal < item.total) {
-                    priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:11px; color:#c0392b; font-weight:600;"><i class="fas fa-donate"></i> Líquido: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
-                }
+    // Ordena do mais recente para o mais antigo
+    filtered.sort((a,b) => b.id - a.id);
 
-                if(item.type === 'venda') {
-                    if(item.status === 'pendente') {
-                        badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
-                        let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                        const zapMsg =  `Olá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
-                        const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
-                        
-                        // Botão Receber chama markAsPaid com ID DA NUVEM (docId)
-                        actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> PRONTO</button><button class="btn-card btn-pay" onclick="markAsPaid('${item.docId}')"><i class="fas fa-check-circle"></i> RECEBER</button>`;
-                    } else { badgeClass = 'bg-venda'; statusText = 'PAGO'; }
-                } else { badgeClass = 'bg-orcamento'; }
+    const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
 
-                // Botão Excluir chama deleteItem com ID DA NUVEM (docId)
-                list.innerHTML += `<div class="item-card"><span class="status-badge ${badgeClass}">${statusText}</span><strong>${item.client}</strong><br><small style="color:#7f8c8d">${item.date.split('-').reverse().join('/')}</small>${priceDisplay}<div class="card-actions">${actionBtn}<button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#ecf0f1; color:var(--dark)" onclick="loadToEdit(${item.id})">EDITAR</button><button class="btn-card" style="background:var(--dark); color:white" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i> PDF</button></div></div>`; 
-            }); 
+    filtered.forEach(item => { 
+        let badgeClass = ''; let statusText = item.type.toUpperCase(); let actionBtn = '';
+        
+        let priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+        if(item.netTotal && item.netTotal < item.total) {
+            priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:11px; color:#c0392b; font-weight:600;"><i class="fas fa-donate"></i> Líquido: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
         }
+
+        if(item.type === 'venda') {
+            if(item.status === 'pendente') {
+                badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
+                
+                let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
+                
+                // --- AQUI ESTÁ A MUDANÇA: ADICIONEI O CABEÇALHO DA EMPRESA ---
+                const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
+                // -------------------------------------------------------------
+
+                const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
+                
+                actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> PRONTO</button><button class="btn-card btn-pay" onclick="markAsPaid('${item.docId}')"><i class="fas fa-check-circle"></i> RECEBER</button>`;
+            } else { 
+                badgeClass = 'bg-venda'; statusText = 'PAGO'; 
+            }
+        } else { 
+            badgeClass = 'bg-orcamento'; 
+        }
+
+        list.innerHTML += `<div class="item-card"><span class="status-badge ${badgeClass}">${statusText}</span><strong>${item.client}</strong><br><small style="color:#7f8c8d">${item.date.split('-').reverse().join('/')}</small>${priceDisplay}<div class="card-actions">${actionBtn}<button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#ecf0f1; color:var(--dark)" onclick="loadToEdit(${item.id})">EDITAR</button><button class="btn-card" style="background:var(--dark); color:white" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i> PDF</button></div></div>`; 
+    }); 
+}
 
         async function markAsPaid(docId) {
             if(!confirm("Confirmar recebimento deste valor?")) return;
@@ -1421,13 +1509,95 @@ function exportToExcel() {
 }
 
 
-        function downloadCurrentPDF() { 
-            const element = document.getElementById('invoice-paper'); 
-            const originalMargin = element.style.margin; const originalBoxShadow = element.style.boxShadow;
-            element.style.margin = '0'; element.style.boxShadow = 'none';
-            const opt = { margin: 0, filename: 'recibo_authon.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, scrollY: 0, windowWidth: 800 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }; 
-            html2pdf().set(opt).from(element).save().then(() => { element.style.margin = originalMargin; element.style.boxShadow = originalBoxShadow; });
+        // ATENÇÃO: Cole isso com cuidado para não quebrar o código vizinho
+window.downloadCurrentPDF = function() {
+    // 1. Identificar os elementos
+    const element = document.getElementById('invoice-paper');
+    const originalParent = element.parentNode;
+    const nextSibling = element.nextSibling;
+    const originalStyle = element.getAttribute('style');
+
+    // 2. Container Seguro (Fundo Branco)
+    const printContainer = document.createElement('div');
+    printContainer.id = 'print-container-safe';
+    printContainer.style.position = 'fixed';
+    printContainer.style.top = '0';
+    printContainer.style.left = '0';
+    printContainer.style.width = '794px'; // Largura A4
+    printContainer.style.height = '100%';
+    printContainer.style.backgroundColor = 'white';
+    printContainer.style.zIndex = '999999999';
+    printContainer.style.overflow = 'hidden';
+    
+    document.body.appendChild(printContainer);
+
+    // 3. Movemos o recibo para o container
+    printContainer.appendChild(element);
+
+    // 4. AJUSTE DE POSIÇÃO (Abaixando mais o conteúdo)
+    element.style.width = '100%';
+    
+    // Centraliza na horizontal
+    element.style.marginLeft = '0'; 
+    element.style.marginRight = '0';
+    
+    // --- AQUI ESTÁ O AJUSTE PARA ABAIXAR ---
+    // Mudei o primeiro valor de 50px para 80px (Topo)
+    element.style.padding = '80px 20px 20px 20px'; 
+    // ----------------------------------------
+
+    element.style.boxShadow = 'none';
+    element.style.border = 'none';
+    element.style.maxWidth = 'none';
+
+    // Função de Restauração (Destrava a tela)
+    function restoreScreen() {
+        if (printContainer.contains(element)) {
+            if (nextSibling) originalParent.insertBefore(element, nextSibling);
+            else originalParent.appendChild(element);
         }
+        if (originalStyle) element.setAttribute('style', originalStyle);
+        else element.removeAttribute('style');
+
+        const container = document.getElementById('print-container-safe');
+        if (container) document.body.removeChild(container);
+    }
+
+    // 5. Configuração PDF
+    const opt = {
+        margin: 0,
+        filename: 'recibo_authon.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            scrollY: 0, 
+            windowWidth: 794,
+            width: 794,
+            x: 0, 
+            y: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Timer de Segurança (Evita travar se der erro)
+    const safetyTimer = setTimeout(() => { restoreScreen(); }, 3500);
+
+    // 6. Gerar
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save()
+        .then(() => {
+            clearTimeout(safetyTimer);
+            restoreScreen();
+        })
+        .catch(err => {
+            console.error(err);
+            clearTimeout(safetyTimer);
+            restoreScreen();
+        });
+    }, 100);
+};
+
 
         function generatePDFFromHistory(id) { const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); const item = db.find(x => x.id == id); if(item) generatePDF(item); }
         function closePDF() { document.getElementById('pdf-overlay').style.display = 'none'; resetForm(); }

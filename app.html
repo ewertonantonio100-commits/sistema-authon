@@ -59,6 +59,15 @@
                 }
             });
         }
+        window.forgotPassword = function() {
+    const email = prompt("Digite seu e-mail para recuperar a senha:");
+    if(email) {
+        sendPasswordResetEmail(auth, email)
+        .then(() => alert("E-mail de redefinição enviado! Verifique sua caixa de entrada e spam."))
+        .catch((error) => alert("Erro: " + error.message));
+    }
+}
+
         
         // --- GUARDA DE SEGURANÇA (ATUALIZADA) ---
 onAuthStateChanged(auth, (user) => {
@@ -97,56 +106,41 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// --- SISTEMA BLINDADO (LEITURA DE DADOS + LOGO NA NUVEM) ---
+// Substitua a função iniciarSistema inteira por esta versão:
 function iniciarSistema() {
     const user = auth.currentUser;
     if (!user) return;
 
     console.log("Baixando dados para:", user.email);
     
-    // 1. DADOS DAS OPERAÇÕES (Vendas/Orçamentos)
-    const q = query(
-        collection(db, "operacoes"), 
-        where("uid", "==", user.uid), 
-        orderBy("id", "desc")
-    );
-
+    // 1. DADOS DAS OPERAÇÕES
+    const q = query(collection(db, "operacoes"), where("uid", "==", user.uid), orderBy("id", "desc"));
     onSnapshot(q, (snapshot) => {
         const dbLocal = [];
-        snapshot.forEach((doc) => {
-            dbLocal.push({ ...doc.data(), docId: doc.id });
-        });
+        snapshot.forEach((doc) => dbLocal.push({ ...doc.data(), docId: doc.id }));
         localStorage.setItem('oficina_db_master', JSON.stringify(dbLocal));
-        
-        // Atualiza as telas
+        // Atualiza telas
         if(window.renderHistory) window.renderHistory('all');
         if(window.renderAgenda) window.renderAgenda();
         if(window.updateDashboard) window.updateDashboard();
         if(window.renderExpensesList) window.renderExpensesList();
     });
 
-    // 2. CONFIGURAÇÕES DA EMPRESA (DADOS + LOGO)
+    // 2. CONFIGURAÇÕES
     const qConfig = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
-    
     onSnapshot(qConfig, (snapshot) => {
         snapshot.forEach((doc) => {
             const cfg = doc.data();
-            
-            // Salva na memória local para acesso rápido
             if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
             if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
             if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
+            if(cfg.pin) localStorage.setItem('authon_cfg_pin', cfg.pin);
+            if(cfg.logo) localStorage.setItem('oficina_logo', cfg.logo);
             
-            // --- AQUI ESTÁ A CORREÇÃO DA LOGO ---
-            if(cfg.logo) {
-                localStorage.setItem('oficina_logo', cfg.logo);
-            }
-            // ------------------------------------
-
-            // Preenche os campos na tela automaticamente
+            // Preenche campos visualmente
             if(document.getElementById('cfgName')) {
                 document.getElementById('cfgName').value = cfg.name || '';
                 document.getElementById('cfgCnpj').value = cfg.cnpj || '';
@@ -154,13 +148,25 @@ function iniciarSistema() {
                 document.getElementById('cfgPhone').value = cfg.phone || '';
                 document.getElementById('cfgPix').value = cfg.pix || '';
                 document.getElementById('cfgWarranty').value = cfg.warranty || '';
+                if(document.getElementById('cfgPin')) document.getElementById('cfgPin').value = cfg.pin || '';
             }
-            
-            // Guarda o ID para atualizar o mesmo documento depois
             localStorage.setItem('authon_config_doc_id', doc.id);
         });
     });
+
+    // 3. --- CORREÇÃO: CATÁLOGO NA NUVEM ---
+    const qCat = query(collection(db, "catalogo"), where("uid", "==", user.uid));
+    onSnapshot(qCat, (snapshot) => {
+        const catLocal = [];
+        snapshot.forEach((doc) => catLocal.push({ ...doc.data(), docId: doc.id }));
+        localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
+        
+        // Atualiza a lista visualmente se estiver na aba
+        if(window.renderCatalogList) window.renderCatalogList();
+        if(window.updateDatalist) window.updateDatalist();
+    });
 }
+
 
 
         
@@ -380,16 +386,26 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
 
     
     <style>
-        /* --- ESTILO GERAL (Mantive o visual V41 que você já gosta) --- */
+        /*        /* --- ESTILO GERAL (NOVO VISUAL CLEAN) --- */
         :root { 
-            --primary: #c0392b; 
-            --primary-grad: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            --dark: #2c3e50; --bg: #ecf0f1; --card-bg: #ffffff;
-            --text-main: #2c3e50; --text-light: #7f8c8d;
-            --green-grad: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            --orange-grad: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
-            --blue-grad: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
-            --shadow: 0 8px 30px rgba(0,0,0,0.08); --radius: 16px;
+            /* Cores Sólidas (Matte) em vez de Degradê */
+            --primary: #e74c3c; 
+            --primary-grad: #e74c3c; /* Truque: definimos o gradiente como cor sólida */
+            
+            --dark: #1e272e; 
+            --bg: #f5f6fa; /* Fundo um pouco mais claro */
+            --card-bg: #ffffff;
+            --text-main: #2f3640; 
+            --text-light: #718093;
+            
+            /* Cores de Status Sólidas */
+            --green-grad: #00b894; /* Verde Mint moderno */
+            --orange-grad: #fdcb6e; /* Amarelo suave */
+            --blue-grad: #0984e3; /* Azul sólido */
+            
+            /* Sombra muito mais suave (quase invisível) */
+            --shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            --radius: 12px; /* Arredondamento um pouco menor para ficar mais sério */
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -516,6 +532,8 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </style>
 </head>
 <body>
+  <div id="unlock-btn" onclick="toggleEmployeeMode(false)"><i class="fas fa-lock"></i> DESBLOQUEAR ADM</div>
+
 
     <div class="brand-header"><span class="brand-logo">SISTEMA AUTHON</span></div>
 
@@ -697,10 +715,17 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </div>
 
     <div id="tab-settings" class="tab-content">
-        <div class="container">
-            <div class="header-title"><h1>Configurações</h1></div>
-            <div style="background-color: #fff; border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--dark); border-bottom:1px solid #eee; padding-bottom:5px;">Dados da Empresa (Sai no PDF)</h3>
+    <div class="container" style="background: transparent; box-shadow: none; border: none; padding: 0;">
+        <div class="header-title"><h1>Configurações</h1></div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 15px;">
+            <button class="settings-btn" onclick="toggleSettingsSection('sec-company')">
+                <span><i class="fas fa-building"></i> Dados do Cliente / Empresa</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            
+            <div id="sec-company" class="settings-content">
+                <p style="font-size:11px; color:#7f8c8d; margin-bottom:15px;">Estes dados aparecerão no cabeçalho do PDF.</p>
                 
                 <label>Nome da Oficina / Empresa</label>
                 <input type="text" id="cfgName" placeholder="Ex: Auto Center Silva" style="margin-bottom:10px">
@@ -712,27 +737,73 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <input type="text" id="cfgAddr" placeholder="Rua, Número, Bairro, Cidade" style="margin-bottom:10px">
                 
                 <label>Telefone / Contato</label>
-                <input type="text" id="cfgPhone" placeholder="(00) 90000-0000" style="margin-bottom:10px">
-            </div><div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                <label>Chave Pix (Para Recibo)</label>
-                <input type="text" id="cfgPix" placeholder="Ex: (11) 99999-9999" onchange="saveSettingsCustom()">
-                <label style="margin-top:15px;">Termos de Garantia</label>
-                <textarea id="cfgWarranty" rows="4" placeholder="Ex: Garantia de 90 dias..." onchange="saveSettingsCustom()" style="width:100%; padding:10px; border-radius:12px; border:2px solid #dfe6e9; font-family:'Poppins', sans-serif;"></textarea>
-                <button class="btn-action" style="background:var(--green-grad); margin-top:10px;" onclick="saveSettingsCustom()">SALVAR CONFIGURAÇÕES</button><button class="btn-action" style="background:var(--dark); margin-top:10px;" onclick="resetPassword()">
-    <i class="fas fa-key"></i> REDEFINIR MINHA SENHA
-</button>
-<button class="btn-action" style="background: #c0392b; margin-top: 30px;" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> SAIR DO SISTEMA
-                </button>
+                <input type="text" id="cfgPhone" placeholder="(00) 90000-0000" style="margin-bottom:15px">
 
-            </div>
-            <button class="btn-action" style="background:#7f8c8d" onclick="openModal()"><i class="fas fa-camera"></i> Alterar Logo</button>
-            <div style="margin-top:25px; padding:15px; background:#e8f5e9; color:#2e7d32; border-radius:10px; text-align:center;">
-                <strong><i class="fas fa-cloud-upload-alt"></i> NUVEM ATIVADA</strong><br>
-                <small>Seus dados estão seguros no Google.</small>
+                <button class="btn-action" style="background:#7f8c8d; margin-top:0;" onclick="openModal()">
+                    <i class="fas fa-camera"></i> Alterar Logo
+                </button>
+                <button class="btn-action" style="background:var(--green-grad); margin-top:10px;" onclick="saveSettingsCustom()">
+                    SALVAR DADOS
+                </button>
             </div>
         </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 15px;">
+            <button class="settings-btn" onclick="toggleSettingsSection('sec-payment')">
+                <span><i class="fas fa-wallet"></i> Pix e Garantia</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            
+            <div id="sec-payment" class="settings-content">
+                <label>Chave Pix (Para Recibo)</label>
+                <input type="text" id="cfgPix" placeholder="Ex: (11) 99999-9999">
+                
+                <label style="margin-top:15px;">Termos de Garantia</label>
+                <textarea id="cfgWarranty" rows="4" placeholder="Ex: Garantia de 90 dias..." style="width:100%; padding:10px; border-radius:12px; border:2px solid #dfe6e9; font-family:'Poppins', sans-serif;"></textarea>
+                
+                <button class="btn-action" style="background:var(--green-grad); margin-top:10px;" onclick="saveSettingsCustom()">
+                    SALVAR TERMOS
+                </button>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 25px;">
+            <button class="settings-btn" onclick="toggleSettingsSection('sec-security')">
+                <span><i class="fas fa-user-lock"></i> Modo Vendedor</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            
+            <div id="sec-security" class="settings-content" style="background: #fff5f5;">
+                <label style="color:#c0392b; font-weight:bold;">PIN de Segurança (Adm)</label>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="password" id="cfgPin" placeholder="Criar PIN (Ex: 1234)" style="flex:1; border-color:#c0392b;">
+                    <button class="btn-action" onclick="saveSettingsCustom()" style="width:auto; margin:0; background:#c0392b;">Gravar</button>
+                </div>
+
+                <button class="btn-action" onclick="toggleEmployeeMode(true)" style="background:#2c3e50; border:2px solid #2c3e50;">
+                    <i class="fas fa-lock"></i> ATIVAR BLOQUEIO AGORA
+                </button>
+                <p style="font-size:11px; color:#7f8c8d; text-align:center; margin-top:10px;">
+                    Isso oculta o Financeiro e impede exclusões.<br>Para desbloquear depois, será necessário o PIN.
+                </p>
+            </div>
+        </div>
+
+        <button class="btn-action" style="background:var(--dark); margin-bottom:10px;" onclick="resetPassword()">
+            <i class="fas fa-key"></i> REDEFINIR MINHA SENHA
+        </button>
+        
+        <button class="btn-action" style="background: #e74c3c;" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> SAIR DO SISTEMA
+        </button>
+
+        <div style="margin-top:25px; padding:15px; background:rgba(39, 174, 96, 0.1); color:#27ae60; border-radius:10px; text-align:center; border:1px solid #27ae60;">
+            <strong><i class="fas fa-cloud-upload-alt"></i> SISTEMA SINCRONIZADO</strong><br>
+            <small>Seus dados estão seguros.</small>
+        </div>
     </div>
+</div>
+
 
     <div class="bottom-nav">
         <div class="nav-item active" onclick="clickNewTab(this)"><i class="fas fa-plus-circle nav-icon"></i><span class="nav-text">Novo</span></div>
@@ -928,7 +999,7 @@ window.saveSettingsCustom = async function() {
     const originalText = btn ? btn.innerText : "SALVAR";
     if(btn) btn.innerText = "Salvando...";
 
-    // 2. Pega os dados
+        // 2. Pega os dados
     const cfgData = {
         uid: user.uid,
         name: document.getElementById('cfgName').value,
@@ -937,8 +1008,13 @@ window.saveSettingsCustom = async function() {
         phone: document.getElementById('cfgPhone').value,
         pix: document.getElementById('cfgPix').value,
         warranty: document.getElementById('cfgWarranty').value,
+        pin: document.getElementById('cfgPin').value, // <--- NOVO
         logo: localStorage.getItem('oficina_logo') || '' 
     };
+
+    // Salva o PIN no local também
+    localStorage.setItem('authon_cfg_pin', cfgData.pin);
+
 
     // 3. Salva no Celular (Backup Rápido)
     localStorage.setItem('authon_cfg_name', cfgData.name);
@@ -967,6 +1043,17 @@ window.saveSettingsCustom = async function() {
     if(btn) btn.innerText = originalText;
 }
 
+window.toggleSettingsSection = function(id) {
+    // Fecha todos primeiro (opcional, para ficar estilo "sanfona")
+    document.querySelectorAll('.settings-content').forEach(el => {
+        if(el.id !== id) el.style.display = 'none';
+    });
+
+    // Abre ou fecha o clicado
+    const el = document.getElementById(id);
+    const isVisible = el.style.display === 'block';
+    el.style.display = isVisible ? 'none' : 'block';
+}
 
 
         function toggleCatType(type) {
@@ -976,58 +1063,88 @@ window.saveSettingsCustom = async function() {
             document.getElementById('btn-type-prod').className = type === 'produto' ? 'op-btn active venda' : 'op-btn';
             document.getElementById('btn-type-serv').className = type === 'servico' ? 'op-btn active agendamento' : 'op-btn';
         }
+        // Substitua a função saveCatalogItem por esta:
+window.saveCatalogItem = async function() {
+    const user = auth.currentUser;
+    if(!user) return alert("Erro: Não logado.");
 
-        function saveCatalogItem() {
-            // 1. Pega os valores dos campos
-            const type = document.getElementById('catType').value;
-            const code = document.getElementById('catCode').value || 'S/N';
-            const category = document.getElementById('catCategory').value || 'Geral';
-            const name = document.getElementById('catName').value; 
-            const price = document.getElementById('catPrice').value;
-            const stock = document.getElementById('catStock').value;
-            const editIdx = document.getElementById('catalogEditIdx').value; // O nosso campo invisível
+    const type = document.getElementById('catType').value;
+    const code = document.getElementById('catCode').value || 'S/N';
+    const category = document.getElementById('catCategory').value || 'Geral';
+    const name = document.getElementById('catName').value; 
+    const price = document.getElementById('catPrice').value;
+    const stock = document.getElementById('catStock').value;
+    const editDocId = document.getElementById('firebaseDocId').value; // Usaremos o campo oculto existente
 
-            // 2. Validações básicas
-            if(!name) return alert('Digite o nome do item');
-            
-            // 3. Carrega o banco de dados do catálogo
-            let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
-            
-            // 4. BLOQUEIO DE CÓDIGO DUPLICADO
-            // Se NÃO estiver editando (ou seja, é um item novo) E o código não for "S/N"
-            if(editIdx === '' && code !== 'S/N') {
-                const existe = cat.find(i => i.code === code);
-                if(existe) {
-                    return alert('ERRO: Já existe um produto cadastrado com o código: ' + code);
-                }
-            }
+    if(!name) return alert('Digite o nome do item');
 
-            // 5. Prepara o objeto para salvar
-            const finalStock = (VERSAO_COM_ESTOQUE && type === 'produto' && stock) ? parseInt(stock) : null;
-            const newItem = { type, code, category, name, price, stock: finalStock };
+    const finalStock = (typeof VERSAO_COM_ESTOQUE !== 'undefined' && VERSAO_COM_ESTOQUE && type === 'produto' && stock) ? parseInt(stock) : null;
+    
+    // Objeto para salvar
+    const itemData = { 
+        uid: user.uid, // Importante: Dono do dado
+        type, code, category, name, price, stock: finalStock 
+    };
 
-            // 6. Decide se CRIA ou ATUALIZA
-            if(editIdx !== '') {
-                // MODO EDIÇÃO: Substitui o item antigo pelo novo
-                cat[editIdx] = newItem;
-                document.getElementById('catalogEditIdx').value = ''; // Limpa o campo invisível
-                alert('Produto atualizado com sucesso!');
-            } else {
-                // MODO NOVO: Adiciona no final da lista
-                cat.push(newItem); 
-                alert('Novo item salvo no Catálogo!');
-            }
+    const btn = event.target;
+    btn.innerText = "Salvando...";
 
-            // 7. Salva e Limpa tudo
-            localStorage.setItem('catalog_v1', JSON.stringify(cat));
-            document.getElementById('catName').value = ''; 
-            document.getElementById('catCode').value = ''; 
-            document.getElementById('catPrice').value = ''; 
-            document.getElementById('catStock').value = '';
-            
-            updateDatalist(); 
-            renderCatalogList(); 
+    try {
+        if(editDocId) {
+            // Atualizar existente
+            await updateDoc(doc(db, "catalogo", editDocId), itemData);
+            alert('Produto atualizado na nuvem!');
+            document.getElementById('firebaseDocId').value = ''; // Limpa ID
+        } else {
+            // Criar novo
+            await addDoc(collection(db, "catalogo"), itemData);
+            alert('Novo item salvo na nuvem!');
         }
+
+        // Limpa formulário
+        document.getElementById('catName').value = ''; 
+        document.getElementById('catCode').value = ''; 
+        document.getElementById('catPrice').value = ''; 
+        document.getElementById('catStock').value = '';
+        
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar: " + e.message);
+    }
+    btn.innerText = "Salvar no Catálogo";
+}
+
+                // Substitua a função editCatalogItem por esta:
+window.editCatalogItem = function(idx) {
+    if(localStorage.getItem('authon_mode_locked') === 'true') return alert("⛔ Bloqueado para funcionários.");
+
+    const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
+    const item = cat[idx]; 
+    if(!item) return;
+
+    document.getElementById('catType').value = item.type;
+    toggleCatType(item.type);
+    
+    document.getElementById('catCode').value = item.code;
+    document.getElementById('catCategory').value = item.category;
+    document.getElementById('catName').value = item.name;
+    document.getElementById('catPrice').value = item.price;
+    document.getElementById('catStock').value = item.stock !== null ? item.stock : '';
+    
+    // IMPORTANTE: Usa o campo oculto que já existe no HTML (usado em operações) ou cria um novo se preferir
+    // No seu HTML atual, existe <input type="hidden" id="firebaseDocId" value=""> dentro da tab-new.
+    // Vamos garantir que a tab-catalog tenha onde guardar esse ID.
+    // Adicione esta linha LOGO ABAIXO de <input type="hidden" id="catalogEditIdx"> no seu HTML:
+    // <input type="hidden" id="catalogFirebaseId"> 
+    
+    // Se não quiser mexer no HTML, podemos reutilizar o 'catalogEditIdx' para guardar o ID do Firebase temporariamente, 
+    // mas o ideal é ajustar o HTML. Vou assumir que você usará o 'firebaseDocId' que já existe no DOM (mesmo estando em outra aba, o JS acha pelo ID).
+    document.getElementById('firebaseDocId').value = item.docId; 
+
+    document.querySelector('#tab-catalog .container').scrollIntoView({behavior: 'smooth'});
+    alert('Editando: ' + item.name);
+}
+
 
                 function renderCatalogList() {
             const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); 
@@ -1094,18 +1211,24 @@ window.saveSettingsCustom = async function() {
 
 
         // --- FUNÇÃO DE EXCLUIR DO ESTOQUE (COM PERGUNTA DE SEGURANÇA) ---
-        function delCatalog(idx) { 
-            let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); 
-            const item = cat[idx]; 
-            
-            // Aqui está a proteção: Só apaga se clicar em OK
-            if (item && confirm(`Tem certeza que deseja EXCLUIR "${item.name}" do estoque?\nEssa ação não tem volta.`)) {
-                cat.splice(idx, 1); 
-                localStorage.setItem('catalog_v1', JSON.stringify(cat)); 
-                renderCatalogList(); 
-                updateDatalist(); 
-            }
+        // Substitua a função delCatalog por esta:
+window.delCatalog = async function(idx) {
+    if(localStorage.getItem('authon_mode_locked') === 'true') return alert("⛔ Bloqueado para funcionários.");
+    
+    const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
+    const item = cat[idx];
+    
+    if (item && item.docId && confirm(`Excluir "${item.name}" da nuvem?`)) {
+        try {
+            await deleteDoc(doc(db, "catalogo", item.docId));
+            alert("Item excluído!");
+        } catch(e) {
+            alert("Erro ao excluir: " + e.message);
         }
+    } else if (!item.docId) {
+        alert("Erro: Item sem ID da nuvem. Tente recarregar a página.");
+    }
+}
         function updateDatalist() { const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); const dl = document.getElementById('services-datalist'); if(!dl) return; dl.innerHTML = ''; cat.forEach(c => { const opt = document.createElement('option'); opt.value = `${c.code} - ${c.name} (${c.category})`; dl.appendChild(opt); }); }
 
         function onServiceChange(input) { 
@@ -1208,27 +1331,45 @@ window.saveSettingsCustom = async function() {
             }
         }
 
-        // --- SISTEMA (ATENDER/EDITAR) ---
-        function loadToEdit(id, forceVenda = false) { 
+               // --- SISTEMA (ATENDER/EDITAR) ---
+        window.loadToEdit = function(id, forceVenda = false) { 
+            // 1. Primeiro buscamos o item para checar o STATUS dele
             const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
-            const item = db.find(x => x.id == id); if(!item) return; 
+            const item = db.find(x => x.id == id); 
+            if(!item) return; 
+
+            // --- TRAVA DE SEGURANÇA INTELIGENTE ---
+            // Se o Modo Vendedor estiver ATIVO:
+            if(localStorage.getItem('authon_mode_locked') === 'true') {
+                // Se a venda JÁ ESTIVER PAGA, bloqueia a edição.
+                if(item.status === 'pago' && !forceVenda) {
+                    return alert("⛔ AÇÃO BLOQUEADA: Vendas já PAGAS (Finalizadas) não podem ser alteradas pelo vendedor.");
+                }
+                // Se for "pendente" ou "orçamento", o código passa direto e deixa editar.
+            }
+            // --------------------------------------
             
             // Carrega IDs para edição na nuvem
             document.getElementById('editId').value = item.id; 
-            document.getElementById('firebaseDocId').value = item.docId; // IMPORTANTE: O ID do Firestore
+            document.getElementById('firebaseDocId').value = item.docId; 
 
             document.getElementById('date').value = item.date; 
-            document.getElementById('time').value = item.time || ''; document.getElementById('phone').value = item.phone; 
-            document.getElementById('clientName').value = item.client; document.getElementById('vehicle').value = item.vehicle; 
-            document.getElementById('plate').value = item.plate; document.getElementById('color').value = item.color || '';
-            document.getElementById('currentKm').value = item.km || ''; document.getElementById('clientCpf').value = item.cpf || '';
-            document.getElementById('services-list').innerHTML = ''; item.items.forEach(i => addNewItem(i.desc, i.val, i.qty)); 
+            document.getElementById('time').value = item.time || ''; 
+            document.getElementById('phone').value = item.phone; 
+            document.getElementById('clientName').value = item.client; 
+            document.getElementById('vehicle').value = item.vehicle; 
+            document.getElementById('plate').value = item.plate; 
+            document.getElementById('color').value = item.color || '';
+            document.getElementById('currentKm').value = item.km || ''; 
+            document.getElementById('clientCpf').value = item.cpf || '';
+            
+            document.getElementById('services-list').innerHTML = ''; 
+            item.items.forEach(i => addNewItem(i.desc, i.val, i.qty)); 
+            
             calcTotal(); 
             
-                        if(forceVenda) { 
+            if(forceVenda) { 
                 setOpType('venda'); 
-                // CORREÇÃO: Mantemos os IDs para atualizar o MESMO registro na nuvem
-                // Apenas atualizamos a data para hoje (dia do atendimento)
                 const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
                 document.getElementById('date').value = date.toISOString().split('T')[0];
             } else { 
@@ -1237,6 +1378,7 @@ window.saveSettingsCustom = async function() {
 
             showTab('new', document.querySelector('.nav-item')); 
         }
+
 
         // --- AGENDA (LEMBRETE NO ZAP) ---
         function renderAgenda() {
@@ -1313,7 +1455,13 @@ function renderHistory(filter) {
         }
 
         async function deleteItem(docId) { 
-            // Agora deleta direto da nuvem
+    // --- TRAVA DE SEGURANÇA ---
+    if(localStorage.getItem('authon_mode_locked') === 'true') {
+        return alert("⛔ AÇÃO BLOQUEADA: Funcionários não podem excluir registros.");
+    }
+    // --------------------------
+
+    // ... o resto do código
             if(docId && docId !== 'undefined') {
                 await deleteFromCloud("operacoes", docId);
             } else {
@@ -1748,7 +1896,7 @@ window.saveLogo = function(event) {
 
 
     </script>
-</body>
+
     <div id="login-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #2c3e50 0%, #000000 100%); z-index:99999; display:none; align-items:center; justify-content:center; flex-direction:column;">
         
         <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 40px 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
@@ -1771,6 +1919,8 @@ window.saveLogo = function(event) {
             </div>
 
             <button class="btn-action" onclick="doLogin()" style="background: var(--primary-grad); border: none; font-size: 14px; padding: 12px; margin-top: 0;">ACESSAR SISTEMA</button>
+            <p style="text-align:center; margin-top:15px; cursor:pointer; color:#bdc3c7; font-size:12px; text-decoration:underline;" onclick="forgotPassword()">Esqueci minha senha</p>
+
             
             <p id="login-msg" style="color: #ff6b6b; font-size: 12px; margin-top: 15px; min-height: 18px;"></p>
         </div>
@@ -1787,6 +1937,90 @@ window.saveLogo = function(event) {
 
 <style>
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        /* --- ESTILOS DO MODO VENDEDOR (V2 - BLINDADO) --- */
+    body.employee-mode .tab-content#tab-dashboard,
+    body.employee-mode .tab-content#tab-expenses,
+    body.employee-mode .tab-content#tab-settings {
+        display: none !important;
+    }
+
+    /* Esconde botões de navegação proibidos */
+    body.employee-mode .nav-item[onclick*="dashboard"],
+    body.employee-mode .nav-item[onclick*="expenses"],
+    body.employee-mode .nav-item[onclick*="settings"] {
+        display: none !important;
+    }
+
+    /* --- BLOQUEIOS DE AÇÃO --- */
+    
+    /* Esconde o Lápis de Editar no Catálogo e no Histórico */
+    body.employee-mode .fa-edit {
+        display: none !important;
+    }
+    
+        /* Esconde o Botão que chama a função de Editar */
+    /* ALTERAÇÃO: Removemos o bloqueio do botão de editar venda (loadToEdit) */
+    /* Mantemos escondido APENAS o lápis do estoque */
+    body.employee-mode i[onclick*="editCatalogItem"] {
+        display: none !important;
+    }
+
+
+    /* Esconde Botões de Excluir (Lixeira) APENAS no Histórico e Catálogo */
+    /* Nota: Mantemos a lixeira da tela de venda para ele poder corrigir erros de digitação */
+    body.employee-mode .card-actions button[onclick*="deleteItem"],
+    body.employee-mode i[onclick*="delCatalog"] {
+        display: none !important;
+    }
+
+    /* Botão Flutuante para Desbloquear */
+    #unlock-btn {
+        display: none;
+        position: fixed;
+        top: 15px; right: 15px;
+        background: #c0392b; color: white;
+        padding: 8px 15px; border-radius: 20px;
+        font-size: 11px; font-weight: bold;
+        z-index: 99999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+    body.employee-mode #unlock-btn { display: block; }
+    
+    /* --- ESTILO DOS MENUS DE CONFIGURAÇÃO --- */
+.settings-btn {
+    width: 100%;
+    padding: 18px;
+    background: white;
+    border: none;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.settings-btn:first-child { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.settings-btn:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; border-bottom: none; }
+.settings-btn:active { background-color: #f5f5f5; }
+.settings-btn i { color: var(--primary); width: 25px; }
+.settings-btn .fa-chevron-down { color: #bdc3c7; font-size: 12px; width: auto; }
+
+/* Área oculta que se abre */
+.settings-content {
+    display: none; /* Começa escondido */
+    padding: 20px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+
 </style>
 
 <script>
@@ -1821,8 +2055,49 @@ window.saveLogo = function(event) {
         document.getElementById('manifesto-seguro').setAttribute('href', url);
         console.log("App pronto para instalar!");
     });
-</script>
+    // --- LÓGICA DO MODO VENDEDOR (SEGURANÇA) ---
+window.toggleEmployeeMode = function(activate) {
+    if(activate) {
+        // ATIVAR BLOQUEIO
+        const pin = document.getElementById('cfgPin').value;
+        if(!pin) return alert("Crie um PIN antes de ativar o modo vendedor!");
+        
+        if(confirm("Confirmar bloqueio? Apenas com o PIN " + pin + " você poderá acessar o financeiro.")) {
+            localStorage.setItem('authon_mode_locked', 'true');
+            applySecurityMode();
+            alert("Sistema Bloqueado para Vendas!");
+            // Vai para a tela de vendas
+            clickNewTab(document.querySelector('.nav-item')); 
+        }
+    } else {
+        // DESATIVAR (PEDIR PIN)
+        const savedPin = localStorage.getItem('authon_cfg_pin');
+        const inputPin = prompt("Digite o PIN do Administrador para desbloquear:");
+        
+        if(inputPin === savedPin) {
+            localStorage.setItem('authon_mode_locked', 'false');
+            applySecurityMode();
+            alert("Sistema Desbloqueado! Bem-vindo Chefe.");
+        } else {
+            alert("PIN Incorreto!");
+        }
+    }
+}
 
+function applySecurityMode() {
+    const isLocked = localStorage.getItem('authon_mode_locked') === 'true';
+    if(isLocked) {
+        document.body.classList.add('employee-mode');
+    } else {
+        document.body.classList.remove('employee-mode');
+    }
+}
+
+// Executa ao carregar a página para manter bloqueado se der F5
+document.addEventListener("DOMContentLoaded", applySecurityMode);
+
+</script>
+</body>
 
 </html>
 

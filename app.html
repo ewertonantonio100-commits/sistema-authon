@@ -131,16 +131,28 @@ function iniciarSistema() {
     onSnapshot(qConfig, (snapshot) => {
         snapshot.forEach((doc) => {
             const cfg = doc.data();
+            
+            // Salva no LocalStorage
             if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
             if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
             if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
+            
+            // Taxas
+            localStorage.setItem('authon_fee_deb', cfg.feeDeb || '0');
+            localStorage.setItem('authon_fee_c1', cfg.feeC1 || '0');
+            localStorage.setItem('authon_fee_c2', cfg.feeC2 || '0');
+            localStorage.setItem('authon_fee_c3', cfg.feeC3 || '0');
+            localStorage.setItem('authon_fee_c4', cfg.feeC4 || '0');
+            localStorage.setItem('authon_fee_c5', cfg.feeC5 || '0');
+            localStorage.setItem('authon_fee_c6', cfg.feeC6 || '0');
+
             if(cfg.pin) localStorage.setItem('authon_cfg_pin', cfg.pin);
             if(cfg.logo) localStorage.setItem('oficina_logo', cfg.logo);
             
-            // Preenche campos visualmente
+            // Preenche campos visualmente SE eles existirem na tela
             if(document.getElementById('cfgName')) {
                 document.getElementById('cfgName').value = cfg.name || '';
                 document.getElementById('cfgCnpj').value = cfg.cnpj || '';
@@ -148,13 +160,25 @@ function iniciarSistema() {
                 document.getElementById('cfgPhone').value = cfg.phone || '';
                 document.getElementById('cfgPix').value = cfg.pix || '';
                 document.getElementById('cfgWarranty').value = cfg.warranty || '';
+                
+                // Preenche as taxas visualmente
+                if(document.getElementById('feeDeb')) {
+                    document.getElementById('feeDeb').value = cfg.feeDeb || '';
+                    document.getElementById('feeC1').value = cfg.feeC1 || '';
+                    document.getElementById('feeC2').value = cfg.feeC2 || '';
+                    document.getElementById('feeC3').value = cfg.feeC3 || '';
+                    document.getElementById('feeC4').value = cfg.feeC4 || '';
+                    document.getElementById('feeC5').value = cfg.feeC5 || '';
+                    document.getElementById('feeC6').value = cfg.feeC6 || '';
+                }
+
                 if(document.getElementById('cfgPin')) document.getElementById('cfgPin').value = cfg.pin || '';
             }
             localStorage.setItem('authon_config_doc_id', doc.id);
         });
     });
 
-    // 3. --- CORREÇÃO: CATÁLOGO NA NUVEM ---
+    // 3. CATÁLOGO NA NUVEM
     const qCat = query(collection(db, "catalogo"), where("uid", "==", user.uid));
     onSnapshot(qCat, (snapshot) => {
         const catLocal = [];
@@ -167,9 +191,6 @@ function iniciarSistema() {
     });
 }
 
-
-
-        
         // --- FUNÇÃO DE SAIR ---
         window.logout = function() {
             if(confirm("Deseja sair e bloquear o sistema?")) {
@@ -577,35 +598,34 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <div class="final-total">Total: R$ <span id="display-total">0,00</span></div>
             </div>
 
-            <div id="payment-div">
-                <h3 style="margin:20px 0 10px 0; font-size:16px;">Pagamento</h3>
-                <select id="payment" onchange="toggleFeeInput()">
-                    <option value="Pix">Pix</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Débito">Débito</option>
-                    <option value="Crédito À vista">Crédito À vista</option>
-                    <option value="Crédito 2x">Crédito 2x</option>
-                    <option value="Crédito 3x">Crédito 3x</option>
-                    <option value="Crédito 4x">Crédito 4x</option>
-                    <option value="Crédito 5x">Crédito 5x</option>
-                    <option value="Crédito 6x">Crédito 6x</option>
-                </select>
-                <div id="div-fee" class="fee-box">
-                    <label>Taxa Maquininha (%)</label>
-                    <input type="number" id="cardFee" placeholder="Ex: 2.0" style="background:white; border:1px solid #ccc;">
-                    <small style="font-size:9px; color:#7f8c8d;">O valor descontado será registrado apenas no Histórico e Caixa.</small>
-                </div>
-            </div>
+            <div id="div-agendamento-info" style="display:none; margin-top:10px;"><label>Hora do Agendamento</label><input type="time" id="time"></div>
+            
             <button type="button" class="btn-action btn-gen" onclick="saveOperation()">SALVAR & FINALIZAR</button>
         </div>
     </div>
 
-    <div id="tab-agenda" class="tab-content"><div style="padding: 15px;"><h1 style="margin-left:10px; margin-bottom:15px; color:var(--dark);">Agenda</h1></div><div id="agenda-list" class="card-list"></div></div>
+        <div id="tab-agenda" class="tab-content">
+        <div class="container">
+            <div class="header-title"><h1>Agenda</h1></div>
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="agendaSearch" placeholder="🔍 Buscar cliente, carro ou data..." onkeyup="renderAgenda()" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
+            </div>
+        </div>
+        <div id="agenda-list" class="card-list"></div>
+    </div>
 
-    <div id="tab-history" class="tab-content">
-        <div style="padding: 15px;"><h1 style="margin-left:10px; margin-bottom:15px; color:var(--dark);">Histórico</h1></div>
+
+
+            <div id="tab-history" class="tab-content">
+        <div class="container">
+            <div class="header-title"><h1>Histórico</h1></div>
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="historySearch" placeholder="🔍 Buscar por nome, placa, valor..." onkeyup="renderHistory(window.currentHistoryFilter || 'all')" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
+            </div>
+        </div>
         <div style="display:flex; gap:10px; margin-bottom:15px; padding: 0 15px; overflow-x:auto">
-            <button class="btn-card" onclick="renderHistory('all')" style="background:var(--dark); color:white; min-width:80px;">Todos</button>
+
+           <button class="btn-card" onclick="renderHistory('all')" style="background:var(--dark); color:white; min-width:80px;">Todos</button>
             <button class="btn-card" onclick="renderHistory('pendente')" style="background:#f1c40f; color:#2c3e50; min-width:80px;">Pendentes</button>
             <button class="btn-card" onclick="renderHistory('pago')" style="background:#27ae60; color:white; min-width:80px;">Pagos</button>
             <button class="btn-card" onclick="renderHistory('orcamento')" style="background:#95a5a6; color:white; min-width:80px;">Orçamentos</button>
@@ -624,12 +644,17 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <button class="btn-action" style="background:var(--primary); color:white; grid-column: span 2;" onclick="saveExpense()"><i class="fas fa-wallet"></i> LANÇAR DESPESA</button>
             </div>
         </div>
-        <h3 style="margin-left:20px; margin-bottom:15px; font-size:16px; color:var(--dark);">Histórico de Despesas</h3>
+        <h3 style="margin-left:20px; margin-bottom:5px; font-size:16px; color:var(--dark);">Histórico de Despesas</h3>
+        <div style="padding: 0 15px 15px 15px;">
+            <input type="text" id="expenseSearch" placeholder="🔍 Buscar despesa..." onkeyup="renderExpensesList()" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
+        </div>
         <div id="expense-list-mini" class="card-list" style="padding-bottom: 20px;"></div>
     </div>
 
-    <div id="tab-dashboard" class="tab-content">
-        <div style="padding: 15px;"><h1 style="margin-left:10px; margin-bottom:15px; color:var(--dark);">Fluxo de Caixa</h1></div>
+        <div id="tab-dashboard" class="tab-content">
+        <div class="container">
+            <div class="header-title"><h1>Fluxo de Caixa</h1></div>
+        </div>
         
         <div class="date-shortcuts">
             <button class="btn-shortcut" onclick="setDateRange('today')">HOJE</button>
@@ -689,11 +714,16 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
 
 
 
-    <div id="tab-catalog" class="tab-content">
+        <div id="tab-catalog" class="tab-content">
         <div class="container">
             <div class="header-title"><h1>Catálogo & Estoque</h1></div>
-            <div style="margin-bottom: 15px;"><input type="text" id="catalogSearch" placeholder="🔍 Pesquisar por Nome, Código ou Categoria..." onkeyup="renderCatalogList()" style="background:#f0fdf4; border-color:#bbf7d0;"></div>
-                        <div class="op-type-switch" style="margin-bottom:15px;">
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="catalogSearch" placeholder="🔍 Pesquisar por Nome, Código ou Categoria..." onkeyup="renderCatalogList()" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
+            </div>
+
+            <div class="op-type-switch" style="margin-bottom:15px;">
+
                 <button type="button" class="op-btn active" id="btn-type-prod" onclick="toggleCatType('produto')">📦 PRODUTO / PEÇA</button>
                 <button type="button" class="op-btn" id="btn-type-serv" onclick="toggleCatType('servico')">🔧 SERVIÇO</button>
             </div>
@@ -748,24 +778,38 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             </div>
         </div>
 
-        <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 15px;">
+         <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 15px;">
             <button class="settings-btn" onclick="toggleSettingsSection('sec-payment')">
-                <span><i class="fas fa-wallet"></i> Pix e Garantia</span>
+                <span><i class="fas fa-wallet"></i> Pix, Garantia & Taxas</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
             
             <div id="sec-payment" class="settings-content">
                 <label>Chave Pix (Para Recibo)</label>
-                <input type="text" id="cfgPix" placeholder="Ex: (11) 99999-9999">
+                <input type="text" id="cfgPix" placeholder="Ex: (11) 99999-9999" style="margin-bottom:15px;">
                 
+                <h4 style="margin: 10px 0 5px 0; color:var(--dark); border-top:1px dashed #eee; padding-top:10px;">Taxas da Maquininha (%)</h4>
+                <p style="font-size:10px; color:#7f8c8d; margin-bottom:10px;">Digite apenas o número (Ex: para 2.5%, digite 2.5)</p>
+                
+                <div class="form-grid">
+                    <div><label>Débito</label><input type="number" id="feeDeb" placeholder="0"></div>
+                    <div><label>Crédito 1x</label><input type="number" id="feeC1" placeholder="0"></div>
+                    <div><label>Crédito 2x</label><input type="number" id="feeC2" placeholder="0"></div>
+                    <div><label>Crédito 3x</label><input type="number" id="feeC3" placeholder="0"></div>
+                    <div><label>Crédito 4x</label><input type="number" id="feeC4" placeholder="0"></div>
+                    <div><label>Crédito 5x</label><input type="number" id="feeC5" placeholder="0"></div>
+                    <div><label>Crédito 6x</label><input type="number" id="feeC6" placeholder="0"></div>
+                </div>
+
                 <label style="margin-top:15px;">Termos de Garantia</label>
                 <textarea id="cfgWarranty" rows="4" placeholder="Ex: Garantia de 90 dias..." style="width:100%; padding:10px; border-radius:12px; border:2px solid #dfe6e9; font-family:'Poppins', sans-serif;"></textarea>
                 
                 <button class="btn-action" style="background:var(--green-grad); margin-top:10px;" onclick="saveSettingsCustom()">
-                    SALVAR TERMOS
+                    SALVAR TUDO
                 </button>
             </div>
         </div>
+
 
         <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 25px;">
             <button class="settings-btn" onclick="toggleSettingsSection('sec-security')">
@@ -858,6 +902,38 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </div>
 
     <div id="modal-config"><div class="modal-box"><h3 style="text-align:center; margin-bottom:15px;">Alterar Logo</h3><input type="file" accept="image/*" onchange="saveLogo(event)"><button onclick="closeModal()" class="btn-action" style="margin-top:15px; background:#7f8c8d;">Fechar</button></div></div>
+            <div id="modal-pay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center;">
+        <div style="background: white; width: 90%; max-width: 350px; padding: 25px; border-radius: 16px;">
+            <h3 style="text-align:center; margin-bottom:10px; color:var(--dark);">Receber Pagamento</h3>
+            
+            <p style="text-align:center; font-size:22px; font-weight:bold; color:var(--green-grad); margin:0;" id="modal-pay-value">R$ 0,00</p>
+            
+            <p style="text-align:center; font-size:12px; color:#7f8c8d; margin-bottom:20px;" id="modal-pay-net">
+                Taxa: 0% | Líquido: R$ 0,00
+            </p>
+            
+            <label>Como o cliente pagou?</label>
+            <select id="modal-pay-select" style="margin-bottom:20px;" onchange="calculateModalNet()">
+                <option value="Pix">Pix (Sem Taxa)</option>
+                <option value="Dinheiro">Dinheiro (Sem Taxa)</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito 1x">Crédito À Vista</option>
+                <option value="Crédito 2x">Crédito 2x</option>
+                <option value="Crédito 3x">Crédito 3x</option>
+                <option value="Crédito 4x">Crédito 4x</option>
+                <option value="Crédito 5x">Crédito 5x</option>
+                <option value="Crédito 6x">Crédito 6x</option>
+            </select>
+            
+            <input type="hidden" id="modal-pay-docid">
+            <input type="hidden" id="modal-pay-total">
+
+            <button class="btn-action" style="background:var(--green-grad);" onclick="confirmPayment()">CONFIRMAR RECEBIMENTO</button>
+            <button class="btn-action" style="background:#e74c3c; margin-top:10px;" onclick="document.getElementById('modal-pay').style.display='none'">CANCELAR</button>
+        </div>
+    </div>
+
+
 
     <script>
         const VERSAO_COM_ESTOQUE = true;
@@ -933,15 +1009,30 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             if(el) { el.classList.add('active'); } else { if(tab === 'new') document.querySelectorAll('.nav-item')[0].classList.add('active'); }
         }
 
-        function setOpType(type) {
+                function setOpType(type) {
             document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
             document.querySelector('.op-btn.'+type).classList.add('active');
             document.getElementById('opType').value = type;
             const btn = document.querySelector('.btn-gen');
-            if(type === 'venda') { btn.innerText = 'FINALIZAR (PENDENTE)'; btn.style.background = 'var(--green-grad)'; document.getElementById('payment-div').style.display='block'; document.getElementById('div-hora').style.display='none'; } 
-            else if (type === 'orcamento') { btn.innerText = 'GERAR ORÇAMENTO (PDF)'; btn.style.background = 'var(--orange-grad)'; document.getElementById('payment-div').style.display='none'; document.getElementById('div-hora').style.display='none'; } 
-            else { btn.innerText = 'AGENDAR SERVIÇO'; btn.style.background = 'var(--blue-grad)'; document.getElementById('payment-div').style.display='none'; document.getElementById('div-hora').style.display='block'; }
+            const divHora = document.getElementById('div-agendamento-info');
+
+            if(type === 'venda') { 
+                btn.innerText = 'SALVAR (PENDENTE)'; 
+                btn.style.background = 'var(--green-grad)'; 
+                if(divHora) divHora.style.display='none'; 
+            } 
+            else if (type === 'orcamento') { 
+                btn.innerText = 'GERAR ORÇAMENTO (PDF)'; 
+                btn.style.background = 'var(--orange-grad)'; 
+                if(divHora) divHora.style.display='none'; 
+            } 
+            else { 
+                btn.innerText = 'AGENDAR SERVIÇO'; 
+                btn.style.background = 'var(--blue-grad)'; 
+                if(divHora) divHora.style.display='block'; 
+            }
         }
+
 
         function toggleFeeInput() {
             const payMethod = document.getElementById('payment').value;
@@ -984,22 +1075,27 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             updateDashboard(true);
         }
 
-        // --- FUNÇÃO DE SALVAR CONFIGURAÇÕES (VERSÃO UNIVERSAL) ---
+        // Substitua a função saveSettingsCustom inteira por esta:
 window.saveSettingsCustom = async function() {
-    // 1. Verifica se tem usuário logado usando a ponte global
+    // 1. Verifica login
     const user = window.auth ? window.auth.currentUser : null;
+    if(!user) return alert("Erro: Login não detectado. Recarregue a página.");
     
-    if(!user) {
-        alert("Erro: O sistema não detectou seu login. Recarregue a página.");
-        return;
-    }
-    
-    // Feedback no botão
     const btn = event ? event.target : null;
     const originalText = btn ? btn.innerText : "SALVAR";
     if(btn) btn.innerText = "Salvando...";
 
-        // 2. Pega os dados
+    // 2. Pega os valores dos campos
+    const fees = {
+        deb: document.getElementById('feeDeb').value || '0',
+        c1: document.getElementById('feeC1').value || '0',
+        c2: document.getElementById('feeC2').value || '0',
+        c3: document.getElementById('feeC3').value || '0',
+        c4: document.getElementById('feeC4').value || '0',
+        c5: document.getElementById('feeC5').value || '0',
+        c6: document.getElementById('feeC6').value || '0'
+    };
+
     const cfgData = {
         uid: user.uid,
         name: document.getElementById('cfgName').value,
@@ -1008,36 +1104,45 @@ window.saveSettingsCustom = async function() {
         phone: document.getElementById('cfgPhone').value,
         pix: document.getElementById('cfgPix').value,
         warranty: document.getElementById('cfgWarranty').value,
-        pin: document.getElementById('cfgPin').value, // <--- NOVO
-        logo: localStorage.getItem('oficina_logo') || '' 
+        pin: document.getElementById('cfgPin').value,
+        logo: localStorage.getItem('oficina_logo') || '',
+        // Adiciona as taxas ao objeto que vai para a nuvem
+        feeDeb: fees.deb, feeC1: fees.c1, feeC2: fees.c2, 
+        feeC3: fees.c3, feeC4: fees.c4, feeC5: fees.c5, feeC6: fees.c6
     };
 
-    // Salva o PIN no local também
-    localStorage.setItem('authon_cfg_pin', cfgData.pin);
-
-
-    // 3. Salva no Celular (Backup Rápido)
+    // 3. SALVA NO CELULAR AGORA (Backup Imediato)
+    // Isso garante que funcione mesmo antes de ir pra nuvem
     localStorage.setItem('authon_cfg_name', cfgData.name);
     localStorage.setItem('authon_cfg_cnpj', cfgData.cnpj);
     localStorage.setItem('authon_cfg_addr', cfgData.addr);
     localStorage.setItem('authon_cfg_phone', cfgData.phone);
     localStorage.setItem('authon_cfg_pix', cfgData.pix);
     localStorage.setItem('authon_cfg_warranty', cfgData.warranty);
+    localStorage.setItem('authon_cfg_pin', cfgData.pin);
+    
+    // Salva as taxas no LocalStorage
+    localStorage.setItem('authon_fee_deb', fees.deb);
+    localStorage.setItem('authon_fee_c1', fees.c1);
+    localStorage.setItem('authon_fee_c2', fees.c2);
+    localStorage.setItem('authon_fee_c3', fees.c3);
+    localStorage.setItem('authon_fee_c4', fees.c4);
+    localStorage.setItem('authon_fee_c5', fees.c5);
+    localStorage.setItem('authon_fee_c6', fees.c6);
 
-    // 4. Salva na Nuvem (Usando ferramentas globais window.)
-    const docId = localStorage.getItem('authon_config_doc_id');
-
+    // 4. Salva na Nuvem
     try {
-        // Usa window.db, window.doc, etc para garantir que funcione
+        const docId = localStorage.getItem('authon_config_doc_id');
         if(docId) {
             await window.updateDoc(window.doc(window.db, "configuracoes", docId), cfgData);
         } else {
             await window.addDoc(window.collection(window.db, "configuracoes"), cfgData);
         }
-        alert("✅ Configurações salvas com sucesso!");
+        alert("✅ Configurações e Taxas salvas com sucesso!");
     } catch(e) {
         console.error("Erro config:", e);
-        alert("Salvo no celular, mas erro na nuvem: " + e.message);
+        // Mesmo com erro na nuvem, já salvamos localmente acima, então vai funcionar.
+        alert("Salvo no celular (Offline). Sincronizaremos quando possível.");
     }
     
     if(btn) btn.innerText = originalText;
@@ -1063,7 +1168,7 @@ window.toggleSettingsSection = function(id) {
             document.getElementById('btn-type-prod').className = type === 'produto' ? 'op-btn active venda' : 'op-btn';
             document.getElementById('btn-type-serv').className = type === 'servico' ? 'op-btn active agendamento' : 'op-btn';
         }
-        // Substitua a função saveCatalogItem por esta:
+        // Substitua a função saveCatalogItem inteira por esta:
 window.saveCatalogItem = async function() {
     const user = auth.currentUser;
     if(!user) return alert("Erro: Não logado.");
@@ -1074,15 +1179,28 @@ window.saveCatalogItem = async function() {
     const name = document.getElementById('catName').value; 
     const price = document.getElementById('catPrice').value;
     const stock = document.getElementById('catStock').value;
-    const editDocId = document.getElementById('firebaseDocId').value; // Usaremos o campo oculto existente
+    const editDocId = document.getElementById('firebaseDocId').value; 
 
     if(!name) return alert('Digite o nome do item');
 
+    // --- NOVA VALIDAÇÃO DE DUPLICIDADE ---
+    const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
+    // Se o código não for genérico "S/N" e não estiver vazio
+    if (code && code.toUpperCase() !== 'S/N') {
+        // Procura se existe algum item com o mesmo código
+        const exists = cat.find(item => item.code === code);
+        
+        // Se achou alguém com esse código, E não é o item que estamos editando agora
+        if (exists && exists.docId !== editDocId) {
+            return alert(`⛔ ERRO: O código "${code}" já está sendo usado no produto:\n"${exists.name}".\n\nPor favor, use um código diferente.`);
+        }
+    }
+    // -------------------------------------
+
     const finalStock = (typeof VERSAO_COM_ESTOQUE !== 'undefined' && VERSAO_COM_ESTOQUE && type === 'produto' && stock) ? parseInt(stock) : null;
     
-    // Objeto para salvar
     const itemData = { 
-        uid: user.uid, // Importante: Dono do dado
+        uid: user.uid,
         type, code, category, name, price, stock: finalStock 
     };
 
@@ -1091,17 +1209,14 @@ window.saveCatalogItem = async function() {
 
     try {
         if(editDocId) {
-            // Atualizar existente
             await updateDoc(doc(db, "catalogo", editDocId), itemData);
             alert('Produto atualizado na nuvem!');
-            document.getElementById('firebaseDocId').value = ''; // Limpa ID
+            document.getElementById('firebaseDocId').value = ''; 
         } else {
-            // Criar novo
             await addDoc(collection(db, "catalogo"), itemData);
             alert('Novo item salvo na nuvem!');
         }
 
-        // Limpa formulário
         document.getElementById('catName').value = ''; 
         document.getElementById('catCode').value = ''; 
         document.getElementById('catPrice').value = ''; 
@@ -1113,6 +1228,7 @@ window.saveCatalogItem = async function() {
     }
     btn.innerText = "Salvar no Catálogo";
 }
+
 
                 // Substitua a função editCatalogItem por esta:
 window.editCatalogItem = function(idx) {
@@ -1265,7 +1381,7 @@ window.delCatalog = async function(idx) {
         
         function calcTotal() { let t = 0; document.querySelectorAll('.val').forEach(i => t += Number(i.value)); const discount = parseFloat(document.getElementById('discount').value) || 0; document.getElementById('display-total').innerText = (t - discount).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
         
-                async function saveOperation() {
+                        async function saveOperation() {
             const type = document.getElementById('opType').value; 
             const client = document.getElementById('clientName').value; 
             const totalStr = document.getElementById('display-total').innerText; 
@@ -1274,11 +1390,7 @@ window.delCatalog = async function(idx) {
             const km = document.getElementById('currentKm').value; 
             const cpf = document.getElementById('clientCpf').value;
             
-            let feeVal = 0; const payMethod = document.getElementById('payment').value;
-            if(payMethod.includes('Crédito') || payMethod.includes('Débito')) { const feePct = parseFloat(document.getElementById('cardFee').value) || 0; feeVal = totalVal * (feePct / 100); }
-            const netVal = totalVal - feeVal;
-
-            // Validação: Se for agendamento, aceita valor zerado. Se for venda, precisa de valor.
+            // Validação
             if(!client) return alert("Por favor, preencha o nome do Cliente.");
             if(type !== 'agendamento' && totalVal <= 0) return alert("Adicione serviços ou peças para salvar.");
 
@@ -1290,6 +1402,7 @@ window.delCatalog = async function(idx) {
                 if(d) items.push({ desc: d, val: v, qty: q });
             });
 
+            // Baixa no Estoque (apenas se for Venda)
             if(type === 'venda' && VERSAO_COM_ESTOQUE) {
                 let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); let stockUpdated = false;
                 items.forEach(soldItem => {
@@ -1299,7 +1412,8 @@ window.delCatalog = async function(idx) {
                 if(stockUpdated) { localStorage.setItem('catalog_v1', JSON.stringify(cat)); renderCatalogList(); }
             }
 
-            const initialStatus = type === 'venda' ? 'pendente' : (type === 'agendamento' ? 'agendado' : 'orcamento');
+            // Status Inicial
+            const initialStatus = (type === 'agendamento') ? 'agendado' : 'pendente';
             
             const data = { 
                 id: document.getElementById('editId').value ? Number(document.getElementById('editId').value) : Date.now(), 
@@ -1307,8 +1421,9 @@ window.delCatalog = async function(idx) {
                 date: document.getElementById('date').value, time: document.getElementById('time').value, 
                 client, phone: document.getElementById('phone').value, vehicle: document.getElementById('vehicle').value, 
                 plate: document.getElementById('plate').value, color: document.getElementById('color').value,
-                km: km, cpf: cpf, payment: payMethod, items: items, 
-                total: totalVal, netTotal: netVal, discount: discountVal 
+                km: km, cpf: cpf, items: items, 
+                total: totalVal, netTotal: totalVal, discount: discountVal, // netTotal começa igual ao total
+                payment: '' // Nasce vazio, preenche no Receber
             };
             
             const docId = document.getElementById('firebaseDocId').value;
@@ -1321,14 +1436,8 @@ window.delCatalog = async function(idx) {
             }
 
             updateClientDatalist(); 
-            
-            // AGORA GERA PDF PARA TODOS (Venda, Orçamento e Agendamento)
             generatePDF(data); 
-            
-            // Se for Agendamento, avisa que salvou (pois o PDF abre por cima)
-            if(type === 'agendamento') {
-                alert("Agendamento Salvo!");
-            }
+            if(type === 'agendamento') alert("Agendamento Salvo!");
         }
 
                // --- SISTEMA (ATENDER/EDITAR) ---
@@ -1381,62 +1490,87 @@ window.delCatalog = async function(idx) {
 
 
         // --- AGENDA (LEMBRETE NO ZAP) ---
-        function renderAgenda() {
-            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); const list = document.getElementById('agenda-list'); list.innerHTML = '';
-            const agendas = db.filter(x => x.type === 'agendamento').sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
-            agendas.forEach(item => { 
-                const msg = `Olá *${item.client}*, tudo bem? 😃\n\nPassando para confirmar seu agendamento para o veículo *${item.vehicle}*.\n\n🗓 Data: *${item.date.split('-').reverse().join('/')}*\n⏰ Horário: *${item.time}*\n\nEstamos combinados? Qualquer imprevisto, só avisar! 🤝`;
-                const link = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
-                let itensHtml = '<ul style="margin:5px 0 5px 15px; padding:0; font-size:11px; color:#555;">';
-                item.items.forEach(i => itensHtml += `<li>${i.desc}</li>`); itensHtml += '</ul>';
-                
-                const valorHtml = `<div style="font-weight:bold; font-size:15px; color:#2c3e50; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+        // Substitua a função renderAgenda por esta:
+function renderAgenda() {
+    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
+    const list = document.getElementById('agenda-list'); 
+    
+    // Pega o termo de busca
+    const searchInput = document.getElementById('agendaSearch');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
 
-                list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
-            });
-        }
+    list.innerHTML = '';
+    
+    const agendas = db.filter(x => x.type === 'agendamento').sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
+    
+    agendas.forEach(item => { 
+        // Filtro de busca
+        const fullText = (item.client + ' ' + item.vehicle + ' ' + item.plate + ' ' + item.date).toLowerCase();
+        if(term && !fullText.includes(term)) return; // Pula se não bater com a busca
 
-// --- HISTÓRICO ATUALIZADO (COM NOME DA EMPRESA NO ZAP DE "PRONTO") ---
-function renderHistory(filter) { 
+        const msg = `Olá *${item.client}*, tudo bem? 😃\n\nPassando para confirmar seu agendamento para o veículo *${item.vehicle}*.\n\n🗓 Data: *${item.date.split('-').reverse().join('/')}*\n⏰ Horário: *${item.time}*\n\nEstamos combinados? Qualquer imprevisto, só avisar! 🤝`;
+        const link = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+        let itensHtml = '<ul style="margin:5px 0 5px 15px; padding:0; font-size:11px; color:#555;">';
+        item.items.forEach(i => itensHtml += `<li>${i.desc}</li>`); itensHtml += '</ul>';
+        
+        const valorHtml = `<div style="font-weight:bold; font-size:15px; color:#2c3e50; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+
+        list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
+    });
+}
+
+
+// Substitua a função renderHistory inteira por esta:
+window.renderHistory = function(filter) { 
+    // Salva o filtro atual para a busca funcionar
+    window.currentHistoryFilter = filter;
+
     const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
     const list = document.getElementById('history-list'); 
-    list.innerHTML = ''; 
     
-    // Pega o nome da empresa salvo nas configurações
+    // Pega o termo de busca
+    const searchInput = document.getElementById('historySearch');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
+
+    list.innerHTML = ''; 
     const compName = localStorage.getItem('authon_cfg_name') || "SUA OFICINA";
 
+    // Filtros
     let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
     if(filter === 'venda') filtered = filtered.filter(x => x.type === 'venda');
     if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
     if(filter === 'pendente') filtered = filtered.filter(x => x.status === 'pendente');
     if(filter === 'pago') filtered = filtered.filter(x => x.status === 'pago');
 
-    // Ordena do mais recente para o mais antigo
     filtered.sort((a,b) => b.id - a.id);
-
     const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
 
     filtered.forEach(item => { 
+        // Filtro de Busca
+        const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
+        if(term && !fullText.includes(term)) return;
+
+        // 1. Definição de Cores e Status
         let badgeClass = ''; let statusText = item.type.toUpperCase(); let actionBtn = '';
         
-        let priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+        // 2. Montagem do Preço (com destaque para Líquido se houver taxa)
+        let priceDisplay = `<div style="font-weight:800; font-size:18px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
         if(item.netTotal && item.netTotal < item.total) {
-            priceDisplay = `<div style="font-weight:bold; margin-top:5px; font-size:16px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div style="font-size:11px; color:#c0392b; font-weight:600;"><i class="fas fa-donate"></i> Líquido: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+            priceDisplay = `
+                <div style="font-weight:800; font-size:18px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                <div style="font-size:10px; color:#c0392b; font-weight:600; margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+            `;
         }
 
+        // 3. Lógica dos Botões (Venda/Orçamento)
         if(item.type === 'venda') {
             if(item.status === 'pendente') {
                 badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
-                
                 let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                
-                // --- AQUI ESTÁ A MUDANÇA: ADICIONEI O CABEÇALHO DA EMPRESA ---
                 const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
-                // -------------------------------------------------------------
-
                 const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
                 
-                actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> PRONTO</button><button class="btn-card btn-pay" onclick="markAsPaid('${item.docId}')"><i class="fas fa-check-circle"></i> RECEBER</button>`;
+                actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> AVISAR</button><button class="btn-card btn-pay" onclick="window.openPayModal('${item.docId}', ${item.total})"><i class="fas fa-check-circle"></i> RECEBER</button>`;
             } else { 
                 badgeClass = 'bg-venda'; statusText = 'PAGO'; 
             }
@@ -1444,15 +1578,192 @@ function renderHistory(filter) {
             badgeClass = 'bg-orcamento'; 
         }
 
-        list.innerHTML += `<div class="item-card"><span class="status-badge ${badgeClass}">${statusText}</span><strong>${item.client}</strong><br><small style="color:#7f8c8d">${item.date.split('-').reverse().join('/')}</small>${priceDisplay}<div class="card-actions">${actionBtn}<button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#ecf0f1; color:var(--dark)" onclick="loadToEdit(${item.id})">EDITAR</button><button class="btn-card" style="background:var(--dark); color:white" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i> PDF</button></div></div>`; 
+        // 4. Montagem da Lista de Serviços (Igual Agenda)
+        let itemsHtml = '<ul style="margin:8px 0 8px 18px; padding:0; font-size:12px; color:#555;">';
+        if(item.items && item.items.length > 0) {
+            item.items.forEach(i => {
+                // Limpa o nome se tiver código (ex: "123 - Peça") vira "Peça"
+                let cleanDesc = i.desc;
+                if(cleanDesc.includes(' - ') && cleanDesc.includes('(')) { 
+                    try { cleanDesc = cleanDesc.split(' - ')[1].split(' (')[0]; } catch(e) {} 
+                }
+                itemsHtml += `<li>${i.qty}x ${cleanDesc}</li>`;
+            });
+        } else {
+            itemsHtml += '<li>(Sem itens descritos)</li>';
+        }
+        itemsHtml += '</ul>';
+
+        // 5. Dados do Veículo + PLACA
+        const plateInfo = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
+        const subInfo = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
+
+        // 6. Data Formatada
+        const dateFormatted = item.date.split('-').reverse().join('/');
+
+        // --- HTML DO CARTÃO (LAYOUT NOVO) ---
+        list.innerHTML += `
+        <div class="item-card" style="padding: 20px; border-left: 6px solid #ccc; position:relative;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="font-size:16px; margin:0; color:var(--dark); font-weight:800;">${dateFormatted}</h3>
+                <span class="status-badge ${badgeClass}" style="position:static;">${statusText}</span>
+            </div>
+
+            <div style="margin-bottom:5px;">
+                <div style="font-size:16px; font-weight:600; color:#2c3e50;">${item.client}</div>
+                <div style="font-size:12px; color:#7f8c8d; margin-top:3px; line-height:1.4;">${subInfo}</div>
+            </div>
+
+            ${itemsHtml}
+
+            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
+                <div style="flex-shrink:0;">
+                    ${priceDisplay}
+                </div>
+                
+                <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+                    ${actionBtn}
+                    <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
+                    <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-card" style="background:var(--dark); color:white; min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
+                </div>
+            </div>
+
+            <style>
+                .item-card:has(.bg-venda) { border-left-color: #27ae60 !important; }
+                .item-card:has(.bg-pendente) { border-left-color: #f1c40f !important; }
+                .item-card:has(.bg-orcamento) { border-left-color: #95a5a6 !important; }
+            </style>
+        </div>`; 
     }); 
 }
 
-        async function markAsPaid(docId) {
-            if(!confirm("Confirmar recebimento deste valor?")) return;
-            await updateInCloud("operacoes", docId, { status: 'pago' });
-            alert("Pagamento registrado na Nuvem!");
+
+
+                        // 1. Abre o Modal e já faz o primeiro cálculo
+        window.openPayModal = function(docId, totalVal) {
+            document.getElementById('modal-pay').style.display = 'flex';
+            document.getElementById('modal-pay-value').innerText = "R$ " + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2});
+            document.getElementById('modal-pay-docid').value = docId;
+            document.getElementById('modal-pay-total').value = totalVal;
+            
+            // Reseta para Pix e calcula
+            document.getElementById('modal-pay-select').value = "Pix";
+            calculateModalNet();
         }
+
+        // Substitua as funções calculateModalNet e confirmPayment por estas:
+
+// Função auxiliar para ler número com vírgula ou ponto
+function getFee(key) {
+    let val = localStorage.getItem(key) || '0';
+    val = val.replace(',', '.'); // Troca vírgula por ponto
+    return parseFloat(val) || 0;
+}
+
+window.calculateModalNet = function() {
+    const total = parseFloat(document.getElementById('modal-pay-total').value);
+    const method = document.getElementById('modal-pay-select').value;
+    
+    let rate = 0;
+    if(method === 'Débito') rate = getFee('authon_fee_deb');
+    if(method === 'Crédito 1x') rate = getFee('authon_fee_c1');
+    if(method === 'Crédito 2x') rate = getFee('authon_fee_c2');
+    if(method === 'Crédito 3x') rate = getFee('authon_fee_c3');
+    if(method === 'Crédito 4x') rate = getFee('authon_fee_c4');
+    if(method === 'Crédito 5x') rate = getFee('authon_fee_c5');
+    if(method === 'Crédito 6x') rate = getFee('authon_fee_c6');
+
+    const discount = total * (rate / 100);
+    const net = total - discount;
+
+    const netEl = document.getElementById('modal-pay-net');
+    
+    if(rate > 0) {
+        // Mostra a taxa e o desconto
+        netEl.innerHTML = `Taxa: <b>${rate}%</b> (- R$ ${discount.toLocaleString('pt-BR', {minimumFractionDigits:2})}) <br> Líquido: <b style="color:#27ae60">R$ ${net.toLocaleString('pt-BR', {minimumFractionDigits:2})}</b>`;
+        netEl.style.color = "#c0392b";
+    } else {
+        netEl.innerHTML = `Taxa: 0% | Líquido: <b>R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2})}</b>`;
+        netEl.style.color = "#7f8c8d";
+    }
+}
+
+window.confirmPayment = async function() {
+    const docId = document.getElementById('modal-pay-docid').value;
+    const total = parseFloat(document.getElementById('modal-pay-total').value);
+    const method = document.getElementById('modal-pay-select').value;
+    
+    let rate = 0;
+    if(method === 'Débito') rate = getFee('authon_fee_deb');
+    if(method === 'Crédito 1x') rate = getFee('authon_fee_c1');
+    if(method === 'Crédito 2x') rate = getFee('authon_fee_c2');
+    if(method === 'Crédito 3x') rate = getFee('authon_fee_c3');
+    if(method === 'Crédito 4x') rate = getFee('authon_fee_c4');
+    if(method === 'Crédito 5x') rate = getFee('authon_fee_c5');
+    if(method === 'Crédito 6x') rate = getFee('authon_fee_c6');
+
+    const netTotal = total - (total * (rate / 100));
+
+    const btn = event.target;
+    btn.innerText = "Salvando...";
+    
+    await updateInCloud("operacoes", docId, { 
+        status: 'pago',
+        payment: method,
+        netTotal: netTotal,
+        feeRate: rate 
+    });
+
+    alert(`✅ Recebimento Confirmado!\n\nLíquido: R$ ${netTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`);
+    document.getElementById('modal-pay').style.display = 'none';
+    btn.innerText = "CONFIRMAR RECEBIMENTO";
+    
+    if(window.renderHistory) window.renderHistory('all');
+    if(window.updateDashboard) window.updateDashboard(true);
+}
+
+
+
+        // 2. Confirma e Calcula Taxas
+        window.confirmPayment = async function() {
+            const docId = document.getElementById('modal-pay-docid').value;
+            const total = parseFloat(document.getElementById('modal-pay-total').value);
+            const method = document.getElementById('modal-pay-select').value;
+            
+            let rate = 0;
+            // Pega a taxa salva na configuração
+            if(method === 'Débito') rate = parseFloat(localStorage.getItem('authon_fee_deb')) || 0;
+            if(method === 'Crédito 1x') rate = parseFloat(localStorage.getItem('authon_fee_c1')) || 0;
+            if(method === 'Crédito 2x') rate = parseFloat(localStorage.getItem('authon_fee_c2')) || 0;
+            if(method === 'Crédito 3x') rate = parseFloat(localStorage.getItem('authon_fee_c3')) || 0;
+            if(method === 'Crédito 4x') rate = parseFloat(localStorage.getItem('authon_fee_c4')) || 0;
+            if(method === 'Crédito 5x') rate = parseFloat(localStorage.getItem('authon_fee_c5')) || 0;
+            if(method === 'Crédito 6x') rate = parseFloat(localStorage.getItem('authon_fee_c6')) || 0;
+
+            // Calcula o Líquido
+            const discountAmount = total * (rate / 100);
+            const netTotal = total - discountAmount;
+
+            // Atualiza na Nuvem
+            const btn = event.target;
+            btn.innerText = "Processando...";
+            
+            await updateInCloud("operacoes", docId, { 
+                status: 'pago',
+                payment: method,
+                netTotal: netTotal,
+                feeRate: rate // Salva qual taxa foi usada para conferência futura
+            });
+
+            alert(`Pagamento Confirmado!\n\nMétodo: ${method}\nTaxa: ${rate}%\nLíquido: R$ ${netTotal.toFixed(2)}`);
+            document.getElementById('modal-pay').style.display = 'none';
+            btn.innerText = "CONFIRMAR RECEBIMENTO";
+        }
+
 
         async function deleteItem(docId) { 
     // --- TRAVA DE SEGURANÇA ---
@@ -1758,11 +2069,29 @@ window.downloadCurrentPDF = function() {
         function generatePDFFromHistory(id) { const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); const item = db.find(x => x.id == id); if(item) generatePDF(item); }
         function closePDF() { document.getElementById('pdf-overlay').style.display = 'none'; resetForm(); }
         
-        function resetForm() { 
-            document.getElementById('editId').value = ''; 
-            document.getElementById('firebaseDocId').value = ''; 
-            document.getElementById('clientName').value = ''; document.getElementById('clientCpf').value = ''; document.getElementById('vehicle').value = ''; document.getElementById('plate').value = ''; document.getElementById('color').value = ''; document.getElementById('phone').value = ''; document.getElementById('currentKm').value = ''; document.getElementById('services-list').innerHTML = ''; document.getElementById('display-total').innerText = '0,00'; document.getElementById('discount').value = ''; document.getElementById('cardFee').value = ''; toggleFeeInput(); addNewItem(); 
-        }
+        // Substitua a função resetForm por esta versão corrigida:
+function resetForm() { 
+    document.getElementById('editId').value = ''; 
+    document.getElementById('firebaseDocId').value = ''; 
+    document.getElementById('clientName').value = ''; 
+    document.getElementById('clientCpf').value = ''; 
+    document.getElementById('vehicle').value = ''; 
+    document.getElementById('plate').value = ''; 
+    document.getElementById('color').value = ''; 
+    document.getElementById('phone').value = ''; 
+    document.getElementById('currentKm').value = ''; 
+    
+    // Limpa a lista de serviços
+    document.getElementById('services-list').innerHTML = ''; 
+    
+    // Zera totais
+    document.getElementById('display-total').innerText = '0,00'; 
+    document.getElementById('discount').value = ''; 
+    
+    // Adiciona um item vazio para começar
+    addNewItem(); 
+}
+
         
         function openModal() { document.getElementById('modal-config').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal-config').style.display = 'none'; }
@@ -1803,7 +2132,27 @@ window.saveLogo = function(event) {
             alert("Despesa salva na Nuvem!");
         }
         
-        function renderExpensesList() { const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); const list = document.getElementById('expense-list-mini'); list.innerHTML = ''; db.filter(x => x.type === 'expense').forEach(x => { list.innerHTML += `<div class="catalog-item st-expense"><div><small>${x.date.split('-').reverse().join('/')}</small><br><strong>${x.vehicle}</strong></div><div style="color:var(--primary); font-weight:bold">- R$ ${x.total.toFixed(2)} <i class="fas fa-trash" style="margin-left:10px; cursor:pointer; color:#999; font-size:12px;" onclick="deleteItem('${x.docId}')"></i></div></div>`; }); }
+        // Substitua a função renderExpensesList por esta:
+window.renderExpensesList = function() { 
+    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
+    const list = document.getElementById('expense-list-mini'); 
+    
+    // Pega o termo de busca
+    const searchInput = document.getElementById('expenseSearch');
+    const term = searchInput ? searchInput.value.toLowerCase() : '';
+
+    list.innerHTML = ''; 
+    
+    db.filter(x => x.type === 'expense').forEach(x => { 
+        // Filtro de busca (Descrição, Categoria, Data)
+        // Nota: No banco de dados, 'vehicle' guarda a descrição e 'client' guarda a categoria para despesas
+        const fullText = (x.vehicle + ' ' + (x.client||'') + ' ' + x.date).toLowerCase();
+        if(term && !fullText.includes(term)) return;
+
+        list.innerHTML += `<div class="catalog-item st-expense"><div><small>${x.date.split('-').reverse().join('/')}</small><br><strong>${x.vehicle}</strong><br><span style="font-size:10px; color:#7f8c8d">${x.client || 'Geral'}</span></div><div style="color:var(--primary); font-weight:bold">- R$ ${x.total.toFixed(2)} <i class="fas fa-trash" style="margin-left:10px; cursor:pointer; color:#999; font-size:12px;" onclick="deleteItem('${x.docId}')"></i></div></div>`; 
+    }); 
+}
+
                // --- FUNÇÕES QUE ESTAVAM FALTANDO NESTA PARTE DO CÓDIGO ---
 
     function renderSixMonthChart() {

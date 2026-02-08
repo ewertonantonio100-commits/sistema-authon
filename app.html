@@ -136,7 +136,16 @@ function iniciarSistema() {
             if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
+                        // ... (dentro do onSnapshot de configuracoes)
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
+            
+            // NOVO: Carregar Equipe
+            if(cfg.team) localStorage.setItem('authon_cfg_team', cfg.team);
+            if(document.getElementById('cfgTeam')) document.getElementById('cfgTeam').value = cfg.team || '';
+            
+            // Atualiza o select da tela de vendas na hora
+            updateSellerSelect();
+
             if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
             if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
             
@@ -572,11 +581,19 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <div><label>Data</label><input type="date" id="date"></div>
                 <div id="div-hora" style="display:none"><label>Hora</label><input type="time" id="time"></div>
                 <div><label>Celular</label><input type="tel" id="phone" placeholder="(DDD) 90000-0000"></div>
-                <div class="full-width">
+                                <div class="full-width">
                     <label>Cliente</label>
                     <input type="text" id="clientName" list="client-list" placeholder="Nome (Digite p/ buscar)" onchange="fillClientData(this)">
                     <datalist id="client-list"></datalist>
                 </div>
+
+                <div class="full-width" id="div-seller">
+                    <label style="color:#2980b9;">Vendedor / Mecânico</label>
+                    <select id="sellerName" style="background:#f0f8ff; border-color:#2980b9;">
+                        <option value="">-- Selecione quem atendeu --</option>
+                    </select>
+                </div>
+
                 <div class="full-width"><label>CPF / CNPJ (Opcional)</label><input type="tel" id="clientCpf" placeholder="Apenas números"></div>
                 <div><label>Veículo</label><input type="text" id="vehicle" placeholder="Modelo"></div>
                 <div><label>Placa</label><input type="text" id="plate" style="text-transform:uppercase" placeholder="ABC-1234"></div>
@@ -674,8 +691,17 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             <div class="kpi-card" style="grid-column:span 2; background: var(--dark); color:white;"><div class="kpi-label" style="color:#bdc3c7;">LUCRO NO PERÍODO</div><div class="kpi-value" style="color:white; font-size:28px;" id="kpi-profit">R$ 0</div></div>
         </div>
 
+                <div class="kpi-grid" style="padding: 0 15px;">
+            </div>
+
+        <div class="container">
+            <h3 style="text-align: center; color:#2980b9;"><i class="fas fa-trophy"></i> Ranking da Equipe</h3>
+            <div id="stats-team" style="margin-top:15px;"></div>
+        </div>
+
         <div class="container">
             <h3 style="text-align: center;">Formas de Pagamento</h3>
+
             <div id="stats-payment" style="margin-top:15px; text-align: center;"></div>
             
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
@@ -767,7 +793,11 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <input type="text" id="cfgAddr" placeholder="Rua, Número, Bairro, Cidade" style="margin-bottom:10px">
                 
                 <label>Telefone / Contato</label>
-                <input type="text" id="cfgPhone" placeholder="(00) 90000-0000" style="margin-bottom:15px">
+                <input type="text" id="cfgPhone" placeholder="(00) 90000-0000" style="margin-bottom:10px">
+              
+               <label style="color:#2980b9; font-weight:bold;">Equipe / Mecânicos (Separe por vírgula)</label>
+                <input type="text" id="cfgTeam" placeholder="Ex: João, Maria, Pedro, Carlos" style="margin-bottom:15px; border-color:#2980b9;">
+
 
                 <button class="btn-action" style="background:#7f8c8d; margin-top:0;" onclick="openModal()">
                     <i class="fas fa-camera"></i> Alterar Logo
@@ -1102,6 +1132,7 @@ window.saveSettingsCustom = async function() {
         cnpj: document.getElementById('cfgCnpj').value,
         addr: document.getElementById('cfgAddr').value,
         phone: document.getElementById('cfgPhone').value,
+        team: document.getElementById('cfgTeam').value,
         pix: document.getElementById('cfgPix').value,
         warranty: document.getElementById('cfgWarranty').value,
         pin: document.getElementById('cfgPin').value,
@@ -1418,7 +1449,9 @@ window.delCatalog = async function(idx) {
             const data = { 
                 id: document.getElementById('editId').value ? Number(document.getElementById('editId').value) : Date.now(), 
                 type: type, status: initialStatus,
-                date: document.getElementById('date').value, time: document.getElementById('time').value, 
+                date: document.getElementById('date').value,
+                client, seller: document.getElementById('sellerName').value, // <--- NOVO: SALVA O VENDEDOR
+                time: document.getElementById('time').value, 
                 client, phone: document.getElementById('phone').value, vehicle: document.getElementById('vehicle').value, 
                 plate: document.getElementById('plate').value, color: document.getElementById('color').value,
                 km: km, cpf: cpf, items: items, 
@@ -1465,7 +1498,9 @@ window.delCatalog = async function(idx) {
             document.getElementById('date').value = item.date; 
             document.getElementById('time').value = item.time || ''; 
             document.getElementById('phone').value = item.phone; 
-            document.getElementById('clientName').value = item.client; 
+            document.getElementById('clientName').value = item.client;
+            // NOVO: Carrega o vendedor se tiver
+            if(document.getElementById('sellerName')) document.getElementById('sellerName').value = item.seller || '';
             document.getElementById('vehicle').value = item.vehicle; 
             document.getElementById('plate').value = item.plate; 
             document.getElementById('color').value = item.color || '';
@@ -1796,7 +1831,12 @@ window.confirmPayment = async function() {
                 if(x.type === 'venda' && x.status === 'pago') { 
                     const val = x.netTotal !== undefined ? x.netTotal : x.total;
                     inc += val; 
-                    let payMethod = x.payment || 'Outros'; payStats[payMethod] = (payStats[payMethod] || 0) + val; 
+                    let payMethod = x.payment || 'Outros'; payStats[payMethod] = (payStats[payMethod] || 0) + val;
+                    // NOVO: Lógica de Ranking de Equipe
+                    let seller = x.seller || 'Não Informado';
+                    // Se quiser agrupar "Não informado" com "Balcão", pode mudar aqui
+                    window.teamStats = window.teamStats || {};
+                    window.teamStats[seller] = (window.teamStats[seller] || 0) + val;
                 } 
                 if(x.type === 'expense') { 
                     exp += x.total; 
@@ -1815,6 +1855,40 @@ window.confirmPayment = async function() {
             
             let expHtml = ''; const sortedExp = Object.entries(catExpStats).sort((a,b) => b[1] - a[1]); sortedExp.forEach(([key, val]) => { let pct = exp > 0 ? (val / exp) * 100 : 0; expHtml += `<div style="margin-bottom:8px;"><div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>${key}</span> <span>R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div><div style="height:6px; background:#ecf0f1; border-radius:3px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#c0392b;"></div></div></div>`; });
             document.getElementById('stats-expenses').innerHTML = expHtml || '<div style="color:#999; text-align:center">Sem despesas</div>';
+            // NOVO: DESENHA O RANKING DA EQUIPE
+            let teamHtml = '';
+            const sortedTeam = Object.entries(window.teamStats || {}).sort((a,b) => b[1] - a[1]);
+            
+            if(sortedTeam.length > 0) {
+                sortedTeam.forEach(([name, val], index) => {
+                    let trophy = '';
+                    if(index === 0) trophy = '🥇';
+                    if(index === 1) trophy = '🥈';
+                    if(index === 2) trophy = '🥉';
+                    
+                    // Barra de progresso baseada no total de entradas (inc)
+                    let pct = inc > 0 ? (val / inc) * 100 : 0;
+                    
+                    teamHtml += `
+                    <div style="margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:600; font-size:13px;">
+                            <span>${trophy} ${name}</span> 
+                            <span style="color:#2980b9;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                        </div>
+                        <div style="height:8px; background:#ecf0f1; border-radius:4px; overflow:hidden;">
+                            <div style="height:100%; width:${pct}%; background:#3498db;"></div>
+                        </div>
+                    </div>`;
+                });
+            } else {
+                teamHtml = '<div style="color:#999; text-align:center; font-size:12px;">Nenhuma venda com vendedor vinculado neste período.</div>';
+            }
+            
+            const divTeam = document.getElementById('stats-team');
+            if(divTeam) divTeam.innerHTML = teamHtml;
+            
+            // Zera para o próximo ciclo
+            window.teamStats = {};
             
             // 5. O SEGREDO (FORÇAR O DESENHO)
             // Aqui eu chamo as funções DIRETAMENTE. Sem "if window". Vai funcionar na marra.
@@ -2404,6 +2478,28 @@ window.renderExpensesList = function() {
         document.getElementById('manifesto-seguro').setAttribute('href', url);
         console.log("App pronto para instalar!");
     });
+    
+    window.updateSellerSelect = function() {
+    const teamStr = localStorage.getItem('authon_cfg_team') || '';
+    const select = document.getElementById('sellerName');
+    if(!select) return;
+    
+    select.innerHTML = '<option value="">-- Selecione quem atendeu --</option>';
+    
+    if(teamStr) {
+        const team = teamStr.split(','); // Quebra a lista na vírgula
+        team.forEach(member => {
+            const name = member.trim(); // Remove espaços
+            if(name) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            }
+        });
+    }
+}
+
     // --- LÓGICA DO MODO VENDEDOR (SEGURANÇA) ---
 window.toggleEmployeeMode = function(activate) {
     if(activate) {
@@ -2441,6 +2537,8 @@ function applySecurityMode() {
         document.body.classList.remove('employee-mode');
     }
 }
+
+
 
 // Executa ao carregar a página para manter bloqueado se der F5
 document.addEventListener("DOMContentLoaded", applySecurityMode);

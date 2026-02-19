@@ -756,6 +756,7 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             
             <input type="hidden" id="catType" value="produto">
             <input type="hidden" id="catalogEditIdx" value="">
+            <input type="hidden" id="catFirebaseDocId" value="">
 
 
             <div class="form-grid">
@@ -1105,54 +1106,52 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             updateDashboard(true);
         }
 
-        // Substitua a função saveSettingsCustom inteira por esta:
+        // --- SALVAR CONFIGURAÇÕES (SINCRONIZAÇÃO TOTAL EM NUVEM) ---
 window.saveSettingsCustom = async function() {
     // 1. Verifica login
     const user = window.auth ? window.auth.currentUser : null;
     if(!user) return alert("Erro: Login não detectado. Recarregue a página.");
     
     const btn = event ? event.target : null;
-    const originalText = btn ? btn.innerText : "SALVAR";
-    if(btn) btn.innerText = "Salvando...";
+    const originalText = btn ? btn.innerText : "SALVAR DADOS";
+    if(btn) btn.innerText = "Sincronizando Nuvem...";
 
     // 2. Pega os valores dos campos
     const fees = {
-        deb: document.getElementById('feeDeb').value || '0',
-        c1: document.getElementById('feeC1').value || '0',
-        c2: document.getElementById('feeC2').value || '0',
-        c3: document.getElementById('feeC3').value || '0',
-        c4: document.getElementById('feeC4').value || '0',
-        c5: document.getElementById('feeC5').value || '0',
-        c6: document.getElementById('feeC6').value || '0'
+        deb: document.getElementById('feeDeb') ? document.getElementById('feeDeb').value || '0' : '0',
+        c1: document.getElementById('feeC1') ? document.getElementById('feeC1').value || '0' : '0',
+        c2: document.getElementById('feeC2') ? document.getElementById('feeC2').value || '0' : '0',
+        c3: document.getElementById('feeC3') ? document.getElementById('feeC3').value || '0' : '0',
+        c4: document.getElementById('feeC4') ? document.getElementById('feeC4').value || '0' : '0',
+        c5: document.getElementById('feeC5') ? document.getElementById('feeC5').value || '0' : '0',
+        c6: document.getElementById('feeC6') ? document.getElementById('feeC6').value || '0' : '0'
     };
 
     const cfgData = {
         uid: user.uid,
-        name: document.getElementById('cfgName').value,
-        cnpj: document.getElementById('cfgCnpj').value,
-        addr: document.getElementById('cfgAddr').value,
-        phone: document.getElementById('cfgPhone').value,
-        team: document.getElementById('cfgTeam').value,
-        pix: document.getElementById('cfgPix').value,
-        warranty: document.getElementById('cfgWarranty').value,
-        pin: document.getElementById('cfgPin').value,
+        name: document.getElementById('cfgName') ? document.getElementById('cfgName').value : '',
+        cnpj: document.getElementById('cfgCnpj') ? document.getElementById('cfgCnpj').value : '',
+        addr: document.getElementById('cfgAddr') ? document.getElementById('cfgAddr').value : '',
+        phone: document.getElementById('cfgPhone') ? document.getElementById('cfgPhone').value : '',
+        team: document.getElementById('cfgTeam') ? document.getElementById('cfgTeam').value : '',
+        pix: document.getElementById('cfgPix') ? document.getElementById('cfgPix').value : '',
+        warranty: document.getElementById('cfgWarranty') ? document.getElementById('cfgWarranty').value : '',
+        pin: document.getElementById('cfgPin') ? document.getElementById('cfgPin').value : '',
         logo: localStorage.getItem('oficina_logo') || '',
-        // Adiciona as taxas ao objeto que vai para a nuvem
         feeDeb: fees.deb, feeC1: fees.c1, feeC2: fees.c2, 
         feeC3: fees.c3, feeC4: fees.c4, feeC5: fees.c5, feeC6: fees.c6
     };
 
-    // 3. SALVA NO CELULAR AGORA (Backup Imediato)
-    // Isso garante que funcione mesmo antes de ir pra nuvem
-    localStorage.setItem('authon_cfg_name', cfgData.name);
-    localStorage.setItem('authon_cfg_cnpj', cfgData.cnpj);
-    localStorage.setItem('authon_cfg_addr', cfgData.addr);
-    localStorage.setItem('authon_cfg_phone', cfgData.phone);
-    localStorage.setItem('authon_cfg_pix', cfgData.pix);
-    localStorage.setItem('authon_cfg_warranty', cfgData.warranty);
-    localStorage.setItem('authon_cfg_pin', cfgData.pin);
+    // 3. SALVA NO CELULAR AGORA (Para garantir funcionamento offline rápido)
+    if(cfgData.name) localStorage.setItem('authon_cfg_name', cfgData.name);
+    if(cfgData.cnpj) localStorage.setItem('authon_cfg_cnpj', cfgData.cnpj);
+    if(cfgData.addr) localStorage.setItem('authon_cfg_addr', cfgData.addr);
+    if(cfgData.phone) localStorage.setItem('authon_cfg_phone', cfgData.phone);
+    if(cfgData.pix) localStorage.setItem('authon_cfg_pix', cfgData.pix);
+    if(cfgData.warranty) localStorage.setItem('authon_cfg_warranty', cfgData.warranty);
+    if(cfgData.pin) localStorage.setItem('authon_cfg_pin', cfgData.pin);
+    if(cfgData.team) localStorage.setItem('authon_cfg_team', cfgData.team);
     
-    // Salva as taxas no LocalStorage
     localStorage.setItem('authon_fee_deb', fees.deb);
     localStorage.setItem('authon_fee_c1', fees.c1);
     localStorage.setItem('authon_fee_c2', fees.c2);
@@ -1161,19 +1160,29 @@ window.saveSettingsCustom = async function() {
     localStorage.setItem('authon_fee_c5', fees.c5);
     localStorage.setItem('authon_fee_c6', fees.c6);
 
-    // 4. Salva na Nuvem
+    // 4. A MÁGICA: FORÇA A BUSCA NA NUVEM ANTES DE SALVAR
     try {
-        const docId = localStorage.getItem('authon_config_doc_id');
-        if(docId) {
-            await window.updateDoc(window.doc(window.db, "configuracoes", docId), cfgData);
+        // Pergunta ao Firebase se esse usuário JÁ TEM uma configuração salva
+        const q = window.query(window.collection(window.db, "configuracoes"), window.where("uid", "==", user.uid));
+        const querySnapshot = await window.getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Já existe na nuvem! Pega a ID real de lá e ATUALIZA os dados, sem duplicar.
+            const cloudDocId = querySnapshot.docs[0].id;
+            await window.updateDoc(window.doc(window.db, "configuracoes", cloudDocId), cfgData);
+            
+            // Grava a ID no celular novo para ele não precisar perguntar de novo
+            localStorage.setItem('authon_config_doc_id', cloudDocId);
         } else {
-            await window.addDoc(window.collection(window.db, "configuracoes"), cfgData);
+            // É literalmente a primeira vez que essa oficina está usando o app
+            const newDoc = await window.addDoc(window.collection(window.db, "configuracoes"), cfgData);
+            localStorage.setItem('authon_config_doc_id', newDoc.id);
         }
-        alert("✅ Configurações e Taxas salvas com sucesso!");
+        
+        alert("✅ Dados salvos e sincronizados em todos os aparelhos da oficina!");
     } catch(e) {
         console.error("Erro config:", e);
-        // Mesmo com erro na nuvem, já salvamos localmente acima, então vai funcionar.
-        alert("Salvo no celular (Offline). Sincronizaremos quando possível.");
+        alert("Salvo no celular atual. Sincronizaremos com os outros quando houver internet.");
     }
     
     if(btn) btn.innerText = originalText;
@@ -1199,7 +1208,7 @@ window.toggleSettingsSection = function(id) {
             document.getElementById('btn-type-prod').className = type === 'produto' ? 'op-btn active venda' : 'op-btn';
             document.getElementById('btn-type-serv').className = type === 'servico' ? 'op-btn active agendamento' : 'op-btn';
         }
-        // Substitua a função saveCatalogItem inteira por esta:
+       // --- SALVAR ITEM NO CATÁLOGO (CORRIGIDO COM ID EXCLUSIVO) ---
 window.saveCatalogItem = async function() {
     const user = auth.currentUser;
     if(!user) return alert("Erro: Não logado.");
@@ -1210,23 +1219,19 @@ window.saveCatalogItem = async function() {
     const name = document.getElementById('catName').value; 
     const price = document.getElementById('catPrice').value;
     const stock = document.getElementById('catStock').value;
-    const editDocId = document.getElementById('firebaseDocId').value; 
+    
+    // AGORA ELE USA O ID EXCLUSIVO DO ESTOQUE
+    const editDocId = document.getElementById('catFirebaseDocId').value; 
 
     if(!name) return alert('Digite o nome do item');
 
-    // --- NOVA VALIDAÇÃO DE DUPLICIDADE ---
     const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
-    // Se o código não for genérico "S/N" e não estiver vazio
     if (code && code.toUpperCase() !== 'S/N') {
-        // Procura se existe algum item com o mesmo código
         const exists = cat.find(item => item.code === code);
-        
-        // Se achou alguém com esse código, E não é o item que estamos editando agora
         if (exists && exists.docId !== editDocId) {
             return alert(`⛔ ERRO: O código "${code}" já está sendo usado no produto:\n"${exists.name}".\n\nPor favor, use um código diferente.`);
         }
     }
-    // -------------------------------------
 
     const finalStock = (typeof VERSAO_COM_ESTOQUE !== 'undefined' && VERSAO_COM_ESTOQUE && type === 'produto' && stock) ? parseInt(stock) : null;
     
@@ -1242,7 +1247,8 @@ window.saveCatalogItem = async function() {
         if(editDocId) {
             await updateDoc(doc(db, "catalogo", editDocId), itemData);
             alert('Produto atualizado na nuvem!');
-            document.getElementById('firebaseDocId').value = ''; 
+            // LIMPA A CAIXA EXCLUSIVA DEPOIS DE SALVAR
+            document.getElementById('catFirebaseDocId').value = ''; 
         } else {
             await addDoc(collection(db, "catalogo"), itemData);
             alert('Novo item salvo na nuvem!');
@@ -1252,6 +1258,7 @@ window.saveCatalogItem = async function() {
         document.getElementById('catCode').value = ''; 
         document.getElementById('catPrice').value = ''; 
         document.getElementById('catStock').value = '';
+        document.getElementById('catalogEditIdx').value = '';
         
     } catch(e) {
         console.error(e);
@@ -1260,8 +1267,7 @@ window.saveCatalogItem = async function() {
     btn.innerText = "Salvar no Catálogo";
 }
 
-
-                // Substitua a função editCatalogItem por esta:
+// --- EDITAR ITEM DO CATÁLOGO (CORRIGIDO COM ID EXCLUSIVO) ---
 window.editCatalogItem = function(idx) {
     if(localStorage.getItem('authon_mode_locked') === 'true') return alert("⛔ Bloqueado para funcionários.");
 
@@ -1278,20 +1284,13 @@ window.editCatalogItem = function(idx) {
     document.getElementById('catPrice').value = item.price;
     document.getElementById('catStock').value = item.stock !== null ? item.stock : '';
     
-    // IMPORTANTE: Usa o campo oculto que já existe no HTML (usado em operações) ou cria um novo se preferir
-    // No seu HTML atual, existe <input type="hidden" id="firebaseDocId" value=""> dentro da tab-new.
-    // Vamos garantir que a tab-catalog tenha onde guardar esse ID.
-    // Adicione esta linha LOGO ABAIXO de <input type="hidden" id="catalogEditIdx"> no seu HTML:
-    // <input type="hidden" id="catalogFirebaseId"> 
-    
-    // Se não quiser mexer no HTML, podemos reutilizar o 'catalogEditIdx' para guardar o ID do Firebase temporariamente, 
-    // mas o ideal é ajustar o HTML. Vou assumir que você usará o 'firebaseDocId' que já existe no DOM (mesmo estando em outra aba, o JS acha pelo ID).
-    document.getElementById('firebaseDocId').value = item.docId; 
+    // GUARDA O ID DO FIREBASE NA CAIXA NOVA E EXCLUSIVA
+    document.getElementById('catFirebaseDocId').value = item.docId; 
+    document.getElementById('catalogEditIdx').value = idx;
 
     document.querySelector('#tab-catalog .container').scrollIntoView({behavior: 'smooth'});
-    alert('Editando: ' + item.name);
+    alert('Editando: ' + item.name + '.\nAltere o que precisar e clique em "Salvar".');
 }
-
 
                 function renderCatalogList() {
             const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); 
@@ -1329,33 +1328,6 @@ window.editCatalogItem = function(idx) {
                 </div>`; 
             });
         }
-
-        // --- NOVA FUNÇÃO PARA JOGAR OS DADOS NO FORMULÁRIO ---
-        function editCatalogItem(idx) {
-            const cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
-            const item = cat[idx]; // Pega o item clicado
-            if(!item) return;
-
-            // Preenche os campos lá de cima
-            document.getElementById('catType').value = item.type;
-            toggleCatType(item.type); // Ajusta a cor dos botões (Produto/Serviço)
-            
-            document.getElementById('catCode').value = item.code;
-            document.getElementById('catCategory').value = item.category;
-            document.getElementById('catName').value = item.name;
-            document.getElementById('catPrice').value = item.price;
-            document.getElementById('catStock').value = item.stock !== null ? item.stock : '';
-            
-            // AVISO IMPORTANTE: Salva o ID no campo invisível para sabermos que é edição
-            document.getElementById('catalogEditIdx').value = idx;
-
-            // Rola a tela para cima suavemente
-            document.querySelector('#tab-catalog .container').scrollIntoView({behavior: 'smooth'});
-            
-            // Avisa o usuário
-            alert('Editando: ' + item.name + '.\nAltere o preço ou estoque e clique em "Salvar".');
-        }
-
 
         // --- FUNÇÃO DE EXCLUIR DO ESTOQUE (COM PERGUNTA DE SEGURANÇA) ---
         // Substitua a função delCatalog por esta:
@@ -1433,14 +1405,21 @@ window.delCatalog = async function(idx) {
                 if(d) items.push({ desc: d, val: v, qty: q });
             });
 
-            // Baixa no Estoque (apenas se for Venda)
+                        // Baixa no Estoque (apenas se for Venda) - CORRIGIDO PARA A NUVEM
             if(type === 'venda' && VERSAO_COM_ESTOQUE) {
-                let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); let stockUpdated = false;
+                let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); 
                 items.forEach(soldItem => {
-                    const idx = cat.findIndex(c => `${c.code} - ${c.name} (${c.category})` === soldItem.desc);
-                    if(idx > -1) { if(cat[idx].type === 'produto' && cat[idx].stock !== null) { cat[idx].stock = cat[idx].stock - (parseInt(soldItem.qty) || 1); stockUpdated = true; } }
+                    const foundItem = cat.find(c => `${c.code} - ${c.name} (${c.category})` === soldItem.desc);
+                    
+                    if(foundItem && foundItem.type === 'produto' && foundItem.stock !== null) { 
+                        const newStock = foundItem.stock - (parseInt(soldItem.qty) || 1); 
+                        
+                        // Atualiza direto no Firebase usando o ID real do produto
+                        if(foundItem.docId) {
+                            updateInCloud("catalogo", foundItem.docId, { stock: newStock });
+                        }
+                    }
                 });
-                if(stockUpdated) { localStorage.setItem('catalog_v1', JSON.stringify(cat)); renderCatalogList(); }
             }
 
             // Status Inicial
@@ -1524,9 +1503,8 @@ window.delCatalog = async function(idx) {
         }
 
 
-        // --- AGENDA (LEMBRETE NO ZAP) ---
-        // Substitua a função renderAgenda por esta:
-function renderAgenda() {
+        // --- AGENDA (LEMBRETE NO ZAP TURBINADO) ---
+window.renderAgenda = function() {
     const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
     const list = document.getElementById('agenda-list'); 
     
@@ -1534,26 +1512,44 @@ function renderAgenda() {
     const searchInput = document.getElementById('agendaSearch');
     const term = searchInput ? searchInput.value.toLowerCase() : '';
 
+    // Pega o nome da oficina salvo nas configurações
+    const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
+
     list.innerHTML = '';
     
     const agendas = db.filter(x => x.type === 'agendamento').sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
     
     agendas.forEach(item => { 
         // Filtro de busca
-        const fullText = (item.client + ' ' + item.vehicle + ' ' + item.plate + ' ' + item.date).toLowerCase();
-        if(term && !fullText.includes(term)) return; // Pula se não bater com a busca
+        const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate || '') + ' ' + item.date).toLowerCase();
+        if(term && !fullText.includes(term)) return;
 
-        const msg = `Olá *${item.client}*, tudo bem? 😃\n\nPassando para confirmar seu agendamento para o veículo *${item.vehicle}*.\n\n🗓 Data: *${item.date.split('-').reverse().join('/')}*\n⏰ Horário: *${item.time}*\n\nEstamos combinados? Qualquer imprevisto, só avisar! 🤝`;
+        // Extrai os serviços para colocar na mensagem do Zap
+        let servicosAgendados = "Revisão / Manutenção"; 
+        if (item.items && item.items.length > 0) {
+            servicosAgendados = item.items.map(i => {
+                let desc = i.desc;
+                // Limpa o texto (Ex: "001 - Alinhamento" vira só "Alinhamento")
+                if(desc.includes(' - ')) {
+                    try { desc = desc.split(' - ')[1].split(' (')[0]; } catch(e){}
+                }
+                return desc;
+            }).join(', ');
+        }
+
+        // A NOVA MENSAGEM PROFISSIONAL
+        const msg = `Olá *${item.client}*, tudo bem? Aqui é da *${compName}*! ⚙️\n\nPassando para confirmar o nosso agendamento para o seu *${item.vehicle}*.\n\n📅 *Data:* ${item.date.split('-').reverse().join('/')}\n⏰ *Horário:* ${item.time}\n🔧 *Serviços:* ${servicosAgendados}\n\nEstamos te esperando! Se houver algum imprevisto, é só nos avisar por aqui. 🤝`;
+        
         const link = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+        
         let itensHtml = '<ul style="margin:5px 0 5px 15px; padding:0; font-size:11px; color:#555;">';
         item.items.forEach(i => itensHtml += `<li>${i.desc}</li>`); itensHtml += '</ul>';
         
         const valorHtml = `<div style="font-weight:bold; font-size:15px; color:#2c3e50; margin-top:5px; border-top:1px dashed #eee; padding-top:5px;">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
 
-        list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
+        list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR CLIENTE</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
     });
 }
-
 
 // Substitua a função renderHistory inteira por esta:
 window.renderHistory = function(filter) { 
@@ -1602,7 +1598,7 @@ window.renderHistory = function(filter) {
             if(item.status === 'pendente') {
                 badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
                 let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso e ficou excelente! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
+                const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
                 const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
                 
                 actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> AVISAR</button><button class="btn-card btn-pay" onclick="window.openPayModal('${item.docId}', ${item.total})"><i class="fas fa-check-circle"></i> RECEBER</button>`;
@@ -2004,14 +2000,14 @@ window.confirmPayment = async function() {
                 window.open(`https://wa.me/55${data.phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`); 
             };
         }
-function exportToExcel() {
+window.exportToExcel = function() {
     const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
     const start = document.getElementById('filterStart').value;
     const end = document.getElementById('filterEnd').value;
 
     if(!start || !end) return alert("Selecione o período no filtro para exportar.");
 
-    // Filtra os dados (mesma lógica do PDF)
+    // Filtra os dados 
     const filtered = db.filter(x => {
         const isPeriod = x.date >= start && x.date <= end;
         const isPaidVenda = x.type === 'venda' && x.status === 'pago';
@@ -2019,35 +2015,60 @@ function exportToExcel() {
         return isPeriod && (isPaidVenda || isExpense);
     }).sort((a, b) => a.date.localeCompare(b.date));
 
-    if(filtered.length === 0) return alert("Sem dados para exportar.");
+    if(filtered.length === 0) return alert("Sem dados para exportar neste período.");
 
-    // Cabeçalho do CSV (Excel entende o ponto e vírgula como separador no Brasil)
-    let csvContent = "Data;Tipo;Descricao;Metodo Pagamento;Valor\n";
+    // FUNÇÃO MÁGICA: Limpa acentos e caracteres que quebram o Excel
+    const limparTexto = (str) => {
+        if (!str) return "-";
+        return str.toString()
+                  .normalize("NFD") // Separa o acento da letra
+                  .replace(/[\u0300-\u036f]/g, "") // Remove o acento
+                  .replace(/;/g, ','); // Troca ponto-e-vírgula por vírgula normal
+    };
+
+    let csvContent = "Data;Tipo;Cliente_Fornecedor;CPF_CNPJ;Placa;Itens_Servicos_Despesas;Metodo_Pagamento;Valor_Bruto;Taxa_Maquininha;Valor_Liquido\n";
 
     filtered.forEach(item => {
         const isVenda = item.type === 'venda';
         const dataFormatada = item.date.split('-').reverse().join('/');
         const tipo = isVenda ? "ENTRADA" : "SAIDA";
-        const descricao = isVenda ? item.client : item.vehicle;
-        const metodo = isVenda ? item.payment : (item.client || "Despesa");
-        const valor = isVenda ? (item.netTotal || item.total) : item.total;
         
-        // Formata o valor com vírgula para o Excel reconhecer como número
-        const valorExcel = valor.toFixed(2).replace('.', ',');
+        const clienteFornecedor = isVenda ? item.client : (item.client || "Geral"); 
+        const cpfCnpj = (isVenda && item.cpf) ? item.cpf : "-";
+        const placa = (isVenda && item.plate) ? item.plate.toUpperCase() : "-";
+        
+        let itensDetalhados = "-";
+        if (isVenda && item.items && item.items.length > 0) {
+            itensDetalhados = item.items.map(i => `${i.qty}x ${i.desc}`).join(', '); 
+        } else if (!isVenda) {
+            itensDetalhados = item.vehicle ? item.vehicle : "Despesa nao detalhada"; 
+        }
 
-        csvContent += `${dataFormatada};${tipo};${descricao};${metodo};${valorExcel}\n`;
+        const metodo = isVenda ? (item.payment || "Nao inf.") : "Saida";
+        
+        const valorBruto = isVenda ? item.total : item.total;
+        const valorLiquido = isVenda ? (item.netTotal || item.total) : item.total;
+        const valorTaxa = isVenda ? (valorBruto - valorLiquido) : 0;
+        
+        const fBruto = valorBruto.toFixed(2).replace('.', ',');
+        const fTaxa = valorTaxa.toFixed(2).replace('.', ',');
+        const fLiquido = valorLiquido.toFixed(2).replace('.', ',');
+
+        // Aplica a limpeza de texto em todas as colunas de texto
+        csvContent += `${dataFormatada};${tipo};${limparTexto(clienteFornecedor)};${limparTexto(cpfCnpj)};${limparTexto(placa)};${limparTexto(itensDetalhados)};${limparTexto(metodo)};${fBruto};${fTaxa};${fLiquido}\n`;
     });
 
-    // Cria o arquivo para download
-    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Removido o \ufeff (BOM) que estava sujando o cabeçalho no celular
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Contabilidade_${start}_a_${end}.csv`);
+    link.setAttribute("download", `Relatorio_Contabil_${start}_a_${end}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
+
 
 
         // ATENÇÃO: Cole isso com cuidado para não quebrar o código vizinho
@@ -2542,6 +2563,58 @@ function applySecurityMode() {
 
 // Executa ao carregar a página para manter bloqueado se der F5
 document.addEventListener("DOMContentLoaded", applySecurityMode);
+
+// --- MÁSCARAS AUTOMÁTICAS (TELEFONE E CPF/CNPJ) ---
+function maskPhone(value) {
+    value = value.replace(/\D/g, ""); // Remove tudo que não é número
+    value = value.replace(/^(\d{2})(\d)/g, "($1) $2"); // Coloca parênteses no DDD
+    value = value.replace(/(\d)(\d{4})$/, "$1-$2"); // Coloca o hífen no lugar certo
+    return value.substring(0, 15); // Limita ao tamanho máximo de um celular
+}
+
+function maskCpfCnpj(value) {
+    value = value.replace(/\D/g, ""); // Remove tudo que não é número
+    if (value.length <= 11) { // Formata como CPF
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else { // Formata como CNPJ
+        value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        value = value.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    return value.substring(0, 18); // Limita ao tamanho máximo de um CNPJ
+}
+
+// Vincula as máscaras aos campos quando a página carrega
+document.addEventListener("DOMContentLoaded", function() {
+    // Aplica nos campos de telefone
+    const phoneIds = ['phone', 'cfgPhone'];
+    phoneIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', (e) => e.target.value = maskPhone(e.target.value));
+    });
+
+    // Aplica nos campos de documento
+    const docIds = ['clientCpf', 'cfgCnpj'];
+    docIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', (e) => e.target.value = maskCpfCnpj(e.target.value));
+    });
+});
+
+    // --- ATIVADOR DO SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(registration) {
+          console.log('ServiceWorker registrado com sucesso:', registration.scope);
+        }, function(err) {
+          console.log('Falha ao registrar o ServiceWorker:', err);
+        });
+      });
+    }
+
 
 </script>
 </body>

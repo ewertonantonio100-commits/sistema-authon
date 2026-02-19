@@ -209,7 +209,7 @@ function iniciarSistema() {
     });
 
 
-    // 3. CATÁLOGO NA NUVEM
+        // 3. CATÁLOGO NA NUVEM
     const qCat = query(collection(db, "catalogo"), where("uid", "==", user.uid));
     onSnapshot(qCat, (snapshot) => {
         const catLocal = [];
@@ -219,6 +219,15 @@ function iniciarSistema() {
         // Atualiza a lista visualmente se estiver na aba
         if(window.renderCatalogList) window.renderCatalogList();
         if(window.updateDatalist) window.updateDatalist();
+
+        // --- GATILHO DO ONBOARDING (Catálogo Automático) ---
+        if(snapshot.empty && localStorage.getItem('authon_onboarding_done') !== 'true') {
+            // Se não tem nada no banco, injeta o catálogo base!
+            if(window.injectStarterCatalog) window.injectStarterCatalog(user);
+        } else if (!snapshot.empty) {
+            // Se já tem itens (ele já usava antes em outro PC), apenas tranca a porta
+            localStorage.setItem('authon_onboarding_done', 'true');
+        }
     });
 }
 
@@ -1100,6 +1109,49 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             if(confirm(`Tem certeza que deseja ${acao} esta oficina?`)) {
                 await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
                 window.openSuperAdmin(); // Recarrega a lista
+            }
+        }
+
+        // --- ONBOARDING AUTOMÁTICO (INJEÇÃO DE CATÁLOGO) ---
+        window.injectStarterCatalog = async function(user) {
+            // Verifica no celular se já fizemos isso para não rodar duas vezes
+            if(localStorage.getItem('authon_onboarding_done') === 'true') return;
+            
+            try {
+                // Pergunta ao banco se o catálogo dessa pessoa realmente está zerado
+                const q = window.query(window.collection(window.db, "catalogo"), window.where("uid", "==", user.uid));
+                const querySnapshot = await window.getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    console.log("Injetando Catálogo Padrão (Efeito Uau)...");
+                    
+                    const servicos = [
+                        // --- MECÂNICA ---
+                        { type: 'servico', code: 'MEC-01', category: 'Mecânica', name: 'Troca de Óleo e Filtro', price: 150, stock: null },
+                        { type: 'servico', code: 'MEC-02', category: 'Mecânica', name: 'Alinhamento e Balanceamento', price: 120, stock: null },
+                        { type: 'servico', code: 'MEC-03', category: 'Mecânica', name: 'Revisão de Freios', price: 180, stock: null },
+                        { type: 'servico', code: 'MEC-04', category: 'Mecânica', name: 'Limpeza de Bicos Injetores', price: 160, stock: null },
+                        { type: 'servico', code: 'MEC-05', category: 'Mecânica', name: 'Suspensão / Troca de Amortecedores', price: 250, stock: null },
+                        
+                        // --- ESTÉTICA AUTOMOTIVA ---
+                        { type: 'servico', code: 'EST-01', category: 'Estética', name: 'Lavagem Detalhada / Premium', price: 80, stock: null },
+                        { type: 'servico', code: 'EST-02', category: 'Estética', name: 'Polimento Comercial', price: 350, stock: null },
+                        { type: 'servico', code: 'EST-03', category: 'Estética', name: 'Higienização Interna (Bancos)', price: 250, stock: null },
+                        { type: 'servico', code: 'EST-04', category: 'Estética', name: 'Vitrificação de Pintura', price: 800, stock: null },
+                        { type: 'servico', code: 'EST-05', category: 'Estética', name: 'Cristalização de Vidros', price: 100, stock: null }
+                    ];
+
+                    // Dispara todos os serviços para a nuvem amarrados ao UID do novo cliente
+                    for (let s of servicos) {
+                        await window.addDoc(window.collection(window.db, "catalogo"), { ...s, uid: user.uid });
+                    }
+                }
+                
+                // Trava a porta do celular para nunca mais tentar injetar isso
+                localStorage.setItem('authon_onboarding_done', 'true');
+                
+            } catch(e) {
+                console.error("Erro no Onboarding Automático:", e);
             }
         }
 

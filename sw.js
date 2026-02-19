@@ -1,4 +1,4 @@
-const CACHE_NAME = 'authon-cache-v2';
+const CACHE_NAME = 'authon-cache-v3';
 const urlsToCache = [
   'app.html', // <--- AQUI ESTÁ O SEGREDO! Salvamos o app, não a página de vendas
   'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap',

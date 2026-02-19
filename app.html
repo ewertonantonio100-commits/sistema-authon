@@ -131,30 +131,48 @@ function iniciarSistema() {
         if(window.renderExpensesList) window.renderExpensesList();
     });
 
-    // 2. CONFIGURAÇÕES
+        // 2. CONFIGURAÇÕES & TRAVA DE SEGURANÇA
     const qConfig = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
     onSnapshot(qConfig, (snapshot) => {
-        snapshot.forEach((doc) => {
-            const cfg = doc.data();
+        snapshot.forEach((docSnap) => {
+            const cfg = docSnap.data();
+
+            // --- A GUILHOTINA: VERIFICA SE ESTÁ BLOQUEADO ---
+            // Se estiver bloqueado e o e-mail não for o seu (Dono), expulsa na hora!
+            if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {
+                alert("⚠️ ATENÇÃO\nO acesso da sua oficina foi temporariamente suspenso. Por favor, entre em contato com o suporte financeiro.");
+                window.auth.signOut().then(() => location.reload());
+                return; // Para o carregamento aqui
+            }
+
+            // --- GRAVA O ÚLTIMO ACESSO E O E-MAIL (Invisível) ---
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (cfg.lastAccess !== todayStr || cfg.email !== user.email) {
+                window.updateDoc(window.doc(window.db, "configuracoes", docSnap.id), { 
+                    lastAccess: todayStr,
+                    email: user.email // Garante que o painel admin veja o e-mail
+                }).catch(e => console.log("Silent update:", e));
+            }
+
+            // --- MOSTRA O BOTÃO SECRETO SE FOR O DONO ---
+            if(user.email === window.ADMIN_EMAIL) {
+                const btnAdmin = document.getElementById('btn-super-admin');
+                if(btnAdmin) btnAdmin.style.display = 'block';
+            }
             
-            // Salva no LocalStorage
+            // Salva no LocalStorage (O resto do seu código original continua igual abaixo)
             if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
-                        // ... (dentro do onSnapshot de configuracoes)
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
-            
-            // NOVO: Carregar Equipe
             if(cfg.team) localStorage.setItem('authon_cfg_team', cfg.team);
             if(document.getElementById('cfgTeam')) document.getElementById('cfgTeam').value = cfg.team || '';
             
-            // Atualiza o select da tela de vendas na hora
             updateSellerSelect();
 
             if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
             if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
             
-            // Taxas
             localStorage.setItem('authon_fee_deb', cfg.feeDeb || '0');
             localStorage.setItem('authon_fee_c1', cfg.feeC1 || '0');
             localStorage.setItem('authon_fee_c2', cfg.feeC2 || '0');
@@ -166,7 +184,6 @@ function iniciarSistema() {
             if(cfg.pin) localStorage.setItem('authon_cfg_pin', cfg.pin);
             if(cfg.logo) localStorage.setItem('oficina_logo', cfg.logo);
             
-            // Preenche campos visualmente SE eles existirem na tela
             if(document.getElementById('cfgName')) {
                 document.getElementById('cfgName').value = cfg.name || '';
                 document.getElementById('cfgCnpj').value = cfg.cnpj || '';
@@ -175,7 +192,6 @@ function iniciarSistema() {
                 document.getElementById('cfgPix').value = cfg.pix || '';
                 document.getElementById('cfgWarranty').value = cfg.warranty || '';
                 
-                // Preenche as taxas visualmente
                 if(document.getElementById('feeDeb')) {
                     document.getElementById('feeDeb').value = cfg.feeDeb || '';
                     document.getElementById('feeC1').value = cfg.feeC1 || '';
@@ -188,9 +204,10 @@ function iniciarSistema() {
 
                 if(document.getElementById('cfgPin')) document.getElementById('cfgPin').value = cfg.pin || '';
             }
-            localStorage.setItem('authon_config_doc_id', doc.id);
+            localStorage.setItem('authon_config_doc_id', docSnap.id);
         });
     });
+
 
     // 3. CATÁLOGO NA NUVEM
     const qCat = query(collection(db, "catalogo"), where("uid", "==", user.uid));
@@ -873,6 +890,11 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             <i class="fas fa-key"></i> REDEFINIR MINHA SENHA
         </button>
         
+                <button id="btn-super-admin" class="btn-action" style="background:#f1c40f; color:#2c3e50; margin-bottom:10px; display:none;" onclick="openSuperAdmin()">
+            <i class="fas fa-crown"></i> ACESSAR PAINEL DE CONTROLE (DONO)
+        </button>
+
+        
         <button class="btn-action" style="background: #e74c3c;" onclick="logout()">
             <i class="fas fa-sign-out-alt"></i> SAIR DO SISTEMA
         </button>
@@ -938,6 +960,36 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </div>
 
     <div id="modal-config"><div class="modal-box"><h3 style="text-align:center; margin-bottom:15px;">Alterar Logo</h3><input type="file" accept="image/*" onchange="saveLogo(event)"><button onclick="closeModal()" class="btn-action" style="margin-top:15px; background:#7f8c8d;">Fechar</button></div></div>
+        <div id="modal-admin" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f6fa; z-index: 999999; overflow-y: auto;">
+        <div style="background: var(--dark); padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0;">
+            <h2 style="margin: 0; font-size: 18px;"><i class="fas fa-crown" style="color: #f1c40f;"></i> Painel Super Admin</h2>
+            <button onclick="document.getElementById('modal-admin').style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">FECHAR</button>
+        </div>
+        
+        <div class="kpi-grid" style="padding: 20px; gap: 10px;">
+            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Total de Oficinas</div><div class="kpi-value" id="admin-total-users" style="color: var(--blue-grad)">0</div></div>
+            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Bloqueadas</div><div class="kpi-value" id="admin-total-blocked" style="color: var(--primary)">0</div></div>
+        </div>
+
+        <div style="padding: 0 20px 20px 20px;">
+            <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead>
+                        <tr style="background: #ecf0f1; color: #2c3e50;">
+                            <th style="padding: 12px;">Oficina / E-mail</th>
+                            <th style="padding: 12px;">Contato</th>
+                            <th style="padding: 12px;">Último Acesso</th>
+                            <th style="padding: 12px; text-align: center;">Status</th>
+                            <th style="padding: 12px; text-align: center;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
             <div id="modal-pay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center;">
         <div style="background: white; width: 90%; max-width: 350px; padding: 25px; border-radius: 16px;">
             <h3 style="text-align:center; margin-bottom:10px; color:var(--dark);">Receber Pagamento</h3>
@@ -987,6 +1039,69 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             // Junta endereço e telefone numa linha só ou quebra
             document.getElementById('pdf-comp-addr').innerText = compAddr + (compPhone ? ' | ' + compPhone : '');
             // --- FIM DO BLOCO ---
+
+        // --- SISTEMA SUPER ADMIN (CONTROLE DE CLIENTES) ---
+        window.ADMIN_EMAIL = "admin@authon.com"; // ⚠️ ATENÇÃO: COLOQUE SEU E-MAIL REAL DE ACESSO AQUI!
+
+        window.openSuperAdmin = async function() {
+            const user = auth.currentUser;
+            if(!user || user.email !== window.ADMIN_EMAIL) return alert("Acesso restrito.");
+            
+            document.getElementById('modal-admin').style.display = 'block';
+            document.getElementById('admin-users-list').innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center;">Carregando clientes...</td></tr>';
+            
+            try {
+                // Busca TODOS os cadastros de oficinas
+                const querySnapshot = await window.getDocs(window.collection(window.db, "configuracoes"));
+                const list = document.getElementById('admin-users-list');
+                list.innerHTML = '';
+                
+                let totalAtivos = 0; let totalBloqueados = 0;
+
+                querySnapshot.forEach((docSnap) => {
+                    const cfg = docSnap.data();
+                    const docId = docSnap.id;
+                    const isBlocked = cfg.status === 'bloqueado';
+                    
+                    if(isBlocked) totalBloqueados++; else totalAtivos++;
+
+                    const statusBadge = isBlocked 
+                        ? '<span style="background:#ffebee; color:#c0392b; padding:4px 8px; border-radius:4px; font-weight:bold;">BLOQUEADO</span>' 
+                        : '<span style="background:#e8f5e9; color:#27ae60; padding:4px 8px; border-radius:4px; font-weight:bold;">ATIVO</span>';
+
+                    const actionBtn = isBlocked
+                        ? `<button onclick="toggleBlockClient('${docId}', 'ativo')" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Liberar</button>`
+                        : `<button onclick="toggleBlockClient('${docId}', 'bloqueado')" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Bloquear</button>`;
+
+                    const dataAcesso = cfg.lastAccess ? cfg.lastAccess.split('-').reverse().join('/') : 'Nunca';
+
+                    list.innerHTML += `
+                        <tr style="border-bottom: 1px solid #f1f2f6;">
+                            <td style="padding: 12px;"><strong>${cfg.name || 'Sem Nome'}</strong><br><small style="color:#7f8c8d">${cfg.email || 'E-mail não salvo'}</small></td>
+                            <td style="padding: 12px;">${cfg.phone || '-'}</td>
+                            <td style="padding: 12px;">${dataAcesso}</td>
+                            <td style="padding: 12px; text-align: center;">${statusBadge}</td>
+                            <td style="padding: 12px; text-align: center;">${actionBtn}</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('admin-total-users').innerText = totalAtivos + totalBloqueados;
+                document.getElementById('admin-total-blocked').innerText = totalBloqueados;
+
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao carregar clientes.");
+            }
+        }
+
+        window.toggleBlockClient = async function(docId, newStatus) {
+            const acao = newStatus === 'bloqueado' ? 'BLOQUEAR' : 'LIBERAR';
+            if(confirm(`Tem certeza que deseja ${acao} esta oficina?`)) {
+                await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
+                window.openSuperAdmin(); // Recarrega a lista
+            }
+        }
 
 
         window.onload = function() {

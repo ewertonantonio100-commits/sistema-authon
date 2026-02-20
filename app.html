@@ -13,6 +13,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
                 <script type="module">
         // 1. IMPORTAÇÕES ATUALIZADAS (Com 'where' e 'sendPasswordResetEmail')
@@ -468,6 +469,13 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             --shadow: 0 4px 12px rgba(0,0,0,0.05); 
             --radius: 12px; /* Arredondamento um pouco menor para ficar mais sério */
         }
+                /* Deixa os textos de exemplo mais transparentes e elegantes */
+        ::placeholder {
+            color: #bdc3c7;
+            opacity: 0.5;
+            font-weight: 400;
+        }
+
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text-main); padding-bottom: 100px; }
@@ -485,6 +493,21 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
         input:focus, select:focus { border-color: var(--primary); background: #fff; }
 
         /* --- BOTÕES --- */
+        /* --- ESTILOS DO CHECKLIST & CARRO --- */
+        .car-part { cursor: pointer; transition: all 0.3s; stroke-width: 1.5px; }
+        .car-part:active { opacity: 0.6; }
+        /* Quando clica e marca avaria, fica vermelho */
+        .car-part.damaged { fill: #e74c3c !important; stroke: #c0392b !important; }
+        
+        /* Estilos específicos para luzes e vidros quando normais */
+        .car-light-front { fill: #f1c40f; stroke: #f39c12; opacity: 0.8; } /* Amarelo */
+        .car-light-rear { fill: #e74c3c; stroke: #c0392b; opacity: 0.8; } /* Vermelho */
+        .car-glass { fill: #bdc3c7; stroke: #95a5a6; opacity: 0.7; } /* Vidro azulado */
+
+        .btn-fuel { flex: 1; padding: 8px 0; border: 1px solid #bdc3c7; background: white; border-radius: 8px; font-size: 11px; font-weight: bold; color: #7f8c8d; cursor: pointer; }
+        .btn-fuel.active { background: #f39c12; color: white; border-color: #f39c12; }
+
+
         .btn-action { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 15px; color: white; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; }
         .btn-action:active { transform: scale(0.98); }
         .btn-add { background: var(--dark); }
@@ -600,7 +623,18 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
 
     <div id="tab-new" class="tab-content active">
         <div class="container">
-            <div class="header-title"><h1>Nova Operação</h1></div>
+              <div class="header-title" style="display:flex; align-items:center; justify-content:center; gap:15px; position:relative; margin-bottom:20px;">
+                <h1 style="margin:0;">NOVA OPERAÇÃO</h1>
+                
+                <button type="button" class="btn-action" style="margin:0; width:45px; height:45px; border-radius:12px; background:var(--dark); padding:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" onclick="document.getElementById('ocr-camera').click()" title="Ler Placa pela Câmera">
+    <span style="font-size: 7px; color: rgba(255,255,255,0.6); font-weight: bold; letter-spacing: 0.5px; line-height: 1;">PLACA</span>
+    <i id="camera-btn-icon" class="fas fa-camera" style="font-size: 16px; color: white;"></i>
+</button>
+
+                
+                <input type="file" id="ocr-camera" accept="image/*" capture="environment" style="display:none;" onchange="processPlateImage(event)">
+            </div>
+
             <div class="op-type-switch">
                 <button type="button" class="op-btn active venda" onclick="setOpType('venda')"><i class="fas fa-receipt"></i> VENDA</button>
                 <button type="button" class="op-btn orcamento" onclick="setOpType('orcamento')"><i class="fas fa-file-invoice"></i> ORÇAMENTO</button>
@@ -613,24 +647,34 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <div id="div-hora" style="display:none"><label>Hora</label><input type="time" id="time"></div>
                 <div><label>Celular</label><input type="tel" id="phone" placeholder="(DDD) 90000-0000"></div>
                                 <div class="full-width">
-                    <label>Cliente</label>
-                    <input type="text" id="clientName" list="client-list" placeholder="Nome (Digite p/ buscar)" onchange="fillClientData(this)">
-                    <datalist id="client-list"></datalist>
-                </div>
+          <label>Cliente</label>
+          <input type="text" id="clientName" list="client-list" placeholder="Nome (Digite p/ buscar)" onchange="fillClientData(this)">
+        <datalist id="client-list"></datalist>
+       </div>
 
-                <div class="full-width" id="div-seller">
-                    <label style="color:#2980b9;">Vendedor / Colaborador</label>
-                    <select id="sellerName" style="background:#f0f8ff; border-color:#2980b9;">
-                        <option value="">-- Selecione quem atendeu --</option>
-                    </select>
-                </div>
+         <div class="full-width" id="div-seller">
+         <label style="color:#2980b9;">Vendedor / Colaborador</label>
+           <select id="sellerName" style="background:#f0f8ff; border-color:#2980b9;">
+             <option value="">-- Selecione quem atendeu --</option>
+        </select>
+       </div>
 
-                <div class="full-width"><label>CPF / CNPJ (Opcional)</label><input type="tel" id="clientCpf" placeholder="Apenas números"></div>
-                <div><label>Veículo</label><input type="text" id="vehicle" placeholder="Modelo"></div>
+            <div class="full-width"><label>CPF / CNPJ (Opcional)</label><input type="tel" id="clientCpf" placeholder="Apenas números"></div>
+         <div><label>Veículo</label><input type="text" id="vehicle" placeholder="Modelo"></div>
+                
                 <div><label>Placa</label><input type="text" id="plate" style="text-transform:uppercase" placeholder="ABC-1234"></div>
+                
                 <div style="display:flex; gap:10px; grid-column: span 2;">
                     <div style="flex:1"><label>Cor</label><input type="text" id="color" placeholder="Prata"></div>
                     <div style="flex:1"><label>KM Atual</label><input type="number" id="currentKm" placeholder="Ex: 50000"></div>
+                </div>
+            </div>
+            <div class="full-width" style="margin-top:10px; margin-bottom: 20px;">
+                <button type="button" class="btn-action" style="background:#2c3e50; color:white; margin-top:0;" onclick="openChecklist()">
+                    <i class="fas fa-car-crash"></i> INSPEÇÃO DO VEÍCULO
+                </button>
+                <div id="checklist-summary" style="font-size:12px; color:#c0392b; margin-top:8px; font-weight:bold; text-align:center;">
+                    Nenhuma inspeção realizada.
                 </div>
             </div>
 
@@ -647,6 +691,13 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             </div>
 
             <div id="div-agendamento-info" style="display:none; margin-top:10px;"><label>Hora do Agendamento</label><input type="time" id="time"></div>
+                        <div style="margin: 20px 0; text-align: center;">
+                <button type="button" class="btn-action" style="background: #34495e; color: white; border-radius: 8px; font-size: 14px;" onclick="openSignatureModal()">
+                    <i class="fas fa-file-signature"></i> Coletar Assinatura do Cliente
+                </button>
+                <img id="sigPreview" style="display: none; width: 100%; max-width: 250px; margin: 15px auto 0; border: 1px dashed #bdc3c7; border-radius: 8px; background: white; padding: 5px;">
+            </div>
+
             
             <button type="button" class="btn-action btn-gen" onclick="saveOperation()">SALVAR & FINALIZAR</button>
         </div>
@@ -914,17 +965,39 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
         </div>
     </div>
 </div>
+    <div id="tab-crm" class="tab-content">
+        <div class="container">
+            <div class="header-title" style="margin-bottom: 10px;">
+                <h1>Máquina de Retorno</h1>
+                <p style="font-size:11px; color:#7f8c8d; margin-top:5px; text-transform:none;">Resgate clientes e gere novas vendas!</p>
+            </div>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; border:1px solid #eee; text-align:center; margin-bottom:15px;">
+                <label style="color:var(--primary); font-size:12px;"><i class="fas fa-filter"></i> Mostrar clientes sumidos há mais de:</label>
+                <select id="crm-days" onchange="renderCRM()" style="margin-top:5px; background:white; font-weight:bold; color:var(--dark);">
+                    <option value="60">60 dias (2 meses)</option>
+                    <option value="90" selected>90 dias (3 meses)</option>
+                    <option value="120">120 dias (4 meses)</option>
+                    <option value="180">180 dias (6 meses)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="crm-list" class="card-list" style="padding-bottom: 30px;"></div>
+    </div>
 
 
     <div class="bottom-nav">
         <div class="nav-item active" onclick="clickNewTab(this)"><i class="fas fa-plus-circle nav-icon"></i><span class="nav-text">Novo</span></div>
-        <div class="nav-item" onclick="showTab('agenda', this)"><i class="fas fa-calendar-alt nav-icon"></i><span class="nav-text">Agenda</span></div>
         <div class="nav-item" onclick="showTab('history', this)"><i class="fas fa-history nav-icon"></i><span class="nav-text">Hist.</span></div>
+        <div class="nav-item" onclick="showTab('agenda', this)"><i class="fas fa-calendar-alt nav-icon"></i><span class="nav-text">Agenda</span></div>
         <div class="nav-item" onclick="showTab('expenses', this)"><i class="fas fa-wallet nav-icon"></i><span class="nav-text">Despesas</span></div>
         <div class="nav-item" onclick="showTab('dashboard', this)"><i class="fas fa-chart-line nav-icon"></i><span class="nav-text">Finan.</span></div>
         <div class="nav-item" onclick="showTab('catalog', this)"><i class="fas fa-boxes-stacked nav-icon"></i><span class="nav-text">Estoque</span></div>
+        <div class="nav-item" onclick="showTab('crm', this); renderCRM();"><i class="fas fa-bullseye nav-icon"></i><span class="nav-text">Retorno</span></div>
         <div class="nav-item" onclick="showTab('settings', this)"><i class="fas fa-cog nav-icon"></i><span class="nav-text">Config</span></div>
     </div>
+
 
     <datalist id="services-datalist"></datalist>
 
@@ -933,6 +1006,7 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             <button onclick="closePDF()" style="padding:10px 25px; border-radius:25px; border:none; font-weight:bold; background:white; color:#333; cursor:pointer;">← VOLTAR</button>
             <button id="btn-whatsapp-send" class="btn-whatsapp" style="margin:15px auto; width:90%; max-width:300px;"><i class="fab fa-whatsapp"></i> ENVIAR NO ZAP</button>
             <button onclick="downloadCurrentPDF()" class="btn-download" style="margin:10px auto; width:90%; max-width:300px;"><i class="fas fa-download"></i> BAIXAR PDF</button>
+            <button onclick="printThermalReceipt()" class="btn-download" style="background:#34495e; margin:10px auto; width:90%; max-width:300px;"><i class="fas fa-print"></i> IMPRIMIR CUPOM (58mm)</button>
         </div>
         <div id="invoice-paper">
             <div class="pdf-header">
@@ -961,9 +1035,7 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
                 <div style="border-top:1px solid #ddd; padding-top:10px;"><h2 style="color:var(--primary); margin:0; font-family:'Oswald',sans-serif;">TOTAL: <span id="pdf-total">R$ 0,00</span></h2></div>
             </div>
             <div style="margin-top:auto; padding-top:20px; text-align:center;">
-                <div style="border-top:1px solid #000; width:40%; margin:0 auto 5px auto;"></div>
-                <div style="font-size:11px; color:#777;">Assinatura do Responsável</div>
-                <div id="pdf-warranty-text" style="font-size:10px; color:#95a5a6; margin-top:15px; text-align:center; padding:10px; border-top:1px dotted #ccc;"></div>
+             <div id="pdf-warranty-text" style="font-size:10px; color:#95a5a6; margin-top:15px; text-align:center; padding:10px; border-top:1px dotted #ccc;"></div>
             </div>
         </div>
     </div>
@@ -1155,6 +1227,616 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             }
         }
 
+          // --- SISTEMA DE INSPEÇÃO (LAUDO UNIFICADO COM QUANTIDADE) ---
+        window.currentChecklist = { fuel: 'Reserva', damages: {} };
+        window.checklistPhotos = [];
+        window.tempSelectedPart = '';
+        window.tempSelectedDamageType = '';
+        window.tempDamagePhotoFile = null;
+        window.tempDamageQty = 1; // NOVO: Guarda a quantidade
+
+        window.openChecklist = function() {
+            document.getElementById('modal-checklist').style.display = 'flex';
+            renderCarDamages();
+        }
+        window.closeChecklist = function() { document.getElementById('modal-checklist').style.display = 'none'; }
+
+        window.selectCarPart = function(partName) {
+            window.tempSelectedPart = partName;
+            
+            // Reseta a quantidade para 1 sempre que abrir uma peça nova
+            window.tempDamageQty = 1; 
+            document.getElementById('damage-qty-display').innerText = '1';
+            
+            document.getElementById('damage-part-name').innerText = partName;
+            document.getElementById('damage-type-buttons').style.display = 'block';
+            document.getElementById('damage-photo-section').style.display = 'none';
+            document.getElementById('camera-input').value = '';
+            document.getElementById('modal-damage').style.display = 'flex';
+        }
+
+        // Ação dos botões + e -
+        window.changeDamageQty = function(delta) {
+            window.tempDamageQty += delta;
+            if(window.tempDamageQty < 1) window.tempDamageQty = 1; // Não deixa ficar negativo ou zero
+            document.getElementById('damage-qty-display').innerText = window.tempDamageQty;
+        }
+
+        window.saveDamage = function(type) {
+            if(type === '') {
+                delete window.currentChecklist.damages[window.tempSelectedPart];
+                document.getElementById('modal-damage').style.display = 'none';
+                renderCarDamages(); updateChecklistSummary();
+                return;
+            }
+            
+            // Se tiver mais de 1, adiciona o "3x " na frente do nome
+            let finalType = type;
+            if(window.tempDamageQty > 1) {
+                finalType = `${window.tempDamageQty}x ${type}`;
+            }
+            
+            window.tempSelectedDamageType = finalType;
+            document.getElementById('damage-selected-type').innerText = finalType;
+            document.getElementById('damage-type-buttons').style.display = 'none';
+            document.getElementById('damage-photo-section').style.display = 'block';
+            
+            document.getElementById('damage-photo-preview').style.display = 'none';
+            document.getElementById('btn-save-damage-photo').style.display = 'none';
+            window.tempDamagePhotoFile = null;
+        }
+
+
+        window.handleDamagePhoto = function(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            window.tempDamagePhotoFile = file; // Guarda temporariamente
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('damage-photo-preview');
+                img.src = e.target.result; img.style.display = 'block';
+                document.getElementById('btn-save-damage-photo').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        window.confirmDamageWithPhoto = function() {
+            window.currentChecklist.damages[window.tempSelectedPart] = window.tempSelectedDamageType;
+            if(window.tempDamagePhotoFile) {
+                window.checklistPhotos.push(window.tempDamagePhotoFile); // Joga a foto na sacola
+            }
+            finalizeDamageEntry();
+        }
+
+        window.confirmDamageWithoutPhoto = function() {
+            window.currentChecklist.damages[window.tempSelectedPart] = window.tempSelectedDamageType;
+            finalizeDamageEntry();
+        }
+
+        function finalizeDamageEntry() {
+            document.getElementById('modal-damage').style.display = 'none';
+            renderCarDamages(); 
+            updateChecklistSummary();
+        }
+
+          // A GRANDE ESTRELA: O ENVIO DIRETO E DOWNLOAD DE FOTOS
+        window.sendFullReportWhatsApp = async function() {
+            const client = document.getElementById('clientName').value || 'Cliente';
+            const phone = document.getElementById('phone').value;
+            
+            // Trava de segurança: Exige o número do cliente
+            if(!phone) {
+                alert("Por favor, preencha o número de celular (WhatsApp) do cliente na tela de Nova Venda primeiro!");
+                return;
+            }
+            
+            const vehicle = document.getElementById('vehicle').value || 'Veículo';
+            const plate = document.getElementById('plate').value || '';
+            const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
+            
+            const damagesKeys = Object.keys(window.currentChecklist.damages);
+            if(damagesKeys.length === 0 && window.currentChecklist.fuel === 'Reserva') {
+                 return alert("Você ainda não marcou nenhuma avaria ou alterou o combustível para enviar.");
+            }
+
+            // Constrói o texto do Laudo
+            let text = `*${compName.toUpperCase()}*\n--------------------------------\nOlá *${client}*!\n\nRealizamos a inspeção prévia do seu veículo *${vehicle}* ${plate ? '('+plate.toUpperCase()+')' : ''} ao chegar.\n\n⛽ *Combustível:* ${window.currentChecklist.fuel}\n`;
+            
+            if(damagesKeys.length > 0) {
+                text += `\n⚠️ *Avarias Identificadas na Lataria/Vidros:*\n`;
+                damagesKeys.forEach(part => {
+                    text += `- ${part}: ${window.currentChecklist.damages[part]}\n`;
+                });
+            } else {
+                text += `\n✅ Nenhuma avaria identificada na lataria.\n`;
+            }
+
+            if(window.checklistPhotos.length > 0) {
+                text += `\n📸 *As fotos das avarias foram registradas na oficina.* (Enviaremos a seguir caso necessário).\n`;
+            }
+
+            text += `\nEstamos cuidando de tudo! 🤝`;
+
+            // --- A MÁGICA NOVA: DOWNLOAD AUTOMÁTICO DAS FOTOS ---
+            if(window.checklistPhotos.length > 0) {
+                alert("⚠️ O sistema vai baixar as fotos para o seu celular agora.\n\nO WhatsApp vai abrir em seguida. Basta clicar no clipe 📎 na conversa e enviar as fotos que foram salvas (geralmente ficam na pasta Downloads ou Recentes).");
+                
+                // Salva cada foto da sacola no celular do mecânico
+                window.checklistPhotos.forEach((file, index) => {
+                    const url = URL.createObjectURL(file);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `Avaria_${plate || 'Carro'}_Foto${index + 1}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                });
+            }
+
+            // Abre o Zap direto no número do dono do carro
+            const numeroLimpo = phone.replace(/\D/g, ''); 
+            window.open(`https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(text)}`);
+            
+            // Fecha a janela do carro para o mecânico poder salvar a venda
+            document.getElementById('modal-checklist').style.display = 'none';
+        }
+
+        window.renderCarDamages = function() {
+            document.querySelectorAll('.car-part').forEach(el => {
+                const partName = el.id.replace('part-', '');
+                if(window.currentChecklist.damages[partName]) el.classList.add('damaged'); else el.classList.remove('damaged');
+            });
+        }
+
+        window.setFuel = function(level) {
+            window.currentChecklist.fuel = level;
+            document.querySelectorAll('.btn-fuel').forEach(b => b.classList.remove('active'));
+            document.getElementById('fuel-' + level).classList.add('active');
+            updateChecklistSummary();
+        }
+
+        window.updateChecklistSummary = function() {
+            let sum = `⛽ Combust. ${window.currentChecklist.fuel} <br>`;
+            const parts = Object.keys(window.currentChecklist.damages);
+            if(parts.length > 0) sum += `⚠️ ${parts.length} avaria(s) registrada(s).`; else sum += `✅ Nenhuma avaria na lataria.`;
+            const divSummary = document.getElementById('checklist-summary');
+            if(divSummary) divSummary.innerHTML = sum;
+        }
+          // --- SISTEMA DE FOTOS: ANTES E DEPOIS (MÚLTIPLAS FOTOS) ---
+        window.ba_clientData = {};
+        window.ba_photos = { before: [], after: [] };
+
+        window.openBeforeAfterModal = function(client, vehicle, phone, plate) {
+            window.ba_clientData = { client, vehicle, phone, plate };
+            window.ba_photos = { before: [], after: [] };
+            
+            if(document.getElementById('camera-before')) document.getElementById('camera-before').value = '';
+            if(document.getElementById('camera-after')) document.getElementById('camera-after').value = '';
+            
+            const prevBefore = document.getElementById('preview-before-container');
+            const prevAfter = document.getElementById('preview-after-container');
+            if(prevBefore) prevBefore.innerHTML = '';
+            if(prevAfter) prevAfter.innerHTML = '';
+            
+            document.getElementById('modal-before-after').style.display = 'flex';
+        }
+
+        window.closeBeforeAfterModal = function() {
+            document.getElementById('modal-before-after').style.display = 'none';
+        }
+
+        window.handleBA_Photo = function(event, type) {
+            const files = Array.from(event.target.files);
+            if(!files.length) return;
+            
+            window.ba_photos[type] = window.ba_photos[type].concat(files);
+            
+            const container = document.getElementById(`preview-${type}-container`);
+            container.innerHTML = ''; 
+            
+            window.ba_photos[type].forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.height = '60px';
+                    img.style.minWidth = '60px';
+                    img.style.borderRadius = '6px';
+                    img.style.objectFit = 'cover';
+                    img.style.border = '1px solid #ccc';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+         window.sendBeforeAfterWhatsApp = async function() {
+            const { client, vehicle, phone, plate } = window.ba_clientData;
+            const totalPhotos = window.ba_photos.before.length + window.ba_photos.after.length;
+
+            if(!phone) return alert("Este cliente não tem um celular cadastrado para envio!");
+            if(totalPhotos === 0) return alert("Você precisa adicionar pelo menos uma foto!");
+
+            const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
+            
+            // Texto do laudo
+            let text = `*${compName.toUpperCase()}*\n--------------------------------\nOlá *${client}*, tudo bem? 😃\n\nO serviço no seu *${vehicle}* ${plate ? '('+plate.toUpperCase()+')' : ''} teve um resultado incrível!\n\n✨ *Dá uma olhada nas fotos do Antes e Depois.* ✨\n\nQualquer dúvida, estamos à disposição! 🤝`;
+
+            const todasAsFotos = [...window.ba_photos.before, ...window.ba_photos.after];
+
+            // TENTATIVA 1: O Compartilhamento Perfeito (Leva fotos e texto amarrados)
+            if (navigator.canShare && navigator.canShare({ files: todasAsFotos })) {
+                try {
+                    await navigator.share({ text: text, files: todasAsFotos });
+                    closeBeforeAfterModal();
+                    return; // Sucesso absoluto, sai da função.
+                } catch (error) { 
+                    console.log('Compartilhamento nativo cancelado ou falhou', error); 
+                    // Se o celular der erro, ele continua pro Plano B silenciosamente.
+                }
+            }
+
+            // PLANO B: Download em Cascata (Engana o bloqueio de segurança do navegador)
+            alert(`⚠️ O sistema vai baixar as ${totalPhotos} foto(s) para sua galeria agora.\n\nAguarde uns segundos. O WhatsApp vai abrir direto no cliente logo em seguida.\n\nBasta clicar no clipe 📎 e anexar as fotos salvas!`);
+            
+            let tempoDeEspera = 0;
+
+            todasAsFotos.forEach((file, index) => {
+                // Coloca um atraso (delay) entre cada download para não bloquear
+                setTimeout(() => {
+                    const url = URL.createObjectURL(file);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `Authon_${plate || 'Veiculo'}_Foto${index+1}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { window.URL.revokeObjectURL(url); }, 1000);
+                    document.body.removeChild(a);
+                }, tempoDeEspera);
+                
+                tempoDeEspera += 800; // 800 milissegundos de respiro entre cada foto
+            });
+
+            // Só abre o Zap depois que der tempo de baixar todas as fotos
+            setTimeout(() => {
+                const numeroLimpo = phone.replace(/\D/g, ''); 
+                window.open(`https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(text)}`);
+                closeBeforeAfterModal();
+            }, tempoDeEspera + 500);
+        }
+         // --- SISTEMA DE IA (LEITOR DE PLACAS - VERSÃO TURBO) ---
+        window.processPlateImage = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const plateInput = document.getElementById('plate');
+            const icon = document.getElementById('camera-btn-icon');
+            
+            // 1. Feedback visual imediato: O ícone da câmera vira uma "rodinha" girando
+            if(icon) {
+                icon.className = 'fas fa-circle-notch fa-spin';
+                icon.style.color = '#f1c40f'; // Fica amarelo indicando processamento
+            }
+            
+            try {
+                // 2. A IA processa a imagem em silêncio (o mais rápido que o celular aguentar)
+                const result = await Tesseract.recognize(file, 'por');
+
+                // 3. Limpa a sujeira do texto e procura a placa
+                const text = result.data.text.replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+                const match = text.match(/[A-Z]{3}-?[0-9][A-Z0-9][0-9]{2}/);
+
+                if (match) {
+                    let placa = match[0].replace('-', ''); 
+                    
+                    // 4. Preenche a placa na tela IMEDIATAMENTE
+                    plateInput.value = placa.substring(0,3) + '-' + placa.substring(3);
+                    
+                    // 5. Mergulho Instantâneo no Banco de Dados
+                    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+                    const lastRecord = db.find(item => item.plate && item.plate.replace(/[^A-Z0-9]/ig, '').toUpperCase() === placa);
+                    
+                    if (lastRecord) {
+                        // Preenche TUDO instantaneamente, sem perguntar (foco na velocidade)
+                        document.getElementById('clientName').value = lastRecord.client || '';
+                        document.getElementById('phone').value = lastRecord.phone || '';
+                        document.getElementById('vehicle').value = lastRecord.vehicle || '';
+                        document.getElementById('color').value = lastRecord.color || '';
+                        if(lastRecord.cpf) document.getElementById('clientCpf').value = lastRecord.cpf;
+                        
+                        alert(`✅ DADOS PREENCHIDOS!\n\nCliente: ${lastRecord.client}\nVeículo: ${lastRecord.vehicle}`);
+                    } else {
+                        alert(`✅ Placa Lida: ${placa}\n\nCliente novo! Continue o cadastro.`);
+                    }
+
+                } else {
+                    alert("❌ Não foi possível ler a placa. Tente focar melhor ou digite manualmente.");
+                }
+
+            } catch(e) {
+                console.error(e);
+                alert("❌ Erro no sistema da câmera.");
+            }
+            
+            // 6. Restaura o botão da câmera ao estado normal
+            if(icon) {
+                icon.className = 'fas fa-camera';
+                icon.style.color = ''; 
+            }
+            event.target.value = '';
+        }
+        
+                // --- MOTOR DE ASSINATURA DIGITAL NA TELA ---
+        let sigCanvas, sigCtx;
+        let isDrawing = false;
+        window.currentSignatureBase64 = null; // Guarda o texto leve da assinatura
+
+        function initSignatureEngine() {
+            sigCanvas = document.getElementById('sigCanvas');
+            if(!sigCanvas) return;
+            sigCtx = sigCanvas.getContext('2d');
+            sigCtx.lineWidth = 3;
+            sigCtx.lineCap = 'round';
+            sigCtx.strokeStyle = '#2c3e50'; // Cor da tinta (Azul escuro chique)
+
+            // Eventos para Celular (Touch)
+            sigCanvas.addEventListener('touchstart', startDrawing, {passive: false});
+            sigCanvas.addEventListener('touchmove', drawSignature, {passive: false});
+            sigCanvas.addEventListener('touchend', stopDrawing, {passive: false});
+
+            // Eventos para Computador (Mouse)
+            sigCanvas.addEventListener('mousedown', startDrawing);
+            sigCanvas.addEventListener('mousemove', drawSignature);
+            sigCanvas.addEventListener('mouseup', stopDrawing);
+            sigCanvas.addEventListener('mouseout', stopDrawing);
+        }
+
+        function getPointerPos(e) {
+            let rect = sigCanvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            let pos = getPointerPos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(pos.x, pos.y);
+        }
+
+        function drawSignature(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            let pos = getPointerPos(e);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+        }
+
+        function stopDrawing(e) {
+            e.preventDefault();
+            isDrawing = false;
+        }
+
+        window.clearSignature = function() {
+            if(sigCtx) sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            window.currentSignatureBase64 = null;
+            document.getElementById('sigPreview').style.display = 'none';
+        }
+
+        window.openSignatureModal = function() {
+            document.getElementById('signatureModal').style.display = 'flex';
+            setTimeout(() => {
+                if(!sigCtx) initSignatureEngine(); // Liga o motor na primeira vez
+                clearSignature(); // Garante que começa limpo
+            }, 100);
+        }
+
+           window.confirmSignature = function() {
+            // Transforma o desenho no texto super leve (Base64)
+            window.currentSignatureBase64 = sigCanvas.toDataURL('image/png');
+            
+            // Mostra na tela pro mecânico ver que salvou
+            let preview = document.getElementById('sigPreview');
+            preview.src = window.currentSignatureBase64;
+            preview.style.display = 'block';
+            
+            // O SEGREDO AQUI: O comando correto para esconder a tela
+            document.getElementById('signatureModal').style.display = 'none';
+        }
+
+
+               // --- SISTEMA CRM (MÁQUINA DE RETORNO DE CLIENTES) ---
+        window.renderCRM = function() {
+            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+            const list = document.getElementById('crm-list');
+            const daysFilter = parseInt(document.getElementById('crm-days').value) || 90;
+            const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
+
+            list.innerHTML = '';
+
+            // 1. Agrupar todas as visitas de cada cliente para descobrir a ÚLTIMA visita
+            const clientsMap = {};
+            const operations = db.filter(x => x.type === 'venda' || x.type === 'orcamento');
+
+            operations.forEach(op => {
+                if(!op.client || !op.phone) return;
+                
+                // Converte a data para comparar
+                const opDate = new Date(op.date + 'T12:00:00');
+                
+                if(!clientsMap[op.client]) {
+                    clientsMap[op.client] = { lastDate: opDate, phone: op.phone, vehicle: op.vehicle || 'Veículo', count: 1 };
+                } else {
+                    clientsMap[op.client].count++;
+                    // Se essa data for mais recente, atualiza a última visita
+                    if(opDate > clientsMap[op.client].lastDate) {
+                        clientsMap[op.client].lastDate = opDate;
+                        clientsMap[op.client].vehicle = op.vehicle || clientsMap[op.client].vehicle;
+                        clientsMap[op.client].phone = op.phone || clientsMap[op.client].phone;
+                    }
+                }
+            });
+
+            // 2. Descobrir quem sumiu há mais de X dias
+            const today = new Date();
+            const dormantClients = [];
+
+            for (let clientName in clientsMap) {
+                const c = clientsMap[clientName];
+                const diffTime = Math.abs(today - c.lastDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                if (diffDays >= daysFilter) {
+                    dormantClients.push({ name: clientName, ...c, daysAway: diffDays });
+                }
+            }
+
+            // Ordenar: Quem está sumido há mais tempo aparece primeiro
+            dormantClients.sort((a,b) => b.daysAway - a.daysAway);
+
+            if(dormantClients.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:30px; color:#7f8c8d;"><i class="fas fa-glass-cheers" style="font-size:30px; margin-bottom:10px; color:#f1c40f;"></i><br>Nenhum cliente sumido nesse período!<br>A retenção da sua oficina está excelente!</div>';
+                return;
+            }
+
+               // 3. Desenhar os "Cartões de Resgate" (COM MENSAGEM NEUTRA E VENDEDORA)
+            dormantClients.forEach(c => {
+                
+                // Mensagem inteligente que foca em CUIDADO e não em serviços específicos
+                const zapMsg = `Olá *${c.name}*, tudo bem? Aqui é da *${compName.toUpperCase()}*! 😃\n\nNotamos que já faz um tempinho desde a última vez que o seu *${c.vehicle}* passou por aqui.\n\nPassando para lembrar que estamos sempre à disposição para cuidar do seu veículo com a qualidade de sempre. Nossa equipe está pronta para te atender e deixar tudo 100%!\n\nVamos agendar um horário ou fazer um orçamento sem compromisso? É só me chamar aqui! 🤝`;
+                
+                const zapLink = `https://wa.me/55${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
+                const dateStr = c.lastDate.toISOString().split('T')[0].split('-').reverse().join('/');
+
+                list.innerHTML += `
+                <div class="item-card" style="border-left-color: #e67e22; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="flex:1;">
+                            <strong style="font-size:16px; color:#2c3e50;">${c.name}</strong><br>
+                            <small style="color:#7f8c8d; font-size:12px;">🚗 ${c.vehicle} <br>📱 ${c.phone}</small>
+                        </div>
+                        <span style="background:#fff3e0; color:#e67e22; padding:4px 8px; border-radius:8px; font-size:10px; font-weight:bold; white-space:nowrap; margin-left:10px;">
+                            <i class="fas fa-clock"></i> ${c.daysAway} dias
+                        </span>
+                    </div>
+                    
+                    <div style="background:#f9f9f9; padding:8px; border-radius:8px; margin-top:10px; font-size:11px; color:#7f8c8d;">
+                        <strong>Última visita:</strong> ${dateStr} <br>
+                        <strong>Fidelidade:</strong> ${c.count} visita(s) no histórico
+                    </div>
+                    
+                    <button class="btn-action" style="background:#25D366; color:white; font-size:12px; font-weight:bold; padding:12px; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="window.open('${zapLink}')">
+                        <i class="fab fa-whatsapp" style="font-size:16px;"></i> ENVIAR CONVITE DE RETORNO
+                    </button>
+                </div>`;
+            });
+        }
+
+ 
+        
+         // --- SISTEMA DE IMPRESSÃO TÉRMICA (MOTOR MATEMÁTICO DE 32 COLUNAS) ---
+        window.printThermalReceipt = function() {
+            const data = window.currentReceiptData;
+            if(!data) return alert("Erro: Dados do recibo não encontrados.");
+
+            const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
+            const compCnpj = localStorage.getItem('authon_cfg_cnpj') || "";
+            const compPhone = localStorage.getItem('authon_cfg_phone') || "";
+
+            const W = 32; // 32 colunas (Padrão exato da maquininha de 58mm)
+
+            // 1. Função que centraliza o texto milimetricamente
+            const center = (str) => {
+                let s = str.substring(0, W);
+                let pad = Math.max(0, Math.floor((W - s.length) / 2));
+                return " ".repeat(pad) + s + "\n";
+            };
+
+            // 2. Função que joga o texto para a esquerda e o preço para a direita
+            const split = (left, right) => {
+                let l = left.substring(0, W - right.length - 1);
+                let spaces = Math.max(1, W - l.length - right.length);
+                return l + " ".repeat(spaces) + right + "\n";
+            };
+
+            const line = "-".repeat(W) + "\n";
+
+            let pText = "";
+            
+            // --- CONSTRUINDO O RECIBO ---
+            pText += center(compName.toUpperCase());
+            if(compCnpj) pText += center(compCnpj);
+            if(compPhone) pText += center(compPhone);
+            
+            pText += line;
+            pText += center("RECIBO / " + data.type.toUpperCase());
+            pText += line;
+            
+            pText += "Data: " + data.date.split('-').reverse().join('/') + "\n";
+            pText += "Cliente: " + data.client.substring(0, 23) + "\n";
+            let veic = (data.vehicle || '') + (data.plate ? ' ' + data.plate.toUpperCase() : '');
+            pText += "Veiculo: " + veic.substring(0, 23) + "\n";
+            
+            pText += line;
+            pText += split("QTD DESC", "VALOR");
+            pText += line;
+
+            // Lançando Itens Alinhados
+            if(data.items) {
+                data.items.forEach(i => {
+                    let cleanDesc = i.desc;
+                    if(cleanDesc.includes(' - ') && cleanDesc.includes('(')) { 
+                        try { cleanDesc = cleanDesc.split(' - ')[1].split(' (')[0]; } catch(e) {} 
+                    }
+                    let leftStr = `${i.qty}x ${cleanDesc}`;
+                    let rightStr = `R$ ${parseFloat(i.val).toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+                    pText += split(leftStr, rightStr);
+                });
+            }
+
+            pText += line;
+            
+            // Lançando Totais
+            if(data.discount > 0) {
+                pText += split("Desconto:", `-R$ ${data.discount.toLocaleString('pt-BR',{minimumFractionDigits:2})}`);
+            }
+            pText += split("TOTAL:", `R$ ${data.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}`);
+            pText += line;
+
+            pText += center(`Pgto: ${data.payment || "A Combinar"}`);
+
+            // Pix e Garantia
+            const savedPix = localStorage.getItem('authon_cfg_pix');
+            if(savedPix && data.status === 'pendente') {
+                pText += "\n" + center(`Pix: ${savedPix}`);
+            }
+
+            pText += "\n\n" + center("__________________________");
+            pText += center("Assinatura do Cliente") + "\n";
+
+            pText += "\n" + center("Gerado pelo Sistema Authon");
+            pText += "\n\n";
+
+            // 3. Envia o texto perfeitamente desenhado para a maquininha
+            try {
+                const intentUrl = "intent:" + encodeURIComponent(pText) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+                window.location.href = intentUrl;
+            } catch(e) {
+                window.print();
+            }
+        }
+ 
 
         window.onload = function() {
             const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
@@ -1556,7 +2238,7 @@ window.delCatalog = async function(idx) {
         
         function calcTotal() { let t = 0; document.querySelectorAll('.val').forEach(i => t += Number(i.value)); const discount = parseFloat(document.getElementById('discount').value) || 0; document.getElementById('display-total').innerText = (t - discount).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
         
-                        async function saveOperation() {
+                                async function saveOperation() {
             const type = document.getElementById('opType').value; 
             const client = document.getElementById('clientName').value; 
             const totalStr = document.getElementById('display-total').innerText; 
@@ -1577,7 +2259,7 @@ window.delCatalog = async function(idx) {
                 if(d) items.push({ desc: d, val: v, qty: q });
             });
 
-                        // Baixa no Estoque (apenas se for Venda) - CORRIGIDO PARA A NUVEM
+            // Baixa no Estoque (apenas se for Venda) - CORRIGIDO PARA A NUVEM
             if(type === 'venda' && VERSAO_COM_ESTOQUE) {
                 let cat = JSON.parse(localStorage.getItem('catalog_v1') || '[]'); 
                 items.forEach(soldItem => {
@@ -1597,32 +2279,60 @@ window.delCatalog = async function(idx) {
             // Status Inicial
             const initialStatus = (type === 'agendamento') ? 'agendado' : 'pendente';
             
+            // --- PACOTE DE DADOS CORRIGIDO COM O CHECKLIST ---
             const data = { 
                 id: document.getElementById('editId').value ? Number(document.getElementById('editId').value) : Date.now(), 
                 type: type, status: initialStatus,
                 date: document.getElementById('date').value,
-                client, seller: document.getElementById('sellerName').value, // <--- NOVO: SALVA O VENDEDOR
+                client: client, 
+                seller: document.getElementById('sellerName').value,
                 time: document.getElementById('time').value, 
-                client, phone: document.getElementById('phone').value, vehicle: document.getElementById('vehicle').value, 
-                plate: document.getElementById('plate').value, color: document.getElementById('color').value,
+                phone: document.getElementById('phone').value, 
+                vehicle: document.getElementById('vehicle').value, 
+                plate: document.getElementById('plate').value, 
+                color: document.getElementById('color').value,
                 km: km, cpf: cpf, items: items, 
-                total: totalVal, netTotal: totalVal, discount: discountVal, // netTotal começa igual ao total
-                payment: '' // Nasce vazio, preenche no Receber
+                    signature: window.currentSignatureBase64 || null,
+
+                
+                checklist: window.currentChecklist, // <--- A MÁGICA DA INSPEÇÃO ESTÁ AQUI
+                
+                total: totalVal, netTotal: totalVal, discount: discountVal,
+                payment: ''
             };
             
-            const docId = document.getElementById('firebaseDocId').value;
+             const docId = document.getElementById('firebaseDocId').value;
             
             if(docId) {
                 await updateInCloud("operacoes", docId, data);
-                alert("Atualizado na Nuvem!");
             } else {
                 await saveToCloud("operacoes", data);
             }
+    window.clearSignature(); // Limpa o quadro e a memória
 
             updateClientDatalist(); 
-            generatePDF(data); 
-            if(type === 'agendamento') alert("Agendamento Salvo!");
+            
+            // --- NOVA LÓGICA DE DIRECIONAMENTO ---
+            if (type === 'venda') {
+                resetForm(); // Limpa a tela
+                // Vai direto para a aba de Histórico automaticamente
+                const histTab = document.querySelector('.nav-item[onclick*="history"]');
+                showTab('history', histTab);
+                
+            } else if (type === 'agendamento') {
+                alert("Agendamento Salvo com Sucesso!");
+                resetForm();
+                // Vai direto para a aba de Agenda
+                const agendTab = document.querySelector('.nav-item[onclick*="agenda"]');
+                showTab('agenda', agendTab);
+                
+            } else {
+                // Se for Orçamento, continua gerando o PDF na hora
+                generatePDF(data); 
+            }
         }
+
+
 
                // --- SISTEMA (ATENDER/EDITAR) ---
         window.loadToEdit = function(id, forceVenda = false) { 
@@ -1722,7 +2432,6 @@ window.renderAgenda = function() {
         list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR CLIENTE</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
     });
 }
-
 // Substitua a função renderHistory inteira por esta:
 window.renderHistory = function(filter) { 
     // Salva o filtro atual para a busca funcionar
@@ -1748,24 +2457,36 @@ window.renderHistory = function(filter) {
     filtered.sort((a,b) => b.id - a.id);
     const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
 
+    // Animação suave (brilho sutil)
+    if (!document.getElementById('style-soft-pulse')) {
+        document.head.insertAdjacentHTML('beforeend', '<style id="style-soft-pulse">@keyframes softPulse { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } 50% { transform: scale(1.02); box-shadow: 0 6px 15px rgba(39, 174, 96, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } }</style>');
+    }
+
     filtered.forEach(item => { 
         // Filtro de Busca
         const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
         if(term && !fullText.includes(term)) return;
 
         // 1. Definição de Cores e Status
-        let badgeClass = ''; let statusText = item.type.toUpperCase(); let actionBtn = '';
+        let badgeClass = ''; let statusText = item.type.toUpperCase(); 
+        let actionBtn = ''; let highlightPayBtn = '';
         
         // 2. Montagem do Preço (com destaque para Líquido se houver taxa)
-        let priceDisplay = `<div style="font-weight:800; font-size:18px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+        let priceDisplay = `<div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
         if(item.netTotal && item.netTotal < item.total) {
             priceDisplay = `
-                <div style="font-weight:800; font-size:18px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                <div style="font-size:10px; color:#c0392b; font-weight:600; margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                <div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                <div style="font-size:11px; color:#c0392b; font-weight:700; margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
             `;
         }
 
         // 3. Lógica dos Botões (Venda/Orçamento)
+        const escapedName = item.client ? item.client.replace(/'/g, "\\'") : '';
+        const escapedVehicle = item.vehicle ? item.vehicle.replace(/'/g, "\\'") : '';
+        const escapedPlate = item.plate ? item.plate.replace(/'/g, "\\'") : '';
+        
+        const btnAntesDepois = `<button class="btn-card" style="background:#7f8c8d; color:white; flex:1; box-shadow:none;" onclick="openBeforeAfterModal('${escapedName}', '${escapedVehicle}', '${item.phone}', '${escapedPlate}')"><i class="fas fa-camera-retro" style="opacity:0.8;"></i> Antes & Depois</button>`;
+
         if(item.type === 'venda') {
             if(item.status === 'pendente') {
                 badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
@@ -1773,38 +2494,42 @@ window.renderHistory = function(filter) {
                 const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
                 const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
                 
-                actionBtn = `<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="margin-right:5px;"><i class="fab fa-whatsapp"></i> AVISAR</button><button class="btn-card btn-pay" onclick="window.openPayModal('${item.docId}', ${item.total})"><i class="fas fa-check-circle"></i> RECEBER</button>`;
+                // Botões Secundários
+                actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
+                
+                // --- A GRANDE MUDANÇA: BOTÃO DE RECEBER CENTRALIZADO E MENOR ---
+                highlightPayBtn = `
+                <button class="btn-action" style="background:var(--green-grad); display:block; width:80%; max-width:260px; margin: 15px auto 10px auto; font-size:13px; padding:12px; border-radius:12px; animation: softPulse 2.5s infinite;" onclick="window.openPayModal('${item.docId}', ${item.total})">
+                    <i class="fas fa-hand-holding-usd" style="font-size:16px; margin-right:8px;"></i> RECEBER PAGAMENTO
+                </button>`;
+                
             } else { 
                 badgeClass = 'bg-venda'; statusText = 'PAGO'; 
+                actionBtn = `${btnAntesDepois}`; 
             }
         } else { 
             badgeClass = 'bg-orcamento'; 
         }
 
-        // 4. Montagem da Lista de Serviços (Igual Agenda)
+        // 4. Montagem da Lista de Serviços
         let itemsHtml = '<ul style="margin:8px 0 8px 18px; padding:0; font-size:12px; color:#555;">';
         if(item.items && item.items.length > 0) {
             item.items.forEach(i => {
-                // Limpa o nome se tiver código (ex: "123 - Peça") vira "Peça"
                 let cleanDesc = i.desc;
                 if(cleanDesc.includes(' - ') && cleanDesc.includes('(')) { 
                     try { cleanDesc = cleanDesc.split(' - ')[1].split(' (')[0]; } catch(e) {} 
                 }
                 itemsHtml += `<li>${i.qty}x ${cleanDesc}</li>`;
             });
-        } else {
-            itemsHtml += '<li>(Sem itens descritos)</li>';
-        }
+        } else { itemsHtml += '<li>(Sem itens descritos)</li>'; }
         itemsHtml += '</ul>';
 
-        // 5. Dados do Veículo + PLACA
+        // 5. Dados do Veículo
         const plateInfo = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
         const subInfo = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
-
-        // 6. Data Formatada
         const dateFormatted = item.date.split('-').reverse().join('/');
 
-        // --- HTML DO CARTÃO (LAYOUT NOVO) ---
+        // --- HTML DO CARTÃO ---
         list.innerHTML += `
         <div class="item-card" style="padding: 20px; border-left: 6px solid #ccc; position:relative;">
             
@@ -1824,14 +2549,21 @@ window.renderHistory = function(filter) {
 
             <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
                 <div style="flex-shrink:0;">
+                    <span style="font-size:11px; color:#7f8c8d; font-weight:bold; text-transform:uppercase;">Valor Total:</span>
                     ${priceDisplay}
                 </div>
-                
-                <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
+            </div>
+
+            ${highlightPayBtn}
+
+            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:space-between; margin-top:10px;">
+                <div style="display:flex; gap:5px; flex:1;">
                     ${actionBtn}
-                    <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
-                    <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
+                </div>
+                <div style="display:flex; gap:5px;">
                     <button class="btn-card" style="background:var(--dark); color:white; min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
+                    <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
 
@@ -2071,6 +2803,8 @@ window.confirmPayment = async function() {
 
         function generatePDF(data) {
             document.getElementById('pdf-overlay').style.display = 'block';
+            // A LINHA QUE FALTAVA PARA A IMPRESSORA FUNCIONAR:
+            window.currentReceiptData = data;
             
             // 1. DATA DO DOCUMENTO
             document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
@@ -2099,6 +2833,17 @@ window.confirmPayment = async function() {
                 document.getElementById('pdf-km-info').innerHTML = `<br><strong>KM Atual:</strong> ${data.km} | <strong>Próxima Revisão:</strong> ${nextRev} km`; 
             } else { 
                 document.getElementById('pdf-km-info').innerHTML = ''; 
+            }
+            // --- IMPRIME A INSPEÇÃO NO PDF ---
+            const chk = data.checklist;
+            // Só imprime no PDF se houver alguma avaria anotada OU se o combustível for diferente do padrão (Reserva)
+            if(chk && (Object.keys(chk.damages).length > 0 || (chk.fuel && chk.fuel !== 'Reserva'))) {
+                let dmgText = "Nenhuma avaria na lataria/vidros.";
+                const dmgKeys = Object.keys(chk.damages);
+                if(dmgKeys.length > 0) {
+                    dmgText = dmgKeys.map(k => `<b>${k}:</b> ${chk.damages[k]}`).join(' | ');
+                }
+                document.getElementById('pdf-km-info').innerHTML += `<div style="margin-top:10px; padding:10px; background:#fff; border:1px solid #ddd; border-radius:5px; font-size:12px; line-height:1.6;"><strong>📝 INSPEÇÃO PRÉVIA:</strong><br>⛽ Combustível: ${chk.fuel || 'Não inf.'}<br>🚗 Avarias: ${dmgText}</div>`;
             }
 
             // 4. LISTA DE ITENS
@@ -2150,6 +2895,36 @@ window.confirmPayment = async function() {
             if(data.type === 'orcamento') pdfTitle = 'ORÇAMENTO';
             if(data.type === 'agendamento') pdfTitle = 'AGENDAMENTO';
             document.getElementById('pdf-title').innerText = pdfTitle;
+               // --- INÍCIO: ASSINATURA DIGITAL NO PDF ---
+            let sigContainer = document.getElementById('pdf-signature-container');
+            // Se o espaço da assinatura não existir no HTML, o sistema cria um magicamente
+            if (!sigContainer) {
+                sigContainer = document.createElement('div');
+                sigContainer.id = 'pdf-signature-container';
+                sigContainer.style.textAlign = 'center';
+                sigContainer.style.marginTop = '30px';
+                
+                // Joga a assinatura lá pro final do recibo
+                const warrantyEl = document.getElementById('pdf-warranty-text');
+                if(warrantyEl && warrantyEl.parentNode) {
+                    warrantyEl.parentNode.appendChild(sigContainer);
+                }
+            }
+
+            // Se o cliente assinou, desenha a linha e a imagem
+            if (data.signature) {
+                sigContainer.innerHTML = `
+                    <img src="${data.signature}" style="max-width: 250px; max-height: 100px; display: block; margin: 0 auto; mix-blend-mode: multiply;">
+                    <div style="border-top: 1px solid #333; width: 80%; margin: 0 auto; padding-top: 5px; font-size: 14px; font-weight: bold; color: #333;">
+                        Assinatura do Cliente
+                    </div>
+                `;
+                sigContainer.style.display = 'block';
+            } else {
+                sigContainer.style.display = 'none'; // Esconde se não tiver assinatura
+            }
+            // --- FIM: ASSINATURA DIGITAL NO PDF ---
+
 
             // Logotipo
             const savedLogo = localStorage.getItem('oficina_logo'); 
@@ -2556,6 +3331,10 @@ window.renderExpensesList = function() {
         /* --- ESTILOS DO MODO VENDEDOR (V2 - BLINDADO) --- */
     body.employee-mode .tab-content#tab-dashboard,
     body.employee-mode .tab-content#tab-expenses,
+        body.employee-mode .nav-item[onclick*="crm"] {
+        display: none !important;
+    }
+
     body.employee-mode .tab-content#tab-settings {
         display: none !important;
     }
@@ -2635,9 +3414,68 @@ window.renderExpensesList = function() {
     animation: slideDown 0.3s ease;
 }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- ESTILOS PARA IMPRESSORA TÉRMICA (CUPOM 58mm) --- */
+        @media screen {
+            #thermal-receipt { display: none !important; }
+        }
+        @media print {
+            body > *:not(#thermal-receipt) { display: none !important; }
+            #pdf-overlay { display: none !important; }
+            
+            /* A MÁGICA: Define o tamanho do papel como 58mm de largura e altura "automática" (para cortar certinho no fim) */
+            @page { 
+                margin: 0; 
+                size: 58mm auto; 
+            }
+            
+            body { 
+                margin: 0; 
+                padding: 0; 
+                background: white; 
+                width: 58mm;
+            }
+            
+            #thermal-receipt { 
+                display: block !important; 
+                width: 58mm !important; 
+                margin: 0; 
+                padding: 2mm 0; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 11px; 
+                color: #000;
+                line-height: 1.2;
+                overflow: hidden;
+            }
+            
+            /* Ajustes finos para caber nos 58mm sem quebrar palavras */
+            .t-line { border-top: 1px dashed #000; margin: 4px 0; }
+            .t-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+            .t-center { text-align: center; }
+            .t-bold { font-weight: bold; }
+            
+            /* Força a quebra de linha em nomes longos */
+            #therm-items span { word-break: break-word; }
+        }
 
 
 </style>
+
+        <div id="signatureModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="color: #2c3e50; margin-bottom: 5px;">Assinatura Digital</h3>
+            <p style="font-size: 12px; color: #7f8c8d; margin-bottom: 15px;">Peça ao cliente para assinar no quadro abaixo:</p>
+            
+            <canvas id="sigCanvas" width="300" height="150" style="border: 2px solid #bdc3c7; border-radius: 8px; background: #f9f9f9; touch-action: none; display: block; margin: 0 auto; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);"></canvas>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn-action" style="background: #e74c3c; color: white; flex: 1; border-radius: 8px; font-weight: bold;" onclick="clearSignature()"><i class="fas fa-eraser"></i> Limpar</button>
+                <button class="btn-action" style="background: #2ecc71; color: white; flex: 1; border-radius: 8px; font-weight: bold;" onclick="confirmSignature()"><i class="fas fa-check"></i> Confirmar</button>
+            </div>
+            <button class="btn-action" style="background: white; color: #7f8c8d; border: 1px solid #bdc3c7; margin-top: 10px; border-radius: 8px; width: 100%; font-weight: bold;" onclick="document.getElementById('signatureModal').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+
+
 
 <script>
     // --- GERADOR DE APP (FUNCIONA EM QUALQUER CELULAR) ---
@@ -2789,6 +3627,193 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 </script>
+        <div id="modal-checklist" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; align-items:center; justify-content:center; flex-direction:column;">
+        <div style="background:var(--bg); width:95%; max-width:400px; padding:20px; border-radius:16px; max-height:80vh; overflow-y:auto;">
+            <h3 style="text-align:center; color:var(--dark); margin-bottom:15px;"><i class="fas fa-search"></i> Inspeção do Veículo</h3>
+            <label style="text-align:center; margin-bottom:10px;">Toque na peça para marcar a avaria:</label>
+            
+             <svg id="car-svg" viewBox="0 0 200 380" style="width:100%; max-width:260px; margin:0 auto; display:block; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.15));">
+                 <ellipse cx="100" cy="190" rx="95" ry="185" fill="#000" opacity="0.05"/>
+                 
+                <rect x="15" y="60" width="20" height="50" rx="8" fill="#2c3e50"/>
+                <rect x="165" y="60" width="20" height="50" rx="8" fill="#2c3e50"/>
+                <rect x="15" y="270" width="20" height="50" rx="8" fill="#2c3e50"/>
+                <rect x="165" y="270" width="20" height="50" rx="8" fill="#2c3e50"/>
+
+                <g stroke="#95a5a6" fill="#ecf0f1" stroke-linejoin="round">
+                    /* --- FRENTE --- */
+                    <path id="part-Para-choque Dianteiro" class="car-part" d="M 40 20 Q 100 5 160 20 L 160 45 L 40 45 Z" onclick="selectCarPart('Para-choque Dianteiro')"/>
+                    <path id="part-Farol Esquerdo" class="car-part car-light-front" d="M 20 25 Q 30 22 40 25 L 40 45 L 22 42 Z" onclick="selectCarPart('Farol Esquerdo')"/>
+                    <path id="part-Farol Direito" class="car-part car-light-front" d="M 180 25 Q 170 22 160 25 L 160 45 L 178 42 Z" onclick="selectCarPart('Farol Direito')"/>
+                    <path id="part-Capô" class="car-part" d="M 40 45 L 160 45 L 155 110 L 45 110 Z" onclick="selectCarPart('Capô')"/>
+                    
+                    <path id="part-Para-lama Dianteiro Esq." class="car-part" d="M 20 45 L 40 45 L 45 110 L 38 145 L 20 140 Z" onclick="selectCarPart('Para-lama Dianteiro Esq.')"/>
+                    <path id="part-Para-lama Dianteiro Dir." class="car-part" d="M 180 45 L 160 45 L 155 110 L 162 145 L 180 140 Z" onclick="selectCarPart('Para-lama Dianteiro Dir.')"/>
+
+                    /* --- CABINE E VIDROS --- */
+                    <path id="part-Para-brisa" class="car-part car-glass" d="M 48 110 L 152 110 L 145 145 L 55 145 Z" onclick="selectCarPart('Para-brisa')"/>
+                    <rect id="part-Teto" class="car-part" x="55" y="145" width="90" height="105" onclick="selectCarPart('Teto')"/>
+                    <path id="part-Vidro Traseiro" class="car-part car-glass" d="M 55 250 L 145 250 L 152 275 L 48 275 Z" onclick="selectCarPart('Vidro Traseiro')"/>
+
+                    /* --- LATERAIS ESQUERDA (PORTAS LARGAS) --- */
+                    <path id="part-Retrovisor Esq." class="car-part" d="M 30 130 L 5 125 L 5 145 L 20 140 Z" fill="#bdc3c7" onclick="selectCarPart('Retrovisor Esq.')"/>
+                    <path id="part-Coluna A Esq." class="car-part" d="M 45 110 L 48 110 L 38 145 L 35 130 Z" onclick="selectCarPart('Coluna A Esq.')"/>
+                    <path id="part-Vidro Lateral Diant. Esq." class="car-part car-glass" d="M 38 145 L 55 145 L 55 200 L 38 200 Z" onclick="selectCarPart('Vidro Lateral Diant. Esq.')"/>
+                    
+                    <path id="part-Porta Dianteira Esq." class="car-part" d="M 20 140 L 38 145 L 38 200 L 20 200 Z" onclick="selectCarPart('Porta Dianteira Esq.')"/>
+                    <rect id="part-Coluna B Esq." class="car-part" x="53" y="145" width="4" height="105" onclick="selectCarPart('Coluna B Esq.')"/>
+                    <path id="part-Vidro Lateral Tras. Esq." class="car-part car-glass" d="M 38 200 L 55 200 L 55 250 L 40 265 Z" onclick="selectCarPart('Vidro Lateral Tras. Esq.')"/>
+                    <path id="part-Porta Traseira Esq." class="car-part" d="M 20 200 L 38 200 L 40 265 L 25 270 Z" onclick="selectCarPart('Porta Traseira Esq.')"/>
+                    <path id="part-Coluna C Esq." class="car-part" d="M 55 250 L 48 275 L 35 270 L 40 265 Z" onclick="selectCarPart('Coluna C Esq.')"/>
+
+                    /* --- LATERAIS DIREITA (PORTAS LARGAS) --- */
+                    <path id="part-Retrovisor Dir." class="car-part" d="M 170 130 L 195 125 L 195 145 L 180 140 Z" fill="#bdc3c7" onclick="selectCarPart('Retrovisor Dir.')"/>
+                    <path id="part-Coluna A Dir." class="car-part" d="M 155 110 L 152 110 L 162 145 L 165 130 Z" onclick="selectCarPart('Coluna A Dir.')"/>
+                    <path id="part-Vidro Lateral Diant. Dir." class="car-part car-glass" d="M 162 145 L 145 145 L 145 200 L 162 200 Z" onclick="selectCarPart('Vidro Lateral Diant. Dir.')"/>
+                    
+                    <path id="part-Porta Dianteira Dir." class="car-part" d="M 180 140 L 162 145 L 162 200 L 180 200 Z" onclick="selectCarPart('Porta Dianteira Dir.')"/>
+                    <rect id="part-Coluna B Dir." class="car-part" x="143" y="145" width="4" height="105" onclick="selectCarPart('Coluna B Dir.')"/>
+                    <path id="part-Vidro Lateral Tras. Dir." class="car-part car-glass" d="M 162 200 L 145 200 L 145 250 L 160 265 Z" onclick="selectCarPart('Vidro Lateral Tras. Dir.')"/>
+                    <path id="part-Porta Traseira Dir." class="car-part" d="M 180 200 L 162 200 L 160 265 L 175 270 Z" onclick="selectCarPart('Porta Traseira Dir.')"/>
+                    <path id="part-Coluna C Dir." class="car-part" d="M 145 250 L 152 275 L 165 270 L 160 265 Z" onclick="selectCarPart('Coluna C Dir.')"/>
+
+                    /* --- TRASEIRA --- */
+                    <path id="part-Para-lama Traseiro Esq." class="car-part" d="M 25 270 L 40 265 L 48 275 L 45 320 L 25 320 Z" onclick="selectCarPart('Para-lama Traseiro Esq.')"/>
+                    <path id="part-Para-lama Traseiro Dir." class="car-part" d="M 175 270 L 160 265 L 152 275 L 155 320 L 175 320 Z" onclick="selectCarPart('Para-lama Traseiro Dir.')"/>
+                    <rect id="part-Porta-malas" class="car-part" x="48" y="275" width="104" height="45" onclick="selectCarPart('Porta-malas')"/>
+                    <path id="part-Lanterna Esquerda" class="car-part car-light-rear" d="M 25 320 L 45 320 L 45 335 L 25 330 Z" onclick="selectCarPart('Lanterna Esquerda')"/>
+                    <path id="part-Lanterna Direita" class="car-part car-light-rear" d="M 175 320 L 155 320 L 155 335 L 175 330 Z" onclick="selectCarPart('Lanterna Direita')"/>
+                    <path id="part-Para-choque Traseiro" class="car-part" d="M 25 330 L 45 335 L 155 335 L 175 330 Q 100 360 25 330 Z" onclick="selectCarPart('Para-choque Traseiro')"/>
+                </g>
+            </svg>
+
+             <label style="text-align:center; margin-top:20px;">Nível de Combustível:</label>
+            <div style="display:flex; gap:5px; justify-content:center; margin-bottom:15px;">
+                <button class="btn-fuel active" id="fuel-Reserva" onclick="setFuel('Reserva')">Reserva</button>
+                <button class="btn-fuel" id="fuel-1/4" onclick="setFuel('1/4')">1/4</button>
+                <button class="btn-fuel" id="fuel-1/2" onclick="setFuel('1/2')">1/2</button>
+                <button class="btn-fuel" id="fuel-3/4" onclick="setFuel('3/4')">3/4</button>
+                <button class="btn-fuel" id="fuel-Cheio" onclick="setFuel('Cheio')">Cheio</button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-action" style="background:#25D366; margin-top:0; font-size:12px;" onclick="sendFullReportWhatsApp()"><i class="fab fa-whatsapp"></i> LAUDO ZAP</button>
+                <button class="btn-action" style="background:var(--green-grad); margin-top:0; font-size:12px;" onclick="closeChecklist()">PRONTO</button>
+            </div>
+        </div>
+    </div>
+
+        <div id="modal-damage" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100000; align-items:center; justify-content:center;">
+        <div style="background:white; width:90%; max-width:320px; padding:20px; border-radius:16px; max-height:85vh; overflow-y:auto;">
+
+            <div id="damage-type-buttons">
+                <h3 style="text-align:center; margin-bottom:15px; font-size:16px;">O que há com: <br><span id="damage-part-name" style="color:var(--primary);"></span>?</h3>
+        <div style="background:#f1f2f6; border-radius:12px; padding:10px; margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:13px; font-weight:bold; color:var(--dark);"><i class="fas fa-layer-group"></i> Quantidade:</span>
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <button type="button" style="background:#bdc3c7; border:none; width:35px; height:35px; border-radius:8px; font-size:18px; font-weight:bold; color:white; cursor:pointer;" onclick="changeDamageQty(-1)">-</button>
+                        <span id="damage-qty-display" style="font-size:20px; font-weight:900; color:var(--primary); min-width:25px; text-align:center;">1</span>
+                        <button type="button" style="background:var(--dark); border:none; width:35px; height:35px; border-radius:8px; font-size:18px; font-weight:bold; color:white; cursor:pointer;" onclick="changeDamageQty(1)">+</button>
+                    </div>
+                </div>
+
+                <button class="btn-action" style="background:#e67e22; margin-top:5px;" onclick="saveDamage('Riscado')">Riscado / Arranhado</button>
+                <button class="btn-action" style="background:#d35400; margin-top:5px;" onclick="saveDamage('Amassado')">Amassado</button>
+                <button class="btn-action" style="background:#c0392b; margin-top:5px;" onclick="saveDamage('Trincado')">Trincado</button>
+                <button class="btn-action" style="background:#8e44ad; margin-top:5px;" onclick="saveDamage('Quebrado')">Quebrado / Faltando</button>
+                <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
+                <button class="btn-action" style="background:#27ae60; margin-top:0;" onclick="saveDamage('')"><i class="fas fa-eraser"></i> Nenhuma Avaria (Limpar)</button>
+                <button class="btn-action" style="background:#7f8c8d; margin-top:10px;" onclick="document.getElementById('modal-damage').style.display='none'">Cancelar</button>
+            </div>
+
+            <div id="damage-photo-section" style="display:none; text-align:center;">
+                <h3 style="margin-bottom:5px; font-size:16px; color:var(--dark);">Avaria: <span id="damage-selected-type" style="color:#c0392b;"></span></h3>
+                <p style="font-size:11px; color:#7f8c8d; margin-bottom:15px;">Deseja anexar uma foto para o laudo final no WhatsApp?</p>
+                
+                <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleDamagePhoto(event)">
+                
+                <button class="btn-action" style="background:#34495e; margin-top:0;" onclick="document.getElementById('camera-input').click()">
+                    <i class="fas fa-camera"></i> TIRAR FOTO (OPCIONAL)
+                </button>
+                
+                <img id="damage-photo-preview" style="width:100%; max-height:180px; object-fit:contain; margin-top:15px; display:none; border-radius:8px; border:2px dashed #ccc;">
+                
+                <button id="btn-save-damage-photo" class="btn-action" style="background:var(--primary); display:none; margin-top:15px;" onclick="confirmDamageWithPhoto()">
+                    <i class="fas fa-check"></i> SALVAR FOTO NO LAUDO
+                </button>
+                
+                <button class="btn-action" style="background:#7f8c8d; margin-top:10px;" onclick="confirmDamageWithoutPhoto()">Apenas marcar no desenho</button>
+            </div>
+        </div>
+    </div>
+       <div id="modal-before-after" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:100000; align-items:center; justify-content:center; flex-direction:column;">
+        <div style="background:white; width:90%; max-width:350px; padding:20px; border-radius:16px; max-height:85vh; overflow-y:auto; position:relative;">
+            <h3 style="text-align:center; margin-bottom:15px; color:var(--dark);"><i class="fas fa-camera-retro" style="color:#8e44ad;"></i> Antes e Depois</h3>
+            <p style="font-size:11px; color:#7f8c8d; text-align:center; margin-bottom:15px;">Adicione quantas fotos quiser para o laudo.</p>
+
+            <div style="background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:15px; text-align:center; border:1px dashed #ccc;">
+                <h4 style="margin:0 0 10px 0; font-size:14px; color:#c0392b;">📸 FOTOS DO ANTES</h4>
+                <input type="file" id="camera-before" accept="image/*" multiple style="display:none;" onchange="handleBA_Photo(event, 'before')">
+                <button class="btn-action" style="background:#bdc3c7; color:#333; margin-top:0; padding:10px; font-size:12px;" onclick="document.getElementById('camera-before').click()">
+                    <i class="fas fa-plus"></i> Adicionar Fotos
+                </button>
+                <div id="preview-before-container" style="display:flex; gap:5px; overflow-x:auto; margin-top:10px; padding-bottom:5px;"></div>
+            </div>
+
+            <div style="background:#f9f9f9; padding:10px; border-radius:12px; margin-bottom:15px; text-align:center; border:1px dashed #ccc;">
+                <h4 style="margin:0 0 10px 0; font-size:14px; color:#27ae60;">📸 FOTOS DO DEPOIS</h4>
+                <input type="file" id="camera-after" accept="image/*" multiple style="display:none;" onchange="handleBA_Photo(event, 'after')">
+                <button class="btn-action" style="background:#bdc3c7; color:#333; margin-top:0; padding:10px; font-size:12px;" onclick="document.getElementById('camera-after').click()">
+                    <i class="fas fa-plus"></i> Adicionar Fotos
+                </button>
+                <div id="preview-after-container" style="display:flex; gap:5px; overflow-x:auto; margin-top:10px; padding-bottom:5px;"></div>
+            </div>
+
+            <button class="btn-action" style="background:#8e44ad; font-size:14px;" onclick="sendBeforeAfterWhatsApp()"><i class="fab fa-whatsapp"></i> ENVIAR LAUDO COMPLETO</button>
+            <button class="btn-action" style="background:#e74c3c; margin-top:10px; font-size:14px;" onclick="closeBeforeAfterModal()">CANCELAR</button>
+        </div>
+    </div>
+    <div id="thermal-receipt">
+        <div class="t-center t-bold" style="font-size:14px;" id="therm-comp-name"></div>
+        <div class="t-center" style="font-size:10px; margin-top:2px;" id="therm-comp-doc"></div>
+        <div class="t-center" style="font-size:10px; margin-bottom:5px;" id="therm-comp-addr"></div>
+        
+        <div class="t-line"></div>
+        <div class="t-center t-bold" style="font-size:14px; margin:5px 0;">RECIBO / <span id="therm-type"></span></div>
+        <div class="t-line"></div>
+        
+        <div style="margin-bottom:5px;">
+            Data: <span id="therm-date"></span><br>
+            Cliente: <span class="t-bold" id="therm-client"></span><br>
+            Veículo: <span id="therm-vehicle"></span>
+        </div>
+        
+        <div class="t-line"></div>
+        <div class="t-flex t-bold"><span>QTD DESCRIÇÃO</span><span>VALOR</span></div>
+        <div class="t-line"></div>
+        
+        <div id="therm-items" style="margin-bottom:5px;"></div>
+        
+        <div class="t-line"></div>
+        <div class="t-flex" id="therm-discount-row" style="display:none; color:#333;"></div>
+        <div class="t-flex t-bold" style="font-size:13px; margin:5px 0;"><span>TOTAL:</span><span id="therm-total"></span></div>
+        <div class="t-line"></div>
+        
+        <div class="t-center" style="margin-top:5px;">
+            Pagamento: <span class="t-bold" id="therm-pay"></span>
+            <div id="therm-pix" style="display:none; margin-top:3px; font-size:10px;">Chave Pix: <span class="t-bold" id="therm-pix-key"></span></div>
+        </div>
+        
+        <div class="t-center" style="margin-top:30px; margin-bottom:10px;">
+            ___________________________<br>
+            Assinatura do Cliente
+        </div>
+        
+        <div class="t-center" style="font-size:9px; margin-top:10px; margin-bottom:20px;" id="therm-warranty"></div>
+        
+        <div class="t-center" style="font-size:9px; margin-bottom:30px;">Gerado pelo Sistema Authon</div>
+    </div>
+
 </body>
 
 </html>

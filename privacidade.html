@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade | Sistema Authon</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:     #0d1b2a;
+            --navy-mid: #1B2D42;
+            --red:      #D92525;
+            --red-dark: #a81c1c;
+            --green:    #00b894;
+            --light:    #f4f6f8;
+            --text:     #1a2332;
+            --muted:    #6b7a8d;
+            --white:    #ffffff;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--navy); color: var(--white); overflow-x: hidden; }
+        h1, h2, h3 { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; line-height: 1.1; }
+        a { text-decoration: none; color: inherit; }
+
+        /* NAVBAR */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 900;
+            background: rgba(13,27,42,0.97);
+            backdrop-filter: blur(12px);
+            padding: 14px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(217,37,37,0.25);
+        }
+        .logo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 24px; font-weight: 800; color: white; letter-spacing: 2px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .logo span { color: var(--red); }
+        .btn-back {
+            background: transparent; color: rgba(255,255,255,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 8px 18px; border-radius: 6px;
+            font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-back:hover { color: white; border-color: rgba(255,255,255,0.4); }
+
+        /* HERO */
+        .page-hero {
+            background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 60%, #111e30 100%);
+            padding: 130px 5% 70px;
+            text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        .page-hero::after {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(217,37,37,0.08) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%,-50%);
+        }
+        .page-hero-content { position: relative; z-index: 1; }
+        .page-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(217,37,37,0.12); border: 1px solid rgba(217,37,37,0.25);
+            color: #ff8080; padding: 6px 16px; border-radius: 30px;
+            font-size: 11px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 20px;
+        }
+        .page-hero h1 {
+            font-size: clamp(36px, 6vw, 64px);
+            color: white; font-weight: 800; margin-bottom: 16px;
+        }
+        .page-hero h1 span { color: var(--red); }
+        .page-hero p {
+            color: rgba(255,255,255,0.45); font-size: 15px; font-weight: 300;
+        }
+
+        /* CONTENT */
+        .content-wrap {
+            max-width: 860px; margin: 0 auto;
+            padding: 60px 5% 100px;
+        }
+
+        .section {
+            margin-bottom: 48px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 36px 40px;
+            transition: border-color 0.2s;
+        }
+        .section:hover { border-color: rgba(217,37,37,0.2); }
+
+        .section-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(217,37,37,0.15); border: 1px solid rgba(217,37,37,0.25);
+            color: var(--red); font-family: 'Barlow Condensed', sans-serif;
+            font-size: 16px; font-weight: 700; margin-bottom: 14px;
+        }
+
+        .section h2 {
+            font-size: 20px; font-weight: 700; color: white;
+            margin-bottom: 16px; letter-spacing: 0.5px;
+        }
+
+        .section p {
+            font-size: 14px; line-height: 1.8;
+            color: rgba(255,255,255,0.55); margin-bottom: 12px;
+        }
+        .section p:last-child { margin-bottom: 0; }
+
+        .section ul {
+            list-style: none; margin: 12px 0;
+        }
+        .section ul li {
+            display: flex; align-items: flex-start; gap: 10px;
+            font-size: 14px; color: rgba(255,255,255,0.55);
+            margin-bottom: 10px; line-height: 1.7;
+        }
+        .section ul li::before {
+            content: '';
+            display: block; width: 6px; height: 6px; border-radius: 50%;
+            background: var(--red); margin-top: 7px; flex-shrink: 0;
+        }
+
+        .highlight-box {
+            background: rgba(0,184,148,0.07);
+            border: 1px solid rgba(0,184,148,0.2);
+            border-radius: 10px; padding: 16px 20px;
+            margin-top: 16px;
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .highlight-box i { color: var(--green); margin-top: 2px; flex-shrink: 0; }
+        .highlight-box p { color: rgba(255,255,255,0.6); font-size: 13px; margin: 0; }
+
+        .contact-box {
+            background: linear-gradient(135deg, rgba(217,37,37,0.08), rgba(13,27,42,0.5));
+            border: 1px solid rgba(217,37,37,0.2);
+            border-radius: 16px; padding: 32px 40px;
+            margin-top: 48px; text-align: center;
+        }
+        .contact-box h3 {
+            font-size: 22px; color: white; margin-bottom: 8px; letter-spacing: 0.5px;
+        }
+        .contact-box p { font-size: 14px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+        .contact-box a {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--red); color: white;
+            padding: 12px 28px; border-radius: 8px;
+            font-weight: 700; font-size: 14px; font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s;
+        }
+        .contact-box a:hover { background: var(--red-dark); transform: translateY(-2px); }
+
+        /* FOOTER */
+        footer {
+            background: #070f1a;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 28px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 12px;
+        }
+        footer p { font-size: 13px; color: rgba(255,255,255,0.25); }
+        footer a { font-size: 13px; color: rgba(255,255,255,0.3); transition: color 0.2s; }
+        footer a:hover { color: white; }
+        .footer-links { display: flex; gap: 20px; }
+
+        @media (max-width: 768px) {
+            .section { padding: 24px 20px; }
+            .content-wrap { padding: 40px 16px 80px; }
+            footer { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">
+        <img src="logo-icone-web.png" alt="Authon" style="height:32px; width:auto;">
+        AUTH<span>ON</span>
+    </div>
+    <a href="index.html" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Voltar ao site
+    </a>
+</nav>
+
+<section class="page-hero">
+    <div class="page-hero-content">
+        <div class="page-badge"><i class="fas fa-shield-alt"></i> LGPD Compliant</div>
+        <h1>POLÍTICA DE <span>PRIVACIDADE</span></h1>
+        <p>Última atualização: 30 de abril de 2026</p>
+    </div>
+</section>
+
+<div class="content-wrap">
+
+    <div class="section">
+        <div class="section-num">1</div>
+        <h2>Quem Somos</h2>
+        <p>O Sistema Authon é um software de gestão automotiva operado por <strong style="color:white;">Ewerton Antonio Farias da Silva</strong>, CPF 704.864.224-61, com sede em Petrolina – Pernambuco.</p>
+        <p>E-mail de contato: <strong style="color:var(--green);">fariassolucoestecnologicas@gmail.com</strong></p>
+        <div class="highlight-box">
+            <i class="fas fa-info-circle"></i>
+            <p>Neste documento, nos referimos ao operador como "nós", "nosso" ou "Sistema Authon".</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-num">2</div>
+        <h2>Quais Dados Coletamos</h2>
+        <p>Coletamos os seguintes dados pessoais no momento do cadastro e durante o uso da plataforma:</p>
+        <ul>
+            <li>Nome completo e nome da oficina</li>
+            <li>Endereço de e-mail e telefone</li>
+            <li>Dados de acesso (e-mail e senha criptografada via Firebase Authentication)</li>
+            <li>Dados financeiros da oficina inseridos pelo próprio usuário (clientes, orçamentos, ordens de serviço)</li>
+            <li>Informações de pagamento processadas pelo Mercado Pago (não armazenamos dados de cartão)</li>
+            <li>Data e hora de acesso, tipo de dispositivo e endereço IP (coletados automaticamente)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-num">3</div>
+        <h2>Como Usamos Seus Dados</h2>
+        <p>Utilizamos seus dados exclusivamente para:</p>
+        <ul>
+            <li>Criar e manter sua conta no sistema</li>
+            <li>Processar o pagamento da assinatura via Mercado Pago</li>
+            <li>Enviar e-mails transacionais (boas-vindas, confirmação de pagamento, recuperação de senha)</li>
+            <li>Garantir a segurança e o funcionamento do sistema</li>
+            <li>Cumprir obrigações legais</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-num">4</div>
+        <h2>Base Legal (LGPD)</h2>
+        <p>O tratamento dos seus dados é fundamentado nas seguintes bases legais previstas na Lei Geral de Proteção de Dados (Lei nº 13.709/2018):</p>
+        <ul>
+            <li><strong style="color:white;">Execução de contrato:</strong> para prestação do serviço de assinatura</li>
+            <li><strong style="color:white;">Legítimo interesse:</strong> para segurança, prevenção de fraudes e melhoria do sistema</li>
+            <li><strong style="color:white;">Cumprimento de obrigação legal:</strong> quando exigido por lei</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-num">5</div>
+        <h2>Compartilhamento de Dados</h2>
+        <p>Não vendemos seus dados. Compartilhamos apenas com parceiros essenciais para operação do serviço:</p>
+        <ul>
+            <li><strong style="color:white;">Mercado Pago:</strong> para processamento de pagamentos</li>
+            <li><strong style="color:white;">Brevo (Sendinblue):</strong> para envio de e-mails transacionais</li>
+            <li><strong style="color:white;">Google Firebase:</strong> para autenticação, banco de dados e hospedagem</li>
+        </ul>
+        <div class="highlight-box">
+            <i class="fas fa-check-circle"></i>
+            <p>Todos os parceiros possuem políticas de privacidade próprias e estão em conformidade com a LGPD e GDPR.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-num">6</div>
+        <h2>Armazenamento e Segurança</h2>
+        <p>Seus dados são armazenados nos servidores do Google Firebase (Google Cloud), com infraestrutura segura e criptografada. Adotamos as seguintes medidas:</p>
+        <ul>
+            <li>Autenticação com senha criptografada</li>
+            <li>Regras de acesso no banco de dados (Firestore Security Rules)</li>
+            <li>Comunicação via HTTPS/TLS</li>
+            <li>Tokens de API armazenados em variáveis de ambiente seguras (nunca expostos no frontend)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <div class="section-num">7</div>
+        <h2>Seus Direitos como Titular</h2>
+        <p>Nos termos da LGPD, você tem direito a:</p>
+        <ul>
+            <li>Confirmar a existência de tratamento dos seus dados</li>
+            <li>Acessar seus dados pessoais</li>
+            <li>Corrigir dados incompletos, inexatos ou desatualizados</li>
+            <li>Solicitar a anonimização, bloqueio ou eliminação de dados desnecessários</li>
+            <li>Revogar o consentimento a qualquer momento</li>
+            <li>Solicitar a portabilidade dos seus dados</li>
+        </ul>
+        <div class="highlight-box">
+            <i class="fas fa-envelope"></i>
+            <p>Para exercer qualquer desses direitos, entre em contato pelo e-mail: <strong>fariassolucoestecnologicas@gmail.com</strong></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-num">8</div>
+        <h2>Retenção de Dados</h2>
+        <p>Seus dados são mantidos enquanto sua conta estiver ativa. Após o cancelamento da assinatura, mantemos os dados por até <strong style="color:white;">90 dias</strong> para fins de recuperação, após o que são excluídos definitivamente, salvo obrigação legal em contrário.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-num">9</div>
+        <h2>Cookies e Armazenamento Local</h2>
+        <p>O sistema utiliza armazenamento local (localStorage) no seu navegador para manter sessões ativas e preferências de uso. <strong style="color:white;">Não utilizamos cookies de rastreamento ou publicidade.</strong></p>
+    </div>
+
+    <div class="section">
+        <div class="section-num">10</div>
+        <h2>Alterações nesta Política</h2>
+        <p>Podemos atualizar esta política periodicamente. Quando isso ocorrer, notificaremos por e-mail e atualizaremos a data no topo deste documento. O uso continuado do sistema após a notificação constitui aceitação das mudanças.</p>
+    </div>
+
+    <div class="contact-box">
+        <h3>DÚVIDAS SOBRE PRIVACIDADE?</h3>
+        <p>Entre em contato com o responsável pelo tratamento de dados</p>
+        <a href="mailto:fariassolucoestecnologicas@gmail.com">
+            <i class="fas fa-envelope"></i> fariassolucoestecnologicas@gmail.com
+        </a>
+    </div>
+
+</div>
+
+<footer>
+    <p>© 2026 Sistema Authon · Ewerton Antonio Farias da Silva · CPF 704.864.224-61 · Petrolina – PE</p>
+    <div class="footer-links">
+        <a href="privacidade.html">Privacidade</a>
+        <a href="termos.html">Termos de Uso</a>
+        <a href="index.html">
+            <img src="logo-icone.webp" alt="Authon" style="height:20px; width:auto; vertical-align:middle; margin-right:4px; opacity:0.5;">
+            Voltar ao site
+        </a>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -125,36 +125,24 @@ function mostrarToastSucesso() {
 }
 
 // ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
+// Token do MP fica seguro na Cloud Function — nunca exposto no frontend
 async function verificarAssinaturaAposRetorno(user) {
     try {
-        const MP_TOKEN = 'APP_USR-6456093788550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
         const res = await fetch(
-            `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(user.email)}&status=authorized`,
-            { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
+            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinatura',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, uid: user.uid })
+            }
         );
         const data = await res.json();
-        const ativa = (data.results || []).find(a => a.status === 'authorized');
 
-        if (ativa) {
-            const { collection, query, where, getDocs, updateDoc, doc } =
-                await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const q = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                const cfg = snap.docs[0].data();
-                const jaAtivo = cfg.status === 'ativo';
-
-                await updateDoc(doc(db, "configuracoes", snap.docs[0].id), {
-                    status: 'ativo',
-                    assinaturaId: ativa.id,
-                    planoExpira: ativa.next_payment_date || '',
-                });
-                console.log('✅ Conta ativada após retorno do MP');
-
-                // Envia e-mail de boas-vindas apenas se era pendente (primeira ativação)
-                if (!jaAtivo) {
-                    await enviarEmailBoasVindas(user.email, cfg.nome || '');
-                }
+        if (data.ativa) {
+            console.log('✅ Conta ativada após retorno do MP');
+            // Envia e-mail de boas-vindas apenas na primeira ativação
+            if (data.primeiraAtivacao) {
+                await enviarEmailBoasVindas(user.email, data.nome || '');
             }
         }
     } catch(err) {
@@ -218,7 +206,7 @@ function mostrarTelaPendente(plano, periodicidade) {
                 <i class="fas fa-lock"></i> FINALIZAR PAGAMENTO
             </a>
             <p style="font-size:12px; color:rgba(255,255,255,0.3); margin:12px 0;">
-                Já pagou? <a onclick="verificarPagamentoManual()" style="color:#00b894; cursor:pointer;">Clique aqui para verificar</a>
+                Já pagou? <a id="btn-verificar-pagamento" style="color:#00b894; cursor:pointer;">Clique aqui para verificar</a>
             </p>
             <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
                 style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; margin-top:8px;">
@@ -227,13 +215,27 @@ function mostrarTelaPendente(plano, periodicidade) {
         </div>
     `;
     document.body.appendChild(overlay);
+
+    // ── Vincula o botão "Já pagou?" via addEventListener (evita problema de escopo de módulo ES6) ──
+    const btnVerificar = document.getElementById('btn-verificar-pagamento');
+    if (btnVerificar) {
+        btnVerificar.addEventListener('click', function() {
+            window.verificarPagamentoManual();
+        });
+    }
 }
 
 async function verificarPagamentoManual() {
     const user = window.auth ? window.auth.currentUser : auth.currentUser;
     if(!user) return;
-    const link = document.querySelector('#pendente-overlay a');
-    if(link) link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+
+    // Feedback visual no botão
+    const btn = document.getElementById('btn-verificar-pagamento');
+    if(btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+        btn.style.pointerEvents = 'none';
+    }
+
     await verificarAssinaturaAposRetorno(user);
     setTimeout(() => window.location.reload(), 1500);
 }
@@ -323,26 +325,25 @@ function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
 }
 
 // ── VERIFICA ASSINATURA NO MERCADO PAGO ──
+// Token do MP fica seguro na Cloud Function — nunca exposto no frontend
 async function verificarAssinaturaMP(email, docId) {
     try {
-        const MP_TOKEN = 'APP_USR-6456093788550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
+        const user = auth.currentUser;
+        if (!user) return;
+
         const res = await fetch(
-            `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(email)}&status=authorized`,
-            { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
+            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinatura',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, uid: user.uid })
+            }
         );
         const data = await res.json();
-        const assinaturas = data.results || [];
-        const ativa = assinaturas.find(a => a.status === 'authorized');
 
-        if (ativa) {
-            // Tem assinatura ativa no MP — atualiza status no Firestore
-            const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            await updateDoc(doc(db, "configuracoes", docId), {
-                status: 'ativo',
-                assinaturaId: ativa.id,
-                planoExpira: ativa.next_payment_date || '',
-            });
+        if (data.ativa) {
             console.log('✅ Assinatura verificada no MP — status atualizado para ativo');
+            // Firestore já foi atualizado pela Cloud Function
         } else {
             // Sem assinatura ativa no MP
             mostrarTelaUpgrade(null, true);

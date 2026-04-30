@@ -125,22 +125,21 @@ function mostrarToastSucesso() {
 }
 
 // ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
-// Token do MP fica seguro na Cloud Function — nunca exposto no frontend
+// Usa uid apenas — payer_email pode vir vazio no MP
 async function verificarAssinaturaAposRetorno(user) {
     try {
         const res = await fetch(
-            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinatura',
+            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinaturaV2',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: user.email, uid: user.uid })
+                body: JSON.stringify({ uid: user.uid })
             }
         );
         const data = await res.json();
 
         if (data.ativa) {
             console.log('✅ Conta ativada após retorno do MP');
-            // Envia e-mail de boas-vindas apenas na primeira ativação
             if (data.primeiraAtivacao) {
                 await enviarEmailBoasVindas(user.email, data.nome || '');
             }
@@ -325,32 +324,30 @@ function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
 }
 
 // ── VERIFICA ASSINATURA NO MERCADO PAGO ──
-// Token do MP fica seguro na Cloud Function — nunca exposto no frontend
+// ── VERIFICA ASSINATURA NO MERCADO PAGO ──
+// Usa uid apenas — payer_email pode vir vazio no MP
 async function verificarAssinaturaMP(email, docId) {
     try {
         const user = auth.currentUser;
         if (!user) return;
 
         const res = await fetch(
-            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinatura',
+            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinaturaV2',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: user.email, uid: user.uid })
+                body: JSON.stringify({ uid: user.uid })
             }
         );
         const data = await res.json();
 
         if (data.ativa) {
             console.log('✅ Assinatura verificada no MP — status atualizado para ativo');
-            // Firestore já foi atualizado pela Cloud Function
         } else {
-            // Sem assinatura ativa no MP
             mostrarTelaUpgrade(null, true);
         }
     } catch(err) {
         console.error('Erro ao verificar MP:', err);
-        // Em caso de erro na API, não bloqueia o usuário
     }
 }
 

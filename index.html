@@ -797,17 +797,25 @@
             <div class="modal-tab"        id="tab-login"    onclick="switchTab('login')">Já sou cliente</div>
         </div>
 
-        <!-- SELETOR DE PLANO → CHECKOUT MP -->
+        <!-- FORMULÁRIO DE CADASTRO → CHECKOUT MP -->
         <div class="modal-form active" id="form-cadastro">
 
-            <div style="background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.2); border-radius:10px; padding:12px 14px; margin-bottom:18px; text-align:center;">
-                <div style="font-size:13px; color:rgba(255,255,255,0.7); line-height:1.7;">
-                    ✅ <strong style="color:#00b894;">Sua conta é criada automaticamente</strong><br>
-                    <span style="font-size:12px; color:rgba(255,255,255,0.4);">Após o pagamento você recebe o acesso por e-mail. Sem burocracia.</span>
-                </div>
-            </div>
+            <label>Nome completo</label>
+            <input type="text" class="modal-input" id="reg-name" placeholder="Ex: João Silva">
 
-            <label style="margin-top:4px;">Periodicidade</label>
+            <label>Nome da Oficina / Estética</label>
+            <input type="text" class="modal-input" id="reg-oficina" placeholder="Ex: Oficina do João">
+
+            <label>Telefone / WhatsApp</label>
+            <input type="tel" class="modal-input" id="reg-phone" placeholder="(11) 99999-9999">
+
+            <label>E-mail</label>
+            <input type="email" class="modal-input" id="reg-email" placeholder="seu@email.com">
+
+            <label>Senha</label>
+            <input type="password" class="modal-input" id="reg-pass" placeholder="Mínimo 6 caracteres">
+
+            <label style="margin-top:12px;">Periodicidade</label>
             <div class="billing-toggle" style="margin-bottom:12px; width:100%; justify-content:center;">
                 <button class="billing-btn active" id="modal-btn-mensal" onclick="setModalBilling('mensal')" style="flex:1; text-align:center;">Mensal</button>
                 <button class="billing-btn" id="modal-btn-anual" onclick="setModalBilling('anual')" style="flex:1; text-align:center;">Anual <span class="billing-save-badge" style="font-size:9px;">2 meses grátis</span></button>
@@ -832,11 +840,13 @@
 
             <div class="modal-trial-note">
                 <i class="fas fa-gift"></i>
-                7 dias grátis · Cobrado automaticamente pelo Mercado Pago
+                7 dias grátis · Cancele quando quiser
             </div>
 
-            <button class="btn-modal-submit" id="btn-cadastrar" onclick="goToCheckout(selectedPlan)">
-                <i class="fas fa-lock"></i> IR PARA O PAGAMENTO SEGURO
+            <div class="modal-error" id="reg-error"></div>
+
+            <button class="btn-modal-submit" id="btn-cadastrar" onclick="cadastrarEPagar()">
+                <i class="fas fa-lock"></i> CRIAR CONTA E PAGAR
             </button>
 
             <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:14px; flex-wrap:wrap;">
@@ -852,7 +862,7 @@
             </div>
 
             <div class="modal-switch">
-                Já pagou? <a onclick="switchTab('login')">Fazer login</a>
+                Já tem conta? <a onclick="switchTab('login')">Fazer login</a>
             </div>
 
         </div><!-- /form-cadastro -->
@@ -1030,6 +1040,53 @@
         });
     }
 
+    // ── CADASTRO + REDIRECT MP ──
+    async function cadastrarEPagar() {
+        const name    = document.getElementById('reg-name').value.trim();
+        const oficina = document.getElementById('reg-oficina').value.trim();
+        const phone   = document.getElementById('reg-phone').value.trim();
+        const email   = document.getElementById('reg-email').value.trim();
+        const pass    = document.getElementById('reg-pass').value;
+
+        if(!name || !oficina || !phone || !email || !pass)
+            return showError('reg-error', 'Preencha todos os campos.');
+        if(pass.length < 6)
+            return showError('reg-error', 'A senha deve ter pelo menos 6 caracteres.');
+
+        const btn = document.getElementById('btn-cadastrar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            const uid  = cred.user.uid;
+
+            await db.collection('configuracoes').add({
+                uid,
+                nome:          name,
+                nomeOficina:   oficina,
+                telefone:      phone,
+                email,
+                plano:         selectedPlan,
+                periodicidade: billingCycle,
+                status:        'trial',
+                criadoEm:      new Date().toISOString(),
+            });
+
+            // Redireciona pro MP
+            goToCheckout(selectedPlan);
+
+        } catch(e) {
+            let msg = 'Erro ao criar conta. Tente novamente.';
+            if(e.code === 'auth/email-already-in-use') msg = 'Este e-mail já está cadastrado. Faça login.';
+            if(e.code === 'auth/invalid-email')        msg = 'E-mail inválido.';
+            if(e.code === 'auth/weak-password')        msg = 'Senha muito fraca.';
+            showError('reg-error', msg);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-lock"></i> CRIAR CONTA E PAGAR';
+        }
+    }
+
     // ── LOGIN ──
     async function entrar() {
         const email = document.getElementById('log-email').value.trim();
@@ -1071,10 +1128,11 @@
         }
     }
 
-    // Enter no login
+    // Enter nos inputs
     document.addEventListener('keydown', function(e) {
         if(e.key !== 'Enter') return;
-        if(document.getElementById('form-login').classList.contains('active')) entrar();
+        if(document.getElementById('form-cadastro').classList.contains('active')) cadastrarEPagar();
+        else entrar();
     });
 
     // Se já está logado, vai direto pro app

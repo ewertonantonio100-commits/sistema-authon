@@ -76,40 +76,84 @@
 
         
         // --- GUARDA DE SEGURANÇA (ATUALIZADA) ---
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     const splash = document.getElementById('loading-screen');
     const loginScreen = document.getElementById('login-screen');
-    const appNav = document.querySelector('.bottom-nav'); // O menu de baixo
+    const appNav = document.querySelector('.bottom-nav');
 
     if (user) {
-        // --- USUÁRIO LOGADO ---
-        // 1. Inicia o sistema (baixa dados)
-        iniciarSistema();
-        
-        // 2. Garante que o login continue escondido
-        if(loginScreen) loginScreen.style.display = 'none';
-        
-        // 3. Mostra o menu de navegação
-        if(appNav) appNav.style.display = 'flex';
+        // Verifica se voltou do MP com sucesso
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('sucesso') === '1') {
+            // Remove o parâmetro da URL sem recarregar
+            window.history.replaceState({}, '', 'app.html');
+            // Mostra tela de carregamento enquanto verifica
+            mostrarToastSucesso();
+            // Aguarda 3 segundos para o webhook processar, depois verifica
+            await new Promise(r => setTimeout(r, 3000));
+            await verificarAssinaturaAposRetorno(user);
+        }
 
-        // 4. Remove a tela de carregamento suavemente
+        iniciarSistema();
+        if(loginScreen) loginScreen.style.display = 'none';
+        if(appNav) appNav.style.display = 'flex';
         if(splash) {
             splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 500); // Espera a transição
+            setTimeout(() => splash.style.display = 'none', 500);
         }
 
     } else {
-        // --- USUÁRIO NÃO LOGADO ---
-        // 1. Mostra a tela de login
         if(loginScreen) loginScreen.style.display = 'flex';
-        
-        // 2. Esconde o menu de navegação (para não vazar o app)
         if(appNav) appNav.style.display = 'none';
-
-        // 3. Remove a tela de carregamento (agora o usuário vê o login)
         if(splash) splash.style.display = 'none';
     }
 });
+
+// ── TOAST DE SUCESSO APÓS PAGAMENTO ──
+function mostrarToastSucesso() {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: #00b894; color: white; padding: 14px 24px; border-radius: 12px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px;
+        z-index: 99999; box-shadow: 0 8px 24px rgba(0,184,148,0.4);
+        display: flex; align-items: center; gap: 10px;
+    `;
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> Pagamento confirmado! Ativando sua conta...';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
+async function verificarAssinaturaAposRetorno(user) {
+    try {
+        const MP_TOKEN = 'APP_USR-6456093786550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
+        const res = await fetch(
+            `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(user.email)}&status=authorized`,
+            { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
+        );
+        const data = await res.json();
+        const ativa = (data.results || []).find(a => a.status === 'authorized');
+
+        if (ativa) {
+            // Busca o documento do usuário no Firestore
+            const { collection, query, where, getDocs, updateDoc, doc } =
+                await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const q = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                await updateDoc(doc(db, "configuracoes", snap.docs[0].id), {
+                    status: 'ativo',
+                    assinaturaId: ativa.id,
+                    planoExpira: ativa.next_payment_date || '',
+                });
+                console.log('✅ Conta ativada após retorno do MP');
+            }
+        }
+    } catch(err) {
+        console.error('Erro ao verificar assinatura:', err);
+    }
+}
 
 
 // ── TELA DE UPGRADE / TRIAL EXPIRADO ──
@@ -195,6 +239,37 @@ function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
     document.body.appendChild(overlay);
 }
 
+// ── VERIFICA ASSINATURA NO MERCADO PAGO ──
+async function verificarAssinaturaMP(email, docId) {
+    try {
+        const MP_TOKEN = 'APP_USR-6456093786550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
+        const res = await fetch(
+            `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(email)}&status=authorized`,
+            { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
+        );
+        const data = await res.json();
+        const assinaturas = data.results || [];
+        const ativa = assinaturas.find(a => a.status === 'authorized');
+
+        if (ativa) {
+            // Tem assinatura ativa no MP — atualiza status no Firestore
+            const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            await updateDoc(doc(db, "configuracoes", docId), {
+                status: 'ativo',
+                assinaturaId: ativa.id,
+                planoExpira: ativa.next_payment_date || '',
+            });
+            console.log('✅ Assinatura verificada no MP — status atualizado para ativo');
+        } else {
+            // Sem assinatura ativa no MP
+            mostrarTelaUpgrade(null, true);
+        }
+    } catch(err) {
+        console.error('Erro ao verificar MP:', err);
+        // Em caso de erro na API, não bloqueia o usuário
+    }
+}
+
 // ── FIM TELA UPGRADE ──
 function iniciarSistema() {
     const user = auth.currentUser;
@@ -228,17 +303,41 @@ function iniciarSistema() {
                 return;
             }
 
-            // --- VERIFICA TRIAL EXPIRADO ---
-            const hoje = new Date().toLocaleDateString('en-CA');
+            // --- VERIFICA STATUS DO PLANO ---
+            const hoje = new Date();
+
             if (cfg.status === 'admin') {
-    // Conta de teste/admin — acesso liberado sem verificação
-} else if (cfg.status === 'trial' && cfg.trialExpira && cfg.trialExpira < hoje && user.email !== window.ADMIN_EMAIL) {
-    mostrarTelaUpgrade(cfg.trialExpira);
-    return;
-} else if (cfg.status === 'ativo' && cfg.planoExpira && cfg.planoExpira < hoje && user.email !== window.ADMIN_EMAIL) {
-    mostrarTelaUpgrade(null, true);
-    return;
-}
+                // Conta admin — acesso liberado
+            } else if (cfg.status === 'bloqueado') {
+                alert("⚠️ Acesso suspenso. Entre em contato com o suporte.");
+                window.auth.signOut().then(() => location.reload());
+                return;
+            } else if (cfg.status === 'trial') {
+                // Verifica se os 7 dias ainda são válidos
+                const criadoEm = cfg.criadoEm ? new Date(cfg.criadoEm) : null;
+                const diasTrial = criadoEm ? Math.floor((hoje - criadoEm) / (1000 * 60 * 60 * 24)) : 8;
+
+                if (diasTrial >= 7) {
+                    // Trial expirado — verifica na API do MP se já pagou
+                    verificarAssinaturaMP(user.email, docSnap.id);
+                    return;
+                }
+                // Trial válido — mostra dias restantes
+                const diasRestantes = 7 - diasTrial;
+                console.log(`Trial: ${diasRestantes} dias restantes`);
+
+            } else if (cfg.status === 'ativo') {
+                // Plano ativo — verifica se não venceu
+                if (cfg.planoExpira && new Date(cfg.planoExpira) < hoje && user.email !== window.ADMIN_EMAIL) {
+                    // Verifica no MP antes de bloquear
+                    verificarAssinaturaMP(user.email, docSnap.id);
+                    return;
+                }
+            } else if (cfg.status === 'pendente') {
+                // Conta criada mas não pagou ainda
+                mostrarTelaUpgrade(null, false);
+                return;
+            }
 
             // --- GRAVA O ÚLTIMO ACESSO E O E-MAIL (Invisível) ---
             const todayStr = new Date().toLocaleDateString('en-CA');

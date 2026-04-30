@@ -156,6 +156,67 @@ async function verificarAssinaturaAposRetorno(user) {
 }
 
 
+// ── TELA PENDENTE — PAGAMENTO NÃO CONFIRMADO ──
+function mostrarTelaPendente(plano, periodicidade) {
+    const old = document.getElementById('pendente-overlay');
+    if(old) old.remove();
+
+    const MP_LINKS = {
+        'basic-mensal':   'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=f47ea36711654ac7b021e0f4fb982b98',
+        'pro-mensal':     'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=9db7664f39544635b106c3c8c698bfc9',
+        'premium-mensal': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=348e0997d98f4dc8abff550913835af5',
+        'basic-anual':    'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=5f932fa5347f4d019b7439bccd9e4fb5',
+        'pro-anual':      'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=ab697bfec3824c0bad8e4ebcb9590f5b',
+        'premium-anual':  'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=b77880bd637a4f229e7ab29fbe55274e',
+    };
+
+    const key = `${plano}-${periodicidade}`;
+    const link = MP_LINKS[key] || 'https://sistemaauthon.com.br';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pendente-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; font-family: 'Poppins', sans-serif;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background:#111d2e; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px 32px; max-width:440px; width:100%; text-align:center;">
+            <div style="font-size:52px; margin-bottom:16px;">⏳</div>
+            <h2 style="font-family:'Oswald',sans-serif; font-size:26px; color:white; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                Finalize seu pagamento
+            </h2>
+            <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:1.7; margin-bottom:28px;">
+                Sua conta foi criada! Para acessar o sistema, finalize a assinatura no Mercado Pago.<br><br>
+                <strong style="color:#00b894;">Você terá 7 dias grátis</strong> após confirmar o cartão.
+            </p>
+            <a href="${link}"
+               style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:#D92525; color:white; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 8px 24px rgba(217,37,37,0.35); margin-bottom:12px;">
+                <i class="fas fa-lock"></i> FINALIZAR PAGAMENTO
+            </a>
+            <p style="font-size:12px; color:rgba(255,255,255,0.3); margin:12px 0;">
+                Já pagou? <a onclick="verificarPagamentoManual()" style="color:#00b894; cursor:pointer;">Clique aqui para verificar</a>
+            </p>
+            <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
+                style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; margin-top:8px;">
+                Sair da conta
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+async function verificarPagamentoManual() {
+    const user = auth.currentUser;
+    if(!user) return;
+    const link = document.querySelector('#pendente-overlay a');
+    if(link) link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    await verificarAssinaturaAposRetorno(user);
+    setTimeout(() => window.location.reload(), 1500);
+}
+
 // ── TELA DE UPGRADE / TRIAL EXPIRADO ──
 function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
     // Remove tela existente se houver
@@ -334,8 +395,8 @@ function iniciarSistema() {
                     return;
                 }
             } else if (cfg.status === 'pendente') {
-                // Conta criada mas não pagou ainda
-                mostrarTelaUpgrade(null, false);
+                // Conta criada mas pagamento não confirmado
+                mostrarTelaPendente(cfg.plano, cfg.periodicidade);
                 return;
             }
 

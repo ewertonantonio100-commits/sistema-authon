@@ -112,7 +112,90 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// Substitua a função iniciarSistema inteira por esta versão:
+// ── TELA DE UPGRADE / TRIAL EXPIRADO ──
+function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
+    // Remove tela existente se houver
+    const old = document.getElementById('upgrade-overlay');
+    if(old) old.remove();
+
+    const titulo = planoVencido
+        ? '⚠️ Seu plano venceu'
+        : '🎉 Seu período de teste encerrou!';
+
+    const subtitulo = planoVencido
+        ? 'Renove agora para continuar usando o Authon e não perder nenhum dado.'
+        : 'Você aproveitou 7 dias grátis. Assine agora para continuar com acesso completo.';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'upgrade-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; font-family: 'Poppins', sans-serif;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background:#111d2e; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px 32px; max-width:480px; width:100%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            
+            <div style="font-size:52px; margin-bottom:16px;">🔒</div>
+            
+            <h2 style="font-family:'Oswald',sans-serif; font-size:28px; color:white; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                ${titulo}
+            </h2>
+            
+            <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:1.7; margin-bottom:28px;">
+                ${subtitulo}
+            </p>
+
+            <!-- Planos -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px;">
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
+                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Basic</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$67</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$670/ano</div>
+                </div>
+                <div style="background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.3); border-radius:12px; padding:16px 10px; position:relative; text-align:center;">
+                    <div style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#00b894; color:white; font-size:8px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; letter-spacing:1px;">⭐ POPULAR</div>
+                    <div style="font-size:10px; font-weight:700; color:#00b894; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Pro</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$97</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$970/ano</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
+                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Premium</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$147</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$1.470/ano</div>
+                </div>
+            </div>
+            <p style="font-size:11px; color:#00b894; margin-bottom:20px; font-weight:600;">🎉 No plano anual você ganha 2 meses grátis!</p>
+
+            <!-- Botão principal -->
+            <a href="https://wa.me/5587996523840?text=Olá!%20Quero%20assinar%20o%20Sistema%20Authon" target="_blank"
+               style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:#D92525; color:white; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 8px 24px rgba(217,37,37,0.35); margin-bottom:12px; transition:all 0.2s;">
+                <i class="fab fa-whatsapp" style="font-size:18px;"></i>
+                ASSINAR AGORA
+            </a>
+
+            <!-- Sair -->
+            <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
+                style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer;">
+                Sair da conta
+            </button>
+
+            <p style="font-size:11px; color:rgba(255,255,255,0.2); margin-top:16px; line-height:1.6;">
+                Seus dados estão seguros e serão mantidos.<br>
+                Dúvidas? <a href="https://wa.me/5587996523840" target="_blank" style="color:rgba(255,255,255,0.4);">Fale conosco</a>
+            </p>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+}
+
+// ── FIM TELA UPGRADE ──
 function iniciarSistema() {
     const user = auth.currentUser;
     if (!user) return;
@@ -139,15 +222,26 @@ function iniciarSistema() {
             const cfg = docSnap.data();
 
             // --- A GUILHOTINA: VERIFICA SE ESTÁ BLOQUEADO ---
-            // Se estiver bloqueado e o e-mail não for o seu (Dono), expulsa na hora!
             if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {
                 alert("⚠️ ATENÇÃO\nO acesso da sua oficina foi temporariamente suspenso. Por favor, entre em contato com o suporte financeiro.");
                 window.auth.signOut().then(() => location.reload());
-                return; // Para o carregamento aqui
+                return;
             }
 
+            // --- VERIFICA TRIAL EXPIRADO ---
+            const hoje = new Date().toLocaleDateString('en-CA');
+            if (cfg.status === 'admin') {
+    // Conta de teste/admin — acesso liberado sem verificação
+} else if (cfg.status === 'trial' && cfg.trialExpira && cfg.trialExpira < hoje && user.email !== window.ADMIN_EMAIL) {
+    mostrarTelaUpgrade(cfg.trialExpira);
+    return;
+} else if (cfg.status === 'ativo' && cfg.planoExpira && cfg.planoExpira < hoje && user.email !== window.ADMIN_EMAIL) {
+    mostrarTelaUpgrade(null, true);
+    return;
+}
+
             // --- GRAVA O ÚLTIMO ACESSO E O E-MAIL (Invisível) ---
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = new Date().toLocaleDateString('en-CA');
             if (cfg.lastAccess !== todayStr || cfg.email !== user.email) {
                 window.updateDoc(window.doc(window.db, "configuracoes", docSnap.id), { 
                     lastAccess: todayStr,
@@ -161,8 +255,11 @@ function iniciarSistema() {
                 if(btnAdmin) btnAdmin.style.display = 'block';
             }
             
-            // Salva no LocalStorage (O resto do seu código original continua igual abaixo)
-            if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
+            // Salva no LocalStorage
+            if(cfg.name)        localStorage.setItem('authon_cfg_name', cfg.name);
+            if(cfg.nomeOficina) localStorage.setItem('authon_cfg_name', cfg.nomeOficina); // cadastro novo
+            if(cfg.plano)       localStorage.setItem('authon_plano', cfg.plano);
+            if(cfg.status)      localStorage.setItem('authon_status', cfg.status);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
@@ -310,101 +407,89 @@ function iniciarSistema() {
         console.log("Sistema SaaS Iniciado!");
                 // --- COLAR ISTO NO FINAL DO SCRIPT (ANTES DE ---
 
-        // 1. GRÁFICO DE 6 MESES (CORRIGIDO)
+        // 1. GRÁFICO 6 MESES — PREMIUM
         function renderSixMonthChart() {
             const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
             const ctx = document.getElementById('financeChart');
-            if(!ctx) return; // Segurança caso não ache o elemento
-            
-            // Calcula os últimos 6 meses
-            const labels = []; const dataInc = []; const dataExp = [];
+            if(!ctx) return;
+            const labels=[],dataInc=[],dataExp=[];
             const today = new Date();
-            
-            for(let i=5; i>=0; i--) {
-                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-                const monthName = d.toLocaleString('pt-BR', { month: 'short' }).toUpperCase();
-                const year = d.getFullYear(); 
-                const month = d.getMonth();
-                
-                labels.push(`${monthName}/${year.toString().substr(2)}`);
-                
-                let mInc = 0; let mExp = 0;
+            for(let i=5;i>=0;i--) {
+                const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+                labels.push(d.toLocaleString('pt-BR',{month:'short'}).toUpperCase()+'/'+d.getFullYear().toString().substr(2));
+                let mInc=0,mExp=0;
                 db.forEach(x => {
-                    const xDate = new Date(x.date + 'T12:00:00'); // Garante fuso horário
-                    if(xDate.getMonth() === month && xDate.getFullYear() === year) {
-                        if(x.type === 'venda' && x.status === 'pago') { mInc += (x.netTotal !== undefined ? x.netTotal : x.total); }
-                        if(x.type === 'expense') { mExp += x.total; }
+                    const xd = new Date(x.date+'T12:00:00');
+                    if(xd.getMonth()===d.getMonth()&&xd.getFullYear()===d.getFullYear()) {
+                        if(x.type==='venda'&&x.status==='pago') mInc+=(x.netTotal!==undefined?x.netTotal:x.total);
+                        if(x.type==='expense') mExp+=x.total;
                     }
                 });
                 dataInc.push(mInc); dataExp.push(mExp);
             }
-            
             if(window.myChart) window.myChart.destroy();
             window.myChart = new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Entradas', data: dataInc, backgroundColor: '#27ae60', borderRadius:4 },
-                        { label: 'Saídas', data: dataExp, backgroundColor: '#c0392b', borderRadius:4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { position: 'bottom' } }
+                type:'bar',
+                data:{ labels, datasets:[
+                    { label:'Entradas', data:dataInc, backgroundColor:'rgba(0,184,148,0.85)', borderRadius:8, borderSkipped:false, barPercentage:0.55 },
+                    { label:'Saídas',   data:dataExp, backgroundColor:'rgba(225,112,85,0.85)',  borderRadius:8, borderSkipped:false, barPercentage:0.55 }
+                ]},
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    interaction:{ mode:'index', intersect:false },
+                    scales:{
+                        y:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,0.04)', drawBorder:false },
+                            ticks:{ font:{family:'Poppins',size:9}, color:'#95a5a6',
+                                callback: v => v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v }},
+                        x:{ grid:{display:false}, ticks:{font:{family:'Poppins',size:9,weight:'600'},color:'#7f8c8d'} }
+                    },
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{ backgroundColor:'#1e272e', titleFont:{family:'Poppins',size:11,weight:'700'},
+                            bodyFont:{family:'Poppins',size:11}, padding:12, cornerRadius:10,
+                            callbacks:{ label: c => ' R$ '+c.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2}) }}
+                    }
                 }
             });
         }
 
-        // 2. TABELA DE BALANÇO ANUAL
+        // 2. BALANÇO ANUAL — PREMIUM
         function renderAnnualBalance() {
             const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
             const list = document.getElementById('annual-list');
             const yearSpan = document.getElementById('annual-year');
             const currentYear = new Date().getFullYear();
-            
             if(yearSpan) yearSpan.innerText = currentYear;
             if(!list) return;
-            
             list.innerHTML = '';
-            const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            let totalYInc = 0; let totalYExp = 0;
-
-            months.forEach((name, idx) => {
-                let mInc = 0; let mExp = 0;
+            const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            let totalYInc=0, totalYExp=0;
+            months.forEach((name,idx) => {
+                let mInc=0, mExp=0;
                 db.forEach(x => {
-                    const xDate = new Date(x.date + 'T12:00:00');
-                    if(xDate.getMonth() === idx && xDate.getFullYear() === currentYear) {
-                        if(x.type === 'venda' && x.status === 'pago') { mInc += (x.netTotal !== undefined ? x.netTotal : x.total); }
-                        if(x.type === 'expense') mExp += x.total;
+                    const xd = new Date(x.date+'T12:00:00');
+                    if(xd.getMonth()===idx&&xd.getFullYear()===currentYear) {
+                        if(x.type==='venda'&&x.status==='pago') mInc+=(x.netTotal!==undefined?x.netTotal:x.total);
+                        if(x.type==='expense') mExp+=x.total;
                     }
                 });
-
-                const profit = mInc - mExp;
-                const color = profit >= 0 ? '#27ae60' : '#c0392b';
-                
-                // Mostra na tabela
-                list.innerHTML += `
-                    <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:10px; color:#2c3e50; font-weight:600;">${name.substring(0,3)}</td>
-                        <td style="padding:10px; text-align:right; color:#27ae60; font-size:11px;">${mInc > 0 ? 'R$ '+mInc.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'}</td>
-                        <td style="padding:10px; text-align:right; color:#c0392b; font-size:11px;">${mExp > 0 ? 'R$ '+mExp.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-'}</td>
-                        <td style="padding:10px; text-align:right; font-weight:bold; color:${color}; font-size:11px;">R$ ${profit.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-                    </tr>`;
-                
-                totalYInc += mInc; totalYExp += mExp;
-            });
-            
-            // Linha de TOTAL
-            const totalProfit = totalYInc - totalYExp;
-            list.innerHTML += `
-                <tr style="background:#e8f5e9; font-weight:bold; border-top:2px solid #ccc;">
-                    <td style="padding:10px;">TOTAL</td>
-                    <td style="padding:10px; text-align:right; color:#27ae60; font-size:11px;">${totalYInc.toLocaleString('pt-BR',{minimumFractionDigits:0})}</td>
-                    <td style="padding:10px; text-align:right; color:#c0392b; font-size:11px;">${totalYExp.toLocaleString('pt-BR',{minimumFractionDigits:0})}</td>
-                    <td style="padding:10px; text-align:right; color:${totalProfit >=0 ? '#27ae60' : '#c0392b'}; font-size:11px;">R$ ${totalProfit.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                const profit=mInc-mExp;
+                const pc=profit>=0?'#00b894':'#e17055';
+                list.innerHTML+=`<tr>
+                    <td>${name.substring(0,3).toUpperCase()}</td>
+                    <td style="color:#00b894;font-weight:700;">${mInc>0?'R$&nbsp;'+mInc.toLocaleString('pt-BR',{minimumFractionDigits:2}):'<span style="color:#dfe6e9">—</span>'}</td>
+                    <td style="color:#e17055;font-weight:700;">${mExp>0?'R$&nbsp;'+mExp.toLocaleString('pt-BR',{minimumFractionDigits:2}):'<span style="color:#dfe6e9">—</span>'}</td>
+                    <td style="color:${pc};font-weight:800;">R$&nbsp;${profit.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
                 </tr>`;
+                totalYInc+=mInc; totalYExp+=mExp;
+            });
+            const tp=totalYInc-totalYExp;
+            list.innerHTML+=`<tr>
+                <td style="font-size:10px;letter-spacing:1px;">TOTAL</td>
+                <td style="color:#00b894;">R$&nbsp;${totalYInc.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                <td style="color:#e17055;">R$&nbsp;${totalYExp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                <td style="color:${tp>=0?'#00b894':'#e17055'};">R$&nbsp;${tp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+            </tr>`;
         }
 // --- CORREÇÃO SEGURA DO MENU (Traz o menu de volta) ---
 const bottomNav = document.querySelector('.bottom-nav');
@@ -715,108 +800,315 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
 
 
 
+    <!-- ============================================================ -->
+    <!-- ABA: HISTÓRICO                                               -->
+    <!-- ============================================================ -->
             <div id="tab-history" class="tab-content">
-        <div class="container">
-            <div class="header-title"><h1>Histórico</h1></div>
-            <div style="margin-bottom: 15px;">
-                <input type="text" id="historySearch" placeholder="🔍 Buscar por nome, placa, valor..." onkeyup="renderHistory(window.currentHistoryFilter || 'all')" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
+
+     <!-- Header do Histórico -->
+<div class="hist-header">
+    <div class="hist-header-top">
+    </div>
+
+            <!-- Busca -->
+            <input type="text" id="historySearch"
+                placeholder="🔍 Buscar por nome, placa, valor..."
+                onkeyup="renderHistory(window.currentHistoryFilter || 'all')"
+                class="hist-search-input">
+
+            <!-- Filtro de Período -->
+            <div class="hist-period-row">
+                <button class="hist-period-btn active" onclick="histPeriod(this,'month')">Este Mês</button>
+                <button class="hist-period-btn" onclick="histPeriod(this,'today')">Hoje</button>
+                <button class="hist-period-btn" onclick="histPeriod(this,'all')">Tudo</button>
+            </div>
+            <div class="hist-date-row">
+                <div class="hist-date-box">
+                    <span class="hist-date-lbl">DE</span>
+                    <input type="date" id="histFilterStart" class="hist-date-input" onchange="renderHistory(window.currentHistoryFilter||'all')">
+                </div>
+                <div class="hist-date-sep">→</div>
+                <div class="hist-date-box">
+                    <span class="hist-date-lbl">ATÉ</span>
+                    <input type="date" id="histFilterEnd" class="hist-date-input" onchange="renderHistory(window.currentHistoryFilter||'all')">
+                </div>
             </div>
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:15px; padding: 0 15px; overflow-x:auto">
 
-           <button class="btn-card" onclick="renderHistory('all')" style="background:var(--dark); color:white; min-width:80px;">Todos</button>
-            <button class="btn-card" onclick="renderHistory('pendente')" style="background:#f1c40f; color:#2c3e50; min-width:80px;">Pendentes</button>
-            <button class="btn-card" onclick="renderHistory('pago')" style="background:#27ae60; color:white; min-width:80px;">Pagos</button>
-            <button class="btn-card" onclick="renderHistory('orcamento')" style="background:#95a5a6; color:white; min-width:80px;">Orçamentos</button>
+        <!-- Filtros de Status -->
+        <div class="hist-status-row">
+            <button class="hist-status-btn active" id="hbtn-all"      onclick="histStatus(this,'all')">Todos</button>
+            <button class="hist-status-btn pend"   id="hbtn-pendente" onclick="histStatus(this,'pendente')">Pendentes</button>
+            <button class="hist-status-btn pago"   id="hbtn-pago"     onclick="histStatus(this,'pago')">Pagos</button>
+            <button class="hist-status-btn orc"    id="hbtn-orcamento"onclick="histStatus(this,'orcamento')">Orçamentos</button>
         </div>
+
         <div id="history-list" class="card-list"></div>
     </div>
 
+        <!-- ============================================================ -->
+        <!-- ABA: DESPESAS                                                -->
+        <!-- ============================================================ -->
         <div id="tab-expenses" class="tab-content">
-        <div class="container">
-            <div class="header-title"><h1>Nova Despesa</h1></div>
-            <div class="form-grid">
-                <div><label>Data</label><input type="date" id="expDate"></div>
-                <div><label>Categoria</label><select id="expCat"><option>Peças/Material</option><option>Aluguel/Contas</option><option>Salário/Pessoal</option><option>Alimentação</option><option>Outros</option></select></div>
-                <div class="full-width"><label>Descrição</label><input type="text" id="expDesc" placeholder="Descrição (ex: Conta de Luz)"></div>
-                <div class="full-width"><label>Valor (R$)</label><input type="number" id="expVal" placeholder="0.00"></div>
-                <button class="btn-action" style="background:var(--primary); color:white; grid-column: span 2;" onclick="saveExpense()"><i class="fas fa-wallet"></i> LANÇAR DESPESA</button>
-            </div>
-        </div>
-        <h3 style="margin-left:20px; margin-bottom:5px; font-size:16px; color:var(--dark);">Histórico de Despesas</h3>
-        <div style="padding: 0 15px 15px 15px;">
-            <input type="text" id="expenseSearch" placeholder="🔍 Buscar despesa..." onkeyup="renderExpensesList()" style="background:rgba(0,0,0,0.05); border-color:#000; color:var(--dark);">
-        </div>
-        <div id="expense-list-mini" class="card-list" style="padding-bottom: 20px;"></div>
-    </div>
 
+            <!-- Header Premium -->
+            <div class="exp-header">
+                <div class="exp-header-top">
+                    <div>
+                        <div class="exp-header-label">CONTROLE</div>
+                        <div class="exp-header-title">Despesas</div>
+                    </div>
+                    <button class="exp-new-btn" onclick="toggleExpForm()">
+                        <i class="fas fa-plus" id="exp-new-icon"></i> Nova Despesa
+                    </button>
+                </div>
+
+                <!-- Busca -->
+                <input type="text" id="expenseSearch"
+                    placeholder="🔍 Buscar despesa..."
+                    onkeyup="renderExpensesList()"
+                    class="exp-search-input">
+
+                <!-- Filtro de Período -->
+                <div class="hist-period-row">
+                    <button class="hist-period-btn active" onclick="expPeriod(this,'month')">Este Mês</button>
+                    <button class="hist-period-btn" onclick="expPeriod(this,'today')">Hoje</button>
+                    <button class="hist-period-btn" onclick="expPeriod(this,'all')">Tudo</button>
+                </div>
+                <div class="hist-date-row">
+                    <div class="hist-date-box">
+                        <span class="hist-date-lbl">DE</span>
+                        <input type="date" id="expFilterStart" class="hist-date-input" onchange="renderExpensesList()">
+                    </div>
+                    <div class="hist-date-sep">→</div>
+                    <div class="hist-date-box">
+                        <span class="hist-date-lbl">ATÉ</span>
+                        <input type="date" id="expFilterEnd" class="hist-date-input" onchange="renderExpensesList()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros de Status -->
+            <div class="hist-status-row">
+                <button class="hist-status-btn active" onclick="expStatus(this,'all')">Todas</button>
+                <button class="hist-status-btn pago"   onclick="expStatus(this,'pago')">Pagas</button>
+                <button class="hist-status-btn pend"   onclick="expStatus(this,'pendente')">Pendentes</button>
+                <button class="hist-status-btn orc"    onclick="expStatus(this,'vencida')">Vencidas</button>
+            </div>
+
+            <!-- Formulário (oculto por padrão) -->
+            <div id="exp-form-wrapper" style="display:none;">
+                <div class="exp-form-card">
+                    <h3 class="exp-form-title"><i class="fas fa-wallet"></i> Nova Despesa</h3>
+                    <div class="form-grid">
+
+                        <div><label>Data do Lançamento</label>
+                            <input type="date" id="expDate"></div>
+
+                        <div><label>Categoria</label>
+                            <select id="expCat">
+                                <option>Peças/Material</option>
+                                <option>Aluguel/Contas</option>
+                                <option>Salário/Pessoal</option>
+                                <option>Alimentação</option>
+                                <option>Outros</option>
+                            </select>
+                        </div>
+
+                        <div class="full-width"><label>Descrição</label>
+                            <input type="text" id="expDesc" placeholder="Ex: Conta de Luz, Aluguel..."></div>
+
+                        <div class="full-width"><label>Valor (R$)</label>
+                            <input type="number" id="expVal" placeholder="0.00"></div>
+
+                        <!-- Status de pagamento -->
+                        <div class="full-width">
+                            <label>Status do Pagamento</label>
+                            <div class="exp-status-toggle">
+                                <button class="exp-toggle-btn active" id="expTogglePago" onclick="setExpStatus('pago')">
+                                    <i class="fas fa-check-circle"></i> Já Pago
+                                </button>
+                                <button class="exp-toggle-btn" id="expTogglePendente" onclick="setExpStatus('pendente')">
+                                    <i class="fas fa-clock"></i> Pendente
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data de vencimento (só aparece se pendente) -->
+                        <div class="full-width" id="expVencWrapper" style="display:none;">
+                            <label>Data de Vencimento</label>
+                            <input type="date" id="expVenc" placeholder="Vencimento">
+                        </div>
+
+                        <!-- Observação (opcional) -->
+                        <div class="full-width">
+                            <label>Observação <span style="color:#95a5a6; font-weight:400;">(opcional)</span></label>
+                            <input type="text" id="expObs" placeholder="Ex: Parcela 1/3, NF #1234...">
+                        </div>
+
+                        <button class="btn-action" style="background:var(--primary); color:white; grid-column:span 2;" onclick="saveExpense()">
+                            <i class="fas fa-wallet"></i> LANÇAR DESPESA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Despesas -->
+            <div id="expense-list-mini" class="card-list" style="padding-bottom:20px;"></div>
+        </div>
+
+    <!-- ============================================================ -->
+    <!-- ABA: FINANCEIRO (FLUXO DE CAIXA / DASHBOARD)                -->
+    <!-- ============================================================ -->
         <div id="tab-dashboard" class="tab-content">
-        <div class="container">
-            <div class="header-title"><h1>Fluxo de Caixa</h1></div>
-        </div>
-        
-        <div class="date-shortcuts">
-            <button class="btn-shortcut" onclick="setDateRange('today')">HOJE</button>
-            <button class="btn-shortcut" onclick="setDateRange('month')">ESTE MÊS</button>
-            <button class="btn-shortcut" onclick="setDateRange('all')">TUDO</button>
-        </div>
-        
-        <div class="dash-filter">
-            <div><label>De:</label><input type="date" id="filterStart"></div>
-            <div><label>Até:</label><input type="date" id="filterEnd"></div>
-            <button class="btn-filter" onclick="updateDashboard(true)"><i class="fas fa-search"></i></button>
-        </div>
-        
-        <div class="kpi-grid" style="padding: 0 15px;">
-            <div class="kpi-card"><div style="color:#27ae60; font-size:24px; margin-bottom:5px;"><i class="fas fa-arrow-up"></i></div><div class="kpi-label">Entradas Liq.</div><div class="kpi-value" style="color:#27ae60" id="kpi-inc">R$ 0</div></div>
-            <div class="kpi-card"><div style="color:var(--primary); font-size:24px; margin-bottom:5px;"><i class="fas fa-arrow-down"></i></div><div class="kpi-label">Saídas</div><div class="kpi-value" style="color:var(--primary)" id="kpi-exp">R$ 0</div></div>
-            <div class="kpi-card" style="grid-column:span 2; background: var(--dark); color:white;"><div class="kpi-label" style="color:#bdc3c7;">LUCRO NO PERÍODO</div><div class="kpi-value" style="color:white; font-size:28px;" id="kpi-profit">R$ 0</div></div>
-        </div>
 
-                <div class="kpi-grid" style="padding: 0 15px;">
-            </div>
-
-        <div class="container">
-            <h3 style="text-align: center; color:#2980b9;"><i class="fas fa-trophy"></i> Ranking da Equipe</h3>
-            <div id="stats-team" style="margin-top:15px;"></div>
+   <!-- Header Premium -->
+<div class="fin-header">
+    <div class="fin-header-top">
+        <div>
         </div>
-
-        <div class="container">
-            <h3 style="text-align: center;">Formas de Pagamento</h3>
-
-            <div id="stats-payment" style="margin-top:15px; text-align: center;"></div>
-            
-            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
-            
-            <h3 style="text-align: center;">Categorias de Despesas</h3>
-            <div id="stats-expenses" style="margin-top:15px; text-align: center;"></div>
-        </div>
-
-        <div class="container">
-        <h3>Gráfico Mensal</h3>
-        <div style="height:200px; position:relative; margin-top:15px;"><canvas id="financeChart"></canvas></div>
     </div>
+            <div class="fin-period-row">
+                <button class="fin-period-btn active" onclick="finPeriod(this,'today')">Hoje</button>
+                <button class="fin-period-btn" onclick="finPeriod(this,'month')">Mês</button>
+                <button class="fin-period-btn" onclick="finPeriod(this,'all')">Tudo</button>
+            </div>
+            <div class="fin-date-row">
+                <div class="fin-date-box">
+                    <span class="fin-date-lbl">DE</span>
+                    <input type="date" id="filterStart" class="fin-date-input">
+                </div>
+                <div class="fin-date-sep">→</div>
+                <div class="fin-date-box">
+                    <span class="fin-date-lbl">ATÉ</span>
+                    <input type="date" id="filterEnd" class="fin-date-input">
+                </div>
+                <button class="fin-search-btn" onclick="updateDashboard(true)"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
 
-    <div class="container" style="margin-top:20px;">
-        <h3 style="text-align: center;">Balanço Anual (<span id="annual-year"></span>)</h3>
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;">
+        <!-- KPIs Principais -->
+        <div class="fin-main-kpis">
+            <div class="fin-kpi-card fin-kpi-income">
+                <div class="fin-kpi-icon-wrap"><i class="fas fa-arrow-trend-up"></i></div>
+                <div class="fin-kpi-info">
+                    <div class="fin-kpi-lbl">Entradas Líq.</div>
+                    <div class="fin-kpi-val" id="kpi-inc">R$ 0</div>
+                </div>
+            </div>
+            <div class="fin-kpi-card fin-kpi-expense">
+                <div class="fin-kpi-icon-wrap"><i class="fas fa-arrow-trend-down"></i></div>
+                <div class="fin-kpi-info">
+                    <div class="fin-kpi-lbl">Saídas</div>
+                    <div class="fin-kpi-val" id="kpi-exp">R$ 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Lucro -->
+        <div class="fin-profit-card">
+            <div class="fin-profit-bg-circles">
+                <div class="fin-profit-circle c1"></div>
+                <div class="fin-profit-circle c2"></div>
+            </div>
+            <div class="fin-profit-content">
+                <div class="fin-profit-lbl">💰 LUCRO NO PERÍODO</div>
+                <div class="fin-profit-val" id="kpi-profit">R$ 0</div>
+                <div class="fin-profit-sub" id="fin-profit-sub-label">–</div>
+            </div>
+        </div>
+
+        <!-- Métricas Operacionais -->
+        <div class="fin-section-label"><i class="fas fa-chart-bar"></i> MÉTRICAS DO NEGÓCIO</div>
+        <div class="fin-metrics-grid">
+            <div class="fin-metric-card" style="--mc:var(--mc-purple);">
+                <div class="fin-metric-icon"><i class="fas fa-receipt"></i></div>
+                <div class="fin-metric-lbl">Ticket Médio</div>
+                <div class="fin-metric-val" id="kpi-ticket">R$ 0</div>
+            </div>
+            <div class="fin-metric-card" style="--mc:var(--mc-orange);" onclick="showTab('history'); setTimeout(()=>renderHistory('pendente'),100)">
+                <div class="fin-metric-icon"><i class="fas fa-clock"></i></div>
+                <div class="fin-metric-lbl">Pendentes</div>
+                <div class="fin-metric-val" id="kpi-pendentes">0</div>
+            </div>
+            <div class="fin-metric-card" style="--mc:var(--mc-gray);" onclick="showTab('history'); setTimeout(()=>renderHistory('orcamento'),100)">
+                <div class="fin-metric-icon"><i class="fas fa-file-invoice"></i></div>
+                <div class="fin-metric-lbl">Orçamentos</div>
+                <div class="fin-metric-val" id="kpi-orcamentos">0</div>
+            </div>
+            <div class="fin-metric-card" style="--mc:var(--mc-green);">
+                <div class="fin-metric-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="fin-metric-lbl">Conversão</div>
+                <div class="fin-metric-val" id="kpi-conversao">0%</div>
+            </div>
+            <div class="fin-metric-card" style="--mc:var(--mc-blue);">
+                <div class="fin-metric-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="fin-metric-lbl">Hoje</div>
+                <div class="fin-metric-val" id="kpi-hoje">0</div>
+            </div>
+            <div class="fin-metric-card" style="--mc:var(--mc-red);" onclick="openMetaModal()">
+                <div class="fin-metric-icon"><i class="fas fa-bullseye"></i></div>
+                <div class="fin-metric-lbl">Meta do Mês</div>
+                <div class="fin-metric-val" id="kpi-meta-pct">Definir</div>
+                <div class="fin-meta-bar-track"><div class="fin-meta-bar-fill" id="kpi-meta-bar"></div></div>
+            </div>
+        </div>
+
+        <!-- Modal Meta -->
+        <div id="modal-meta" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); z-index:99999; align-items:center; justify-content:center;">
+            <div style="background:white; width:85%; max-width:320px; padding:28px; border-radius:20px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="width:52px;height:52px;background:#fff0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                    <i class="fas fa-bullseye" style="font-size:22px;color:#e74c3c;"></i>
+                </div>
+                <h3 style="color:var(--dark); margin-bottom:5px;">Meta Mensal</h3>
+                <p style="font-size:12px; color:#7f8c8d; margin-bottom:15px;">Faturamento bruto que quer atingir este mês.</p>
+                <input type="number" id="meta-input" placeholder="Ex: 15000" style="text-align:center; font-size:22px; font-weight:700; color:var(--dark); margin-bottom:15px;">
+                <button class="btn-action" style="background:var(--primary); margin-top:0;" onclick="saveMeta()">SALVAR META</button>
+                <button class="btn-action" style="background:#f5f6fa; color:#7f8c8d; border:1px solid #eee; margin-top:10px;" onclick="document.getElementById('modal-meta').style.display='none'">CANCELAR</button>
+            </div>
+        </div>
+
+        <!-- Gráfico Mensal -->
+        <div class="fin-section-label"><i class="fas fa-chart-column"></i> EVOLUÇÃO MENSAL</div>
+        <div class="fin-chart-card">
+            <div class="fin-chart-legend">
+                <span class="fin-legend-dot" style="background:#00b894;"></span> Entradas
+                <span class="fin-legend-dot" style="background:#e17055; margin-left:12px;"></span> Saídas
+            </div>
+            <div style="height:220px; position:relative;"><canvas id="financeChart"></canvas></div>
+        </div>
+
+        <!-- Ranking da Equipe -->
+        <div class="fin-section-label"><i class="fas fa-trophy"></i> RANKING DA EQUIPE</div>
+        <div class="fin-card"><div id="stats-team"></div></div>
+
+        <!-- Formas de Pagamento -->
+        <div class="fin-section-label"><i class="fas fa-credit-card"></i> FORMAS DE PAGAMENTO</div>
+        <div class="fin-card"><div id="stats-payment"></div></div>
+
+        <!-- Categorias de Despesa -->
+        <div class="fin-section-label"><i class="fas fa-tags"></i> CATEGORIAS DE DESPESA</div>
+        <div class="fin-card"><div id="stats-expenses"></div></div>
+
+        <!-- Balanço Anual -->
+        <div class="fin-section-label"><i class="fas fa-calendar"></i> BALANÇO ANUAL <span id="annual-year" style="color:#bdc3c7;font-size:12px;margin-left:5px;font-weight:400;font-family:'Poppins',sans-serif;"></span></div>
+        <div class="fin-annual-card">
+            <table class="fin-annual-table">
                 <thead>
-                    <tr style="background:#f1f2f6; color:#7f8c8d; border-radius:8px;">
-                        <th style="padding:10px; text-align:left;">Mês</th>
-                        <th style="padding:10px; text-align:right;">Entrada</th>
-                        <th style="padding:10px; text-align:right;">Saída</th>
-                        <th style="padding:10px; text-align:right;">Lucro</th>
+                    <tr>
+                        <th>Mês</th><th>Entrada</th><th>Saída</th><th>Lucro</th>
                     </tr>
                 </thead>
                 <tbody id="annual-list"></tbody>
             </table>
         </div>
-    </div>
-<button class="btn-action" style="background: #1d6f42; margin: 20px 15px; width: calc(100% - 30px);" onclick="exportToExcel()">
-    <i class="fas fa-file-csv"></i> BAIXAR RELATÓRIO P/ CONTADOR (EXCEL)
-</button>
 
+        <!-- Exportar -->
+        <div style="padding: 10px 15px 30px;">
+            <button class="fin-export-btn" onclick="exportToExcel()">
+                <i class="fas fa-file-csv"></i> EXPORTAR RELATÓRIO PARA O CONTADOR
+            </button>
+        </div>
 
     </div>
 
@@ -1041,35 +1333,68 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </div>
 
     <div id="modal-config"><div class="modal-box"><h3 style="text-align:center; margin-bottom:15px;">Alterar Logo</h3><input type="file" accept="image/*" onchange="saveLogo(event)"><button onclick="closeModal()" class="btn-action" style="margin-top:15px; background:#7f8c8d;">Fechar</button></div></div>
-        <div id="modal-admin" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f6fa; z-index: 999999; overflow-y: auto;">
-        <div style="background: var(--dark); padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0;">
-            <h2 style="margin: 0; font-size: 18px;"><i class="fas fa-crown" style="color: #f1c40f;"></i> Painel Super Admin</h2>
-            <button onclick="document.getElementById('modal-admin').style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">FECHAR</button>
-        </div>
-        
-        <div class="kpi-grid" style="padding: 20px; gap: 10px;">
-            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Total de Oficinas</div><div class="kpi-value" id="admin-total-users" style="color: var(--blue-grad)">0</div></div>
-            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Bloqueadas</div><div class="kpi-value" id="admin-total-blocked" style="color: var(--primary)">0</div></div>
-        </div>
+        <!-- ============================================================ -->
+        <!-- PAINEL SUPER ADMIN — PREMIUM                                  -->
+        <!-- ============================================================ -->
+        <div id="modal-admin" style="display:none; position:fixed; inset:0; background:#0d1b2a; z-index:999999; overflow-y:auto;">
 
-        <div style="padding: 0 20px 20px 20px;">
-            <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-                    <thead>
-                        <tr style="background: #ecf0f1; color: #2c3e50;">
-                            <th style="padding: 12px;">Oficina / E-mail</th>
-                            <th style="padding: 12px;">Contato</th>
-                            <th style="padding: 12px;">Último Acesso</th>
-                            <th style="padding: 12px; text-align: center;">Status</th>
-                            <th style="padding: 12px; text-align: center;">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-users-list">
-                        </tbody>
-                </table>
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#0d1b2a 0%,#1B2D42 100%); padding:20px; position:sticky; top:0; z-index:10; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:9px; font-weight:700; letter-spacing:2px; color:rgba(255,255,255,0.4); text-transform:uppercase; margin-bottom:3px;">Sistema Authon</div>
+                    <div style="font-family:'Oswald',sans-serif; font-size:22px; color:white; letter-spacing:1px;">
+                        <i class="fas fa-crown" style="color:#f0a500; margin-right:8px;"></i>Painel Admin
+                    </div>
+                </div>
+                <button onclick="document.getElementById('modal-admin').style.display='none'"
+                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.6); padding:9px 16px; border-radius:8px; font-size:12px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-times"></i> FECHAR
+                </button>
             </div>
+
+            <!-- KPIs -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px 15px 0;">
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #00b894;">
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Total</div>
+                    <div style="font-size:26px; font-weight:800; color:white; font-family:'Oswald',sans-serif;" id="admin-total-users">0</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #00b894;">
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Ativos</div>
+                    <div style="font-size:26px; font-weight:800; color:#00b894; font-family:'Oswald',sans-serif;" id="admin-total-ativos">0</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #f39c12;">
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Trial</div>
+                    <div style="font-size:26px; font-weight:800; color:#f39c12; font-family:'Oswald',sans-serif;" id="admin-total-trial">0</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #e74c3c;">
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Bloqueados</div>
+                    <div style="font-size:26px; font-weight:800; color:#e74c3c; font-family:'Oswald',sans-serif;" id="admin-total-blocked">0</div>
+                </div>
+            </div>
+
+            <!-- MRR estimado -->
+            <div style="margin:12px 15px 0; background:linear-gradient(135deg,#0f2420,#0d1b2a); border:1px solid rgba(0,184,148,0.25); border-radius:14px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">💰 Receita Mensal Estimada (MRR)</div>
+                    <div style="font-size:28px; font-weight:800; color:#00b894; font-family:'Oswald',sans-serif;" id="admin-mrr">R$ 0</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Anual Estimado</div>
+                    <div style="font-size:16px; font-weight:800; color:rgba(255,255,255,0.6); font-family:'Oswald',sans-serif;" id="admin-arr">R$ 0</div>
+                </div>
+            </div>
+
+            <!-- Busca -->
+            <div style="padding:14px 15px 0;">
+                <input type="text" id="admin-search" placeholder="🔍 Buscar oficina ou e-mail..."
+                    oninput="filterAdminList()"
+                    style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:11px 14px; color:white; font-size:13px; font-family:'Poppins',sans-serif;">
+            </div>
+
+            <!-- Lista de clientes -->
+            <div id="admin-cards-list" style="padding:14px 15px 30px;"></div>
+
         </div>
-    </div>
 
             <div id="modal-pay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center;">
         <div style="background: white; width: 90%; max-width: 350px; padding: 25px; border-radius: 16px;">
@@ -1124,65 +1449,165 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
         // --- SISTEMA SUPER ADMIN (CONTROLE DE CLIENTES) ---
         window.ADMIN_EMAIL = "admin@authon.com"; // ⚠️ ATENÇÃO: COLOQUE SEU E-MAIL REAL DE ACESSO AQUI!
 
+        // --- PAINEL SUPER ADMIN PREMIUM ---
+        window._adminData = []; // cache para filtro
+
         window.openSuperAdmin = async function() {
             const user = auth.currentUser;
             if(!user || user.email !== window.ADMIN_EMAIL) return alert("Acesso restrito.");
-            
+
             document.getElementById('modal-admin').style.display = 'block';
-            document.getElementById('admin-users-list').innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center;">Carregando clientes...</td></tr>';
-            
+            document.getElementById('admin-cards-list').innerHTML = `
+                <div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">
+                    <i class="fas fa-spinner fa-spin" style="font-size:28px; margin-bottom:12px; display:block;"></i>
+                    Carregando clientes...
+                </div>`;
+
             try {
-                // Busca TODOS os cadastros de oficinas
                 const querySnapshot = await window.getDocs(window.collection(window.db, "configuracoes"));
-                const list = document.getElementById('admin-users-list');
-                list.innerHTML = '';
-                
-                let totalAtivos = 0; let totalBloqueados = 0;
+                window._adminData = [];
+
+                let totalAtivos=0, totalBloqueados=0, totalTrial=0, mrr=0;
+                const hoje = new Date().toLocaleDateString('en-CA');
+
+                const planoPrecos = { basic:67, pro:97, premium:147 };
 
                 querySnapshot.forEach((docSnap) => {
                     const cfg = docSnap.data();
-                    const docId = docSnap.id;
-                    const isBlocked = cfg.status === 'bloqueado';
-                    
-                    if(isBlocked) totalBloqueados++; else totalAtivos++;
+                    window._adminData.push({ ...cfg, docId: docSnap.id });
 
-                    const statusBadge = isBlocked 
-                        ? '<span style="background:#ffebee; color:#c0392b; padding:4px 8px; border-radius:4px; font-weight:bold;">BLOQUEADO</span>' 
-                        : '<span style="background:#e8f5e9; color:#27ae60; padding:4px 8px; border-radius:4px; font-weight:bold;">ATIVO</span>';
-
-                    const actionBtn = isBlocked
-                        ? `<button onclick="toggleBlockClient('${docId}', 'ativo')" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Liberar</button>`
-                        : `<button onclick="toggleBlockClient('${docId}', 'bloqueado')" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Bloquear</button>`;
-
-                    const dataAcesso = cfg.lastAccess ? cfg.lastAccess.split('-').reverse().join('/') : 'Nunca';
-
-                    list.innerHTML += `
-                        <tr style="border-bottom: 1px solid #f1f2f6;">
-                            <td style="padding: 12px;"><strong>${cfg.name || 'Sem Nome'}</strong><br><small style="color:#7f8c8d">${cfg.email || 'E-mail não salvo'}</small></td>
-                            <td style="padding: 12px;">${cfg.phone || '-'}</td>
-                            <td style="padding: 12px;">${dataAcesso}</td>
-                            <td style="padding: 12px; text-align: center;">${statusBadge}</td>
-                            <td style="padding: 12px; text-align: center;">${actionBtn}</td>
-                        </tr>
-                    `;
+                    const st = cfg.status || 'ativo';
+                    if(st === 'ativo')      { totalAtivos++;    mrr += planoPrecos[cfg.plano] || 97; }
+                    if(st === 'trial')       totalTrial++;
+                    if(st === 'bloqueado')   totalBloqueados++;
                 });
 
-                document.getElementById('admin-total-users').innerText = totalAtivos + totalBloqueados;
+                document.getElementById('admin-total-users').innerText   = window._adminData.length;
+                document.getElementById('admin-total-ativos').innerText  = totalAtivos;
+                document.getElementById('admin-total-trial').innerText   = totalTrial;
                 document.getElementById('admin-total-blocked').innerText = totalBloqueados;
+                document.getElementById('admin-mrr').innerText  = 'R$ ' + mrr.toLocaleString('pt-BR');
+                document.getElementById('admin-arr').innerText  = 'R$ ' + (mrr*12).toLocaleString('pt-BR');
+
+                renderAdminCards(window._adminData);
 
             } catch(e) {
                 console.error(e);
-                alert("Erro ao carregar clientes.");
+                document.getElementById('admin-cards-list').innerHTML = `<div style="color:#e74c3c; text-align:center; padding:30px;">Erro ao carregar clientes.</div>`;
             }
-        }
+        };
 
-        window.toggleBlockClient = async function(docId, newStatus) {
-            const acao = newStatus === 'bloqueado' ? 'BLOQUEAR' : 'LIBERAR';
-            if(confirm(`Tem certeza que deseja ${acao} esta oficina?`)) {
-                await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
-                window.openSuperAdmin(); // Recarrega a lista
+        window.renderAdminCards = function(data) {
+            const hoje = new Date().toLocaleDateString('en-CA');
+            const list = document.getElementById('admin-cards-list');
+            if(!list) return;
+
+            if(data.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">Nenhum cliente encontrado.</div>`;
+                return;
             }
-        }
+
+            list.innerHTML = data.map(cfg => {
+                const st = cfg.status || 'ativo';
+                const isAdmin    = st === 'admin';
+                const isAtivo    = st === 'ativo';
+                const isTrial    = st === 'trial';
+                const isBloqueado= st === 'bloqueado';
+
+                // Badge de status
+                let badge = '';
+                if(isAdmin)     badge = `<span style="background:rgba(240,165,0,0.15); color:#f0a500; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">👑 Admin</span>`;
+                if(isAtivo)     badge = `<span style="background:rgba(0,184,148,0.15); color:#00b894; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">✓ Ativo</span>`;
+                if(isTrial)     badge = `<span style="background:rgba(243,156,18,0.15); color:#f39c12; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">⏳ Trial</span>`;
+                if(isBloqueado) badge = `<span style="background:rgba(231,76,60,0.15); color:#e74c3c; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">🔒 Bloqueado</span>`;
+
+                // Cor da borda
+                const borderColor = isAdmin?'#f0a500': isAtivo?'#00b894': isTrial?'#f39c12':'#e74c3c';
+
+                // Vencimento
+                const venceEm = cfg.planoExpira || cfg.trialExpira || '—';
+                const venceFormatted = venceEm !== '—' ? venceEm.split('-').reverse().join('/') : '—';
+                const vencido = venceEm !== '—' && venceEm < hoje;
+
+                // Plano
+                const planoNome = (cfg.plano || 'pro').toUpperCase();
+                const period = cfg.periodicidade === 'anual' ? 'Anual' : 'Mensal';
+
+                // Último acesso
+                const lastAccess = cfg.lastAccess ? cfg.lastAccess.split('-').reverse().join('/') : 'Nunca';
+
+                // Botões de ação
+                let acoes = '';
+                if(!isAdmin) {
+                    if(isBloqueado) {
+                        acoes += `<button onclick="adminSetStatus('${cfg.docId}','ativo')" style="flex:1; padding:8px; background:rgba(0,184,148,0.15); color:#00b894; border:1px solid rgba(0,184,148,0.3); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-unlock"></i> Liberar</button>`;
+                    } else {
+                        acoes += `<button onclick="adminSetStatus('${cfg.docId}','bloqueado')" style="flex:1; padding:8px; background:rgba(231,76,60,0.1); color:#e74c3c; border:1px solid rgba(231,76,60,0.2); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-ban"></i> Bloquear</button>`;
+                    }
+                    acoes += `<button onclick="adminExtendPlan('${cfg.docId}','${cfg.plano||'pro'}')" style="flex:1; padding:8px; background:rgba(0,184,148,0.15); color:#00b894; border:1px solid rgba(0,184,148,0.3); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-calendar-plus"></i> Renovar</button>`;
+                }
+
+                return `
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-left:3px solid ${borderColor}; border-radius:14px; padding:16px; margin-bottom:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                        <div>
+                            <div style="font-size:15px; font-weight:700; color:white; margin-bottom:3px;">${cfg.nomeOficina || cfg.name || 'Sem nome'}</div>
+                            <div style="font-size:11px; color:rgba(255,255,255,0.4);">${cfg.email || '—'}</div>
+                            <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">${cfg.phone || '—'}</div>
+                        </div>
+                        <div style="text-align:right; flex-shrink:0; margin-left:10px;">
+                            ${badge}
+                            <div style="font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px; font-weight:700;">${planoNome} · ${period}</div>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                        <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Último acesso</div>
+                            <div style="font-size:12px; font-weight:700; color:rgba(255,255,255,0.7);">${lastAccess}</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:8px 10px;">
+                            <div style="font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Vencimento</div>
+                            <div style="font-size:12px; font-weight:700; color:${vencido?'#e74c3c':'rgba(255,255,255,0.7)'};">${venceFormatted} ${vencido?'⚠':''}</div>
+                        </div>
+                    </div>
+                    ${acoes ? `<div style="display:flex; gap:8px;">${acoes}</div>` : ''}
+                </div>`;
+            }).join('');
+        };
+
+        window.filterAdminList = function() {
+            const term = document.getElementById('admin-search').value.toLowerCase();
+            const filtered = window._adminData.filter(c =>
+                (c.nomeOficina||c.name||'').toLowerCase().includes(term) ||
+                (c.email||'').toLowerCase().includes(term)
+            );
+            renderAdminCards(filtered);
+        };
+
+        window.adminSetStatus = async function(docId, newStatus) {
+            const acao = newStatus === 'bloqueado' ? 'BLOQUEAR' : 'LIBERAR';
+            if(!confirm(`Tem certeza que deseja ${acao} esta oficina?`)) return;
+            await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
+            window.openSuperAdmin();
+        };
+
+        window.adminExtendPlan = async function(docId, plano) {
+            const meses = prompt('Renovar por quantos meses?', '1');
+            if(!meses || isNaN(meses)) return;
+            const hoje = new Date();
+            hoje.setMonth(hoje.getMonth() + parseInt(meses));
+            const novaData = hoje.toLocaleDateString('en-CA');
+            await window.updateDoc(window.doc(window.db, "configuracoes", docId), {
+                status: 'ativo',
+                plano: plano,
+                planoExpira: novaData
+            });
+            alert(`✅ Plano renovado até ${novaData.split('-').reverse().join('/')}!`);
+            window.openSuperAdmin();
+        };
+
+        // Mantém compatibilidade com o botão antigo
+        window.toggleBlockClient = window.adminSetStatus;
 
         // --- ONBOARDING AUTOMÁTICO (INJEÇÃO DE CATÁLOGO) ---
         window.injectStarterCatalog = async function(user) {
@@ -1778,9 +2203,9 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
  
 
         window.onload = function() {
-            const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-            document.getElementById('date').value = date.toISOString().split('T')[0];
-            document.getElementById('expDate').value = date.toISOString().split('T')[0];
+            const date = new Date();
+            document.getElementById('date').value = date.toLocaleDateString('en-CA');
+            document.getElementById('expDate').value = date.toLocaleDateString('en-CA');
             setDateRange('month');
             if(localStorage.getItem('authon_cfg_name')) document.getElementById('cfgName').value = localStorage.getItem('authon_cfg_name');
             if(localStorage.getItem('authon_cfg_cnpj')) document.getElementById('cfgCnpj').value = localStorage.getItem('authon_cfg_cnpj');
@@ -1792,7 +2217,24 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
             if(localStorage.getItem('authon_cfg_pix')) document.getElementById('cfgPix').value = localStorage.getItem('authon_cfg_pix');
             if(localStorage.getItem('authon_cfg_warranty')) document.getElementById('cfgWarranty').value = localStorage.getItem('authon_cfg_warranty');
 
-            updateDatalist(); updateClientDatalist(); renderCatalogList(); renderAgenda(); renderHistory('all'); updateDashboard(true); renderExpensesList(); addNewItem(); toggleFeeInput();
+            updateDatalist(); updateClientDatalist(); renderCatalogList(); renderAgenda(); 
+            
+            // Histórico: inicia com filtro do mês atual
+            const _today = new Date();
+            const _hs = document.getElementById('histFilterStart');
+            const _he = document.getElementById('histFilterEnd');
+            if(_hs && _he) {
+                _hs.value = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().split('T')[0];
+                _he.value = new Date(_today.getFullYear(), _today.getMonth()+1, 0).toISOString().split('T')[0];
+            }
+            // Despesas: inicia com filtro do mês atual
+            const _es = document.getElementById('expFilterStart'), _ee = document.getElementById('expFilterEnd');
+            if(_es && _ee) {
+                _es.value = new Date(_today.getFullYear(), _today.getMonth(), 1).toISOString().split('T')[0];
+                _ee.value = new Date(_today.getFullYear(), _today.getMonth()+1, 0).toISOString().split('T')[0];
+            }
+            renderHistory('all'); 
+            updateDashboard(true); renderExpensesList(); addNewItem(); toggleFeeInput();
         };
 
         // --- FUNÇÕES FIREBASE (SALVAR NA NUVEM) ---
@@ -1890,7 +2332,7 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
         function setDateRange(type) {
             const today = new Date();
             const startInput = document.getElementById('filterStart'); const endInput = document.getElementById('filterEnd');
-            if(type === 'today') { const str = today.toISOString().split('T')[0]; startInput.value = str; endInput.value = str; } 
+            if(type === 'today') { const str = today.toLocaleDateString('en-CA'); startInput.value = str; endInput.value = str; } 
             else if (type === 'month') { 
                 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
                 const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
@@ -2314,8 +2756,8 @@ window.delCatalog = async function(idx) {
             
             if(forceVenda) { 
                 setOpType('venda'); 
-                const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-                document.getElementById('date').value = date.toISOString().split('T')[0];
+                const date = new Date();
+                document.getElementById('date').value = date.toLocaleDateString('en-CA');
             } else { 
                 setOpType(item.type); 
             }
@@ -2371,46 +2813,55 @@ window.renderAgenda = function() {
         list.innerHTML += `<div class="item-card st-agenda"><span class="status-badge bg-agenda">AGENDA</span><strong>${item.date.split('-').reverse().join('/')} às ${item.time}</strong><br><span style="font-size:14px">${item.client}</span><br><small style="color:#7f8c8d">${item.vehicle} - ${item.phone}</small>${itensHtml}${valorHtml}<div class="card-actions"><button class="btn-card btn-notify" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> LEMBRAR CLIENTE</button><button class="btn-card" style="color:var(--primary); background:#ffebee;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button><button class="btn-card" style="background:#27ae60; color:white" onclick="loadToEdit(${item.id}, true)"><i class="fas fa-check"></i> ATENDER</button></div></div>`; 
     });
 }
-// Substitua a função renderHistory inteira por esta:
+// ── HISTÓRICO: Renderiza com filtro de status + período ──
 window.renderHistory = function(filter) { 
-    // Salva o filtro atual para a busca funcionar
     window.currentHistoryFilter = filter;
 
     const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
     const list = document.getElementById('history-list'); 
     
-    // Pega o termo de busca
-    const searchInput = document.getElementById('historySearch');
-    const term = searchInput ? searchInput.value.toLowerCase() : '';
+    const term = (document.getElementById('historySearch')?.value || '').toLowerCase();
+    const hStart = document.getElementById('histFilterStart')?.value || '';
+    const hEnd   = document.getElementById('histFilterEnd')?.value   || '';
 
     list.innerHTML = ''; 
     const compName = localStorage.getItem('authon_cfg_name') || "SUA OFICINA";
 
-    // Filtros
+    // Filtro de tipo/status
     let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
-    if(filter === 'venda') filtered = filtered.filter(x => x.type === 'venda');
+    if(filter === 'venda')     filtered = filtered.filter(x => x.type === 'venda');
     if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
-    if(filter === 'pendente') filtered = filtered.filter(x => x.status === 'pendente');
-    if(filter === 'pago') filtered = filtered.filter(x => x.status === 'pago');
+    if(filter === 'pendente')  filtered = filtered.filter(x => x.status === 'pendente');
+    if(filter === 'pago')      filtered = filtered.filter(x => x.status === 'pago');
+
+    // Filtro de período
+    if(hStart) filtered = filtered.filter(x => x.date >= hStart);
+    if(hEnd)   filtered = filtered.filter(x => x.date <= hEnd);
 
     filtered.sort((a,b) => b.id - a.id);
     const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
 
-    // Animação suave (brilho sutil)
+    // Animação do botão receber
     if (!document.getElementById('style-soft-pulse')) {
         document.head.insertAdjacentHTML('beforeend', '<style id="style-soft-pulse">@keyframes softPulse { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } 50% { transform: scale(1.02); box-shadow: 0 6px 15px rgba(39, 174, 96, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } }</style>');
     }
 
+    if(filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding:50px 20px; color:#bdc3c7;">
+            <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:12px; display:block;"></i>
+            <div style="font-size:14px; font-weight:600;">Nenhum registro encontrado</div>
+            <div style="font-size:12px; margin-top:5px;">Tente mudar o período ou filtro</div>
+        </div>`;
+        return;
+    }
+
     filtered.forEach(item => { 
-        // Filtro de Busca
         const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
         if(term && !fullText.includes(term)) return;
 
-        // 1. Definição de Cores e Status
         let badgeClass = ''; let statusText = item.type.toUpperCase(); 
         let actionBtn = ''; let highlightPayBtn = '';
         
-        // 2. Montagem do Preço (com destaque para Líquido se houver taxa)
         let priceDisplay = `<div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
         if(item.netTotal && item.netTotal < item.total) {
             priceDisplay = `
@@ -2419,10 +2870,9 @@ window.renderHistory = function(filter) {
             `;
         }
 
-        // 3. Lógica dos Botões (Venda/Orçamento)
-        const escapedName = item.client ? item.client.replace(/'/g, "\\'") : '';
+        const escapedName    = item.client  ? item.client.replace(/'/g, "\\'")  : '';
         const escapedVehicle = item.vehicle ? item.vehicle.replace(/'/g, "\\'") : '';
-        const escapedPlate = item.plate ? item.plate.replace(/'/g, "\\'") : '';
+        const escapedPlate   = item.plate   ? item.plate.replace(/'/g, "\\'")   : '';
         
         const btnAntesDepois = `<button class="btn-card" style="background:#7f8c8d; color:white; flex:1; box-shadow:none;" onclick="openBeforeAfterModal('${escapedName}', '${escapedVehicle}', '${item.phone}', '${escapedPlate}')"><i class="fas fa-camera-retro" style="opacity:0.8;"></i> Antes & Depois</button>`;
 
@@ -2432,16 +2882,11 @@ window.renderHistory = function(filter) {
                 let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
                 const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
                 const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
-                
-                // Botões Secundários
                 actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
-                
-                // --- A GRANDE MUDANÇA: BOTÃO DE RECEBER CENTRALIZADO E MENOR ---
                 highlightPayBtn = `
                 <button class="btn-action" style="background:var(--green-grad); display:block; width:80%; max-width:260px; margin: 15px auto 10px auto; font-size:13px; padding:12px; border-radius:12px; animation: softPulse 2.5s infinite;" onclick="window.openPayModal('${item.docId}', ${item.total})">
                     <i class="fas fa-hand-holding-usd" style="font-size:16px; margin-right:8px;"></i> RECEBER PAGAMENTO
                 </button>`;
-                
             } else { 
                 badgeClass = 'bg-venda'; statusText = 'PAGO'; 
                 actionBtn = `${btnAntesDepois}`; 
@@ -2450,7 +2895,6 @@ window.renderHistory = function(filter) {
             badgeClass = 'bg-orcamento'; 
         }
 
-        // 4. Montagem da Lista de Serviços
         let itemsHtml = '<ul style="margin:8px 0 8px 18px; padding:0; font-size:12px; color:#555;">';
         if(item.items && item.items.length > 0) {
             item.items.forEach(i => {
@@ -2463,49 +2907,37 @@ window.renderHistory = function(filter) {
         } else { itemsHtml += '<li>(Sem itens descritos)</li>'; }
         itemsHtml += '</ul>';
 
-        // 5. Dados do Veículo
-        const plateInfo = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
-        const subInfo = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
+        const plateInfo    = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
+        const subInfo      = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
         const dateFormatted = item.date.split('-').reverse().join('/');
 
-        // --- HTML DO CARTÃO ---
         list.innerHTML += `
         <div class="item-card" style="padding: 20px; border-left: 6px solid #ccc; position:relative;">
-            
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 style="font-size:16px; margin:0; color:var(--dark); font-weight:800;">${dateFormatted}</h3>
                 <span class="status-badge ${badgeClass}" style="position:static;">${statusText}</span>
             </div>
-
             <div style="margin-bottom:5px;">
                 <div style="font-size:16px; font-weight:600; color:#2c3e50;">${item.client}</div>
                 <div style="font-size:12px; color:#7f8c8d; margin-top:3px; line-height:1.4;">${subInfo}</div>
             </div>
-
             ${itemsHtml}
-
             <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
-
             <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
                 <div style="flex-shrink:0;">
                     <span style="font-size:11px; color:#7f8c8d; font-weight:bold; text-transform:uppercase;">Valor Total:</span>
                     ${priceDisplay}
                 </div>
             </div>
-
             ${highlightPayBtn}
-
             <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:space-between; margin-top:10px;">
-                <div style="display:flex; gap:5px; flex:1;">
-                    ${actionBtn}
-                </div>
+                <div style="display:flex; gap:5px; flex:1;">${actionBtn}</div>
                 <div style="display:flex; gap:5px;">
                     <button class="btn-card" style="background:var(--dark); color:white; min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
                     <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
                     <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-
             <style>
                 .item-card:has(.bg-venda) { border-left-color: #27ae60 !important; }
                 .item-card:has(.bg-pendente) { border-left-color: #f1c40f !important; }
@@ -2683,60 +3115,83 @@ window.confirmPayment = async function() {
                 } 
             });
             
-            // 3. Atualiza os Números Grandes
+            // 3. KPIs principais
             document.getElementById('kpi-inc').innerText = 'R$ ' + inc.toLocaleString('pt-BR',{minimumFractionDigits:2}); 
             document.getElementById('kpi-exp').innerText = 'R$ ' + exp.toLocaleString('pt-BR',{minimumFractionDigits:2}); 
             document.getElementById('kpi-profit').innerText = 'R$ ' + (inc - exp).toLocaleString('pt-BR',{minimumFractionDigits:2});
-            
-            // 4. Atualiza as Barrinhas
-            let payHtml = ''; for (let [key, val] of Object.entries(payStats)) { let pct = inc > 0 ? (val / inc) * 100 : 0; payHtml += `<div style="margin-bottom:8px;"><div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>${key}</span> <span>R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div><div style="height:6px; background:#ecf0f1; border-radius:3px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#27ae60;"></div></div></div>`; }
-            document.getElementById('stats-payment').innerHTML = payHtml || '<div style="color:#999; text-align:center">Sem dados</div>';
-            
-            let expHtml = ''; const sortedExp = Object.entries(catExpStats).sort((a,b) => b[1] - a[1]); sortedExp.forEach(([key, val]) => { let pct = exp > 0 ? (val / exp) * 100 : 0; expHtml += `<div style="margin-bottom:8px;"><div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>${key}</span> <span>R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div><div style="height:6px; background:#ecf0f1; border-radius:3px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:#c0392b;"></div></div></div>`; });
-            document.getElementById('stats-expenses').innerHTML = expHtml || '<div style="color:#999; text-align:center">Sem despesas</div>';
-            // NOVO: DESENHA O RANKING DA EQUIPE
-            let teamHtml = '';
-            const sortedTeam = Object.entries(window.teamStats || {}).sort((a,b) => b[1] - a[1]);
-            
-            if(sortedTeam.length > 0) {
-                sortedTeam.forEach(([name, val], index) => {
-                    let trophy = '';
-                    if(index === 0) trophy = '🥇';
-                    if(index === 1) trophy = '🥈';
-                    if(index === 2) trophy = '🥉';
-                    
-                    // Barra de progresso baseada no total de entradas (inc)
-                    let pct = inc > 0 ? (val / inc) * 100 : 0;
-                    
-                    teamHtml += `
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-weight:600; font-size:13px;">
-                            <span>${trophy} ${name}</span> 
-                            <span style="color:#2980b9;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
-                        </div>
-                        <div style="height:8px; background:#ecf0f1; border-radius:4px; overflow:hidden;">
-                            <div style="height:100%; width:${pct}%; background:#3498db;"></div>
-                        </div>
+            const elSub = document.getElementById('fin-profit-sub-label');
+            if(elSub) { const l=inc-exp; elSub.innerText = l>0?'▲ Resultado positivo no período':l<0?'▼ Resultado negativo no período':'─ Sem movimentação'; }
+
+            // 4. Barras de Pagamento — Premium
+            let payHtml='';
+            for(let [key,val] of Object.entries(payStats)) {
+                let pct=inc>0?(val/inc)*100:0;
+                payHtml+=`<div class="fin-bar-row">
+                    <div class="fin-bar-top"><span class="fin-bar-name">${key}</span><span class="fin-bar-val" style="color:#00b894;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+                    <div class="fin-bar-track"><div class="fin-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#00b894,#00cec9);"></div></div>
+                    <div class="fin-bar-pct">${pct.toFixed(0)}% do total</div>
+                </div>`;
+            }
+            document.getElementById('stats-payment').innerHTML = payHtml||'<div style="color:#bdc3c7;text-align:center;padding:15px;font-size:13px;">Sem dados no período</div>';
+
+            // 5. Barras de Despesas — Premium
+            let expHtml='';
+            Object.entries(catExpStats).sort((a,b)=>b[1]-a[1]).forEach(([key,val])=>{
+                let pct=exp>0?(val/exp)*100:0;
+                expHtml+=`<div class="fin-bar-row">
+                    <div class="fin-bar-top"><span class="fin-bar-name">${key}</span><span class="fin-bar-val" style="color:#e17055;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+                    <div class="fin-bar-track"><div class="fin-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#e17055,#d63031);"></div></div>
+                    <div class="fin-bar-pct">${pct.toFixed(0)}% das saídas</div>
+                </div>`;
+            });
+            document.getElementById('stats-expenses').innerHTML = expHtml||'<div style="color:#bdc3c7;text-align:center;padding:15px;font-size:13px;">Sem despesas no período</div>';
+
+            // 6. Ranking da Equipe — Premium
+            let teamHtml='';
+            const sortedTeam=Object.entries(window.teamStats||{}).sort((a,b)=>b[1]-a[1]);
+            if(sortedTeam.length>0) {
+                sortedTeam.forEach(([name,val],i)=>{
+                    const medals=['🥇','🥈','🥉'];
+                    const pct=inc>0?(val/inc)*100:0;
+                    teamHtml+=`<div class="fin-bar-row">
+                        <div class="fin-bar-top"><span class="fin-bar-name">${medals[i]||'👤'} ${name}</span><span class="fin-bar-val" style="color:#0984e3;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>
+                        <div class="fin-bar-track"><div class="fin-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#0984e3,#74b9ff);"></div></div>
+                        <div class="fin-bar-pct">${pct.toFixed(0)}% das entradas</div>
                     </div>`;
                 });
             } else {
-                teamHtml = '<div style="color:#999; text-align:center; font-size:12px;">Nenhuma venda com vendedor vinculado neste período.</div>';
+                teamHtml='<div style="color:#bdc3c7;text-align:center;padding:10px;font-size:13px;">Nenhuma venda com vendedor vinculado.</div>';
             }
-            
-            const divTeam = document.getElementById('stats-team');
-            if(divTeam) divTeam.innerHTML = teamHtml;
-            
-            // Zera para o próximo ciclo
-            window.teamStats = {};
-            
-            // 5. O SEGREDO (FORÇAR O DESENHO)
-            // Aqui eu chamo as funções DIRETAMENTE. Sem "if window". Vai funcionar na marra.
-            try {
-                renderSixMonthChart();
-                renderAnnualBalance();
-            } catch (e) {
-                console.error("Erro ao desenhar gráficos:", e);
+            const divTeam=document.getElementById('stats-team');
+            if(divTeam) divTeam.innerHTML=teamHtml;
+            window.teamStats={};
+
+            // 7. KPIs Secundários
+            const vendasPagas=filtered.filter(x=>x.type==='venda'&&x.status==='pago');
+            const ticket=vendasPagas.length>0?inc/vendasPagas.length:0;
+            const elT=document.getElementById('kpi-ticket');
+            if(elT) elT.innerText='R$ '+ticket.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+            const dbFull=JSON.parse(localStorage.getItem('oficina_db_master')||'[]');
+            const elP=document.getElementById('kpi-pendentes'); if(elP) elP.innerText=dbFull.filter(x=>x.type==='venda'&&x.status==='pendente').length;
+            const elO=document.getElementById('kpi-orcamentos'); if(elO) elO.innerText=dbFull.filter(x=>x.type==='orcamento').length;
+            const totalOp=filtered.filter(x=>x.type==='orcamento').length+filtered.filter(x=>x.type==='venda').length;
+            const elC=document.getElementById('kpi-conversao'); if(elC) elC.innerText=(totalOp>0?Math.round((filtered.filter(x=>x.type==='venda').length/totalOp)*100):0)+'%';
+            const hoje2=new Date().toLocaleDateString('en-CA');
+            const elH=document.getElementById('kpi-hoje'); if(elH) elH.innerText=dbFull.filter(x=>x.date===hoje2&&x.type!=='expense').length;
+            const metaV=parseFloat(localStorage.getItem('authon_meta_mes')||'0');
+            const elMP=document.getElementById('kpi-meta-pct'),elMB=document.getElementById('kpi-meta-bar');
+            if(elMP&&elMB){
+                if(metaV>0){
+                    const now2=new Date();
+                    const incM=dbFull.filter(x=>{const d=new Date(x.date+'T12:00:00');return x.type==='venda'&&x.status==='pago'&&d.getMonth()===now2.getMonth()&&d.getFullYear()===now2.getFullYear();}).reduce((s,x)=>s+(x.netTotal!==undefined?x.netTotal:x.total),0);
+                    const pct=Math.min(Math.round((incM/metaV)*100),100);
+                    elMP.innerText=pct+'%'; elMB.style.width=pct+'%';
+                    elMB.style.background=pct>=100?'#00b894':pct>=60?'#fdcb6e':'#e74c3c';
+                } else { elMP.innerText='Definir'; elMB.style.width='0%'; }
             }
+
+            try { renderSixMonthChart(); renderAnnualBalance(); } catch(e){ console.error(e); }
         }
           
 
@@ -3105,33 +3560,119 @@ window.saveLogo = function(event) {
         function restoreSystem(event) { const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if(data.db) localStorage.setItem('oficina_db_master', data.db); if(data.cat) localStorage.setItem('catalog_v1', data.cat); if(data.logo) localStorage.setItem('oficina_logo', data.logo); if(data.pix) localStorage.setItem('authon_cfg_pix', data.pix); if(data.war) localStorage.setItem('authon_cfg_warranty', data.war); if(data.km) localStorage.setItem('authon_cfg_km', data.km); alert("Sistema restaurado!"); location.reload(); } catch(err) { alert("Erro ao ler arquivo."); } }; reader.readAsText(event.target.files[0]); }
         
         async function saveExpense() { 
-            const date = document.getElementById('expDate').value; const cat = document.getElementById('expCat').value; const desc = document.getElementById('expDesc').value; const val = parseFloat(document.getElementById('expVal').value); 
-            if(!desc || !val) return alert("Preencha a descrição e valor."); 
-            const item = { id: Date.now(), type: 'expense', date, client: cat, vehicle: desc, total: val, items: [] }; 
+            const date = document.getElementById('expDate').value;
+            const cat  = document.getElementById('expCat').value;
+            const desc = document.getElementById('expDesc').value;
+            const val  = parseFloat(document.getElementById('expVal').value);
+            const expStatus = window._expStatus || 'pago';
+            const venc = expStatus === 'pendente' ? (document.getElementById('expVenc').value || '') : '';
+            const obs  = document.getElementById('expObs').value || '';
+
+            if(!desc || !val) return alert("Preencha a descrição e valor.");
+
+            const item = {
+                id: Date.now(), type: 'expense', date, client: cat,
+                vehicle: desc, total: val,
+                status: expStatus,
+                vencimento: venc,
+                obs: obs,
+                items: []
+            };
             await saveToCloud("operacoes", item);
-            document.getElementById('expDesc').value = ''; document.getElementById('expVal').value = ''; 
-            alert("Despesa salva na Nuvem!");
+            document.getElementById('expDesc').value = '';
+            document.getElementById('expVal').value = '';
+            document.getElementById('expObs').value = '';
+            document.getElementById('expVenc').value = '';
+            setExpStatus('pago');
+            toggleExpForm(true);
+            alert("Despesa salva!");
         }
         
-        // Substitua a função renderExpensesList por esta:
-window.renderExpensesList = function() { 
-    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
-    const list = document.getElementById('expense-list-mini'); 
-    
-    // Pega o termo de busca
-    const searchInput = document.getElementById('expenseSearch');
-    const term = searchInput ? searchInput.value.toLowerCase() : '';
+        // ── DESPESAS: Render com filtro de período, status e visual premium ──
+window.renderExpensesList = function() {
+    const db   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+    const list = document.getElementById('expense-list-mini');
+    if(!list) return;
 
-    list.innerHTML = ''; 
-    
-    db.filter(x => x.type === 'expense').forEach(x => { 
-        // Filtro de busca (Descrição, Categoria, Data)
-        // Nota: No banco de dados, 'vehicle' guarda a descrição e 'client' guarda a categoria para despesas
-        const fullText = (x.vehicle + ' ' + (x.client||'') + ' ' + x.date).toLowerCase();
-        if(term && !fullText.includes(term)) return;
+    const term     = (document.getElementById('expenseSearch')?.value || '').toLowerCase();
+    const eStart   = document.getElementById('expFilterStart')?.value || '';
+    const eEnd     = document.getElementById('expFilterEnd')?.value   || '';
+    const statusF  = window._expFilterStatus || 'all';
+    const hoje     = new Date().toLocaleDateString('en-CA');
 
-        list.innerHTML += `<div class="catalog-item st-expense"><div><small>${x.date.split('-').reverse().join('/')}</small><br><strong>${x.vehicle}</strong><br><span style="font-size:10px; color:#7f8c8d">${x.client || 'Geral'}</span></div><div style="color:var(--primary); font-weight:bold">- R$ ${x.total.toFixed(2)} <i class="fas fa-trash" style="margin-left:10px; cursor:pointer; color:#999; font-size:12px;" onclick="deleteItem('${x.docId}')"></i></div></div>`; 
-    }); 
+    let filtered = db.filter(x => x.type === 'expense');
+
+    // Filtro de período
+    if(eStart) filtered = filtered.filter(x => x.date >= eStart);
+    if(eEnd)   filtered = filtered.filter(x => x.date <= eEnd);
+
+    // Filtro de status
+    if(statusF === 'pago')     filtered = filtered.filter(x => x.status === 'pago' || !x.status);
+    if(statusF === 'pendente') filtered = filtered.filter(x => x.status === 'pendente' && (!x.vencimento || x.vencimento >= hoje));
+    if(statusF === 'vencida')  filtered = filtered.filter(x => x.status === 'pendente' && x.vencimento && x.vencimento < hoje);
+
+    // Filtro de busca
+    if(term) filtered = filtered.filter(x => (x.vehicle+' '+(x.client||'')+' '+x.date).toLowerCase().includes(term));
+
+    filtered.sort((a,b) => b.id - a.id);
+
+    // Total do período
+    const total = filtered.reduce((s,x) => s + x.total, 0);
+
+    if(filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding:50px 20px; color:#bdc3c7;">
+            <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:12px; display:block;"></i>
+            <div style="font-size:14px; font-weight:600;">Nenhuma despesa encontrada</div>
+            <div style="font-size:12px; margin-top:5px;">Tente mudar o período ou filtro</div>
+        </div>`;
+        return;
+    }
+
+    let html = `<div style="margin:12px 15px; background:white; border-radius:14px; padding:14px 16px; box-shadow:0 4px 16px rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#95a5a6;">${filtered.length} despesa${filtered.length>1?'s':''} no período</div>
+        <div style="font-size:16px; font-weight:800; color:#e17055;">- R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+    </div>`;
+
+    filtered.forEach(x => {
+        const isPago    = !x.status || x.status === 'pago';
+        const isVencida = x.status === 'pendente' && x.vencimento && x.vencimento < hoje;
+        const isPendente= x.status === 'pendente' && !isVencida;
+
+        let badgeHtml = '';
+        let borderColor = '#e17055';
+        if(isPago)     { badgeHtml = `<span style="background:#e8faf4; color:#00b894; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">✓ Pago</span>`; borderColor='#00b894'; }
+        if(isPendente) { badgeHtml = `<span style="background:#fff8e8; color:#f39c12; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">⏳ Pendente</span>`; borderColor='#f39c12'; }
+        if(isVencida)  { badgeHtml = `<span style="background:#fff0f0; color:#e74c3c; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">⚠ Vencida</span>`; borderColor='#e74c3c'; }
+
+        const vencInfo = x.vencimento ? `<div style="font-size:11px; color:${isVencida?'#e74c3c':'#95a5a6'}; margin-top:2px;"><i class="fas fa-calendar-xmark" style="margin-right:4px;"></i>Vence: ${x.vencimento.split('-').reverse().join('/')}</div>` : '';
+        const obsInfo  = x.obs ? `<div style="font-size:11px; color:#95a5a6; margin-top:2px; font-style:italic;"><i class="fas fa-comment-dots" style="margin-right:4px;"></i>${x.obs}</div>` : '';
+
+        html += `
+        <div style="margin:0 15px 10px; background:white; border-radius:14px; padding:16px; box-shadow:0 4px 16px rgba(0,0,0,0.05); border-left:4px solid ${borderColor}; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                <div>
+                    <div style="font-size:15px; font-weight:700; color:#2d3436;">${x.vehicle}</div>
+                    <div style="font-size:11px; color:#95a5a6; margin-top:2px;">
+                        <i class="fas fa-tag" style="margin-right:4px;"></i>${x.client || 'Geral'}
+                        &nbsp;·&nbsp;
+                        <i class="fas fa-calendar" style="margin-right:4px;"></i>${x.date.split('-').reverse().join('/')}
+                    </div>
+                    ${vencInfo}
+                    ${obsInfo}
+                </div>
+                <div style="text-align:right; flex-shrink:0; margin-left:10px;">
+                    <div style="font-size:17px; font-weight:800; color:#e17055;">- R$ ${x.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                    <div style="margin-top:5px;">${badgeHtml}</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px; border-top:1px solid #f5f6fa; padding-top:10px;">
+                ${!isPago ? `<button onclick="markExpensePaid('${x.docId}')" style="flex:1; padding:8px; background:#e8faf4; color:#00b894; border:none; border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-check"></i> Marcar como Pago</button>` : ''}
+                <button onclick="deleteItem('${x.docId}')" style="padding:8px 14px; background:#fff0f0; color:#e74c3c; border:none; border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
+    });
+
+    list.innerHTML = html;
 }
 
                // --- FUNÇÕES QUE ESTAVAM FALTANDO NESTA PARTE DO CÓDIGO ---
@@ -3217,6 +3758,133 @@ window.renderExpensesList = function() {
             totalYInc += mInc; totalYExp += mExp;
         });
     }
+
+    // ── HISTÓRICO: controle de período e status ──
+
+    // Botões de período rápido do Histórico
+    window.histPeriod = function(btn, range) {
+        document.querySelectorAll('.hist-period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const today = new Date();
+        const s = document.getElementById('histFilterStart');
+        const e = document.getElementById('histFilterEnd');
+        if(range === 'today') {
+            const str = today.toLocaleDateString('en-CA');
+            s.value = str; e.value = str;
+        } else if(range === 'month') {
+            s.value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            e.value = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().split('T')[0];
+        } else {
+            s.value = ''; e.value = '';
+        }
+        renderHistory(window.currentHistoryFilter || 'all');
+    };
+
+    // Botões de status do Histórico
+    window.histStatus = function(btn, filter) {
+        document.querySelectorAll('.hist-status-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderHistory(filter);
+    };
+
+    // Inicializa o período padrão do Histórico (mês atual)
+    (function initHistoryPeriod() {
+        const today = new Date();
+        const s = document.getElementById('histFilterStart');
+        const e = document.getElementById('histFilterEnd');
+        if(s && e && !s.value) {
+            s.value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            e.value = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().split('T')[0];
+        }
+    })();
+
+    // ── DESPESAS: funções auxiliares ──
+
+    window._expStatus       = 'pago';
+    window._expFilterStatus = 'all';
+
+    window.toggleExpForm = function(forceClose) {
+        const wrapper = document.getElementById('exp-form-wrapper');
+        const icon    = document.getElementById('exp-new-icon');
+        const isOpen  = wrapper.style.display !== 'none';
+        if(forceClose || isOpen) {
+            wrapper.style.display = 'none';
+            icon.className = 'fas fa-plus';
+        } else {
+            wrapper.style.display = 'block';
+            icon.className = 'fas fa-times';
+        }
+    };
+
+    window.setExpStatus = function(status) {
+        window._expStatus = status;
+        document.getElementById('expTogglePago').classList.toggle('active',    status === 'pago');
+        document.getElementById('expTogglePendente').classList.toggle('active', status === 'pendente');
+        document.getElementById('expVencWrapper').style.display = status === 'pendente' ? 'block' : 'none';
+    };
+
+    window.expPeriod = function(btn, range) {
+        document.querySelectorAll('.exp-header .hist-period-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const today = new Date();
+        const s = document.getElementById('expFilterStart');
+        const e = document.getElementById('expFilterEnd');
+        if(range === 'today')      { const str = today.toLocaleDateString('en-CA'); s.value = str; e.value = str; }
+        else if(range === 'month') { s.value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; e.value = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().split('T')[0]; }
+        else                       { s.value = ''; e.value = ''; }
+        renderExpensesList();
+    };
+
+    window.expStatus = function(btn, status) {
+        document.querySelectorAll('#tab-expenses .hist-status-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        window._expFilterStatus = status;
+        renderExpensesList();
+    };
+
+    window.markExpensePaid = async function(docId) {
+        if(!docId) return;
+        try {
+            await window.updateDoc(window.doc(window.db, "operacoes", docId), { status: 'pago', vencimento: '' });
+            alert("Despesa marcada como paga!");
+        } catch(e) { console.error(e); }
+    };
+
+    // ── FINANCEIRO: período rápido ──
+    window.finPeriod = function(btn, range) {
+        document.querySelectorAll('.fin-period-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        setDateRange(range);
+    };
+
+    // ── META MENSAL ──
+    window.openMetaModal = function() {
+        const i=document.getElementById('meta-input'); if(i) i.value=localStorage.getItem('authon_meta_mes')||'';
+        document.getElementById('modal-meta').style.display='flex';
+    };
+    window.saveMeta = function() {
+        const val=parseFloat(document.getElementById('meta-input').value);
+        if(!val||val<=0) return alert("Informe um valor válido para a meta.");
+        localStorage.setItem('authon_meta_mes',val);
+        document.getElementById('modal-meta').style.display='none';
+        updateDashboard(true);
+    };
+
+    // ── HISTÓRICO: período e status ──
+    window.histPeriod = function(btn, range) {
+        document.querySelectorAll('.hist-period-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const today=new Date(), s=document.getElementById('histFilterStart'), e=document.getElementById('histFilterEnd');
+        if(range==='today'){ const str=today.toLocaleDateString('en-CA'); s.value=str; e.value=str; }
+        else if(range==='month'){ s.value=new Date(today.getFullYear(),today.getMonth(),1).toISOString().split('T')[0]; e.value=new Date(today.getFullYear(),today.getMonth()+1,0).toISOString().split('T')[0]; }
+        else { s.value=''; e.value=''; }
+        renderHistory(window.currentHistoryFilter||'all');
+    };
+    window.histStatus = function(btn, filter) {
+        document.querySelectorAll('.hist-status-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        renderHistory(filter);
+    };
 
     // --- CONEXÕES FINAIS ---
     window.renderExpensesList = renderExpensesList;
@@ -3353,7 +4021,207 @@ window.renderExpensesList = function() {
     animation: slideDown 0.3s ease;
 }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        /* --- ESTILOS PARA IMPRESSORA TÉRMICA (CUPOM 58mm) --- */
+
+/* ============================================================
+           ABA DESPESAS — VISUAL PREMIUM
+           ============================================================ */
+        .exp-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px;
+            position: relative; overflow: hidden;
+        }
+        .exp-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .exp-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 3px; }
+        .exp-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .exp-new-btn {
+            background: #e74c3c; color: white; border: none;
+            padding: 10px 16px; border-radius: 10px;
+            font-size: 12px; font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer; display: flex; align-items: center; gap: 7px;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .exp-new-btn:active { transform: scale(0.97); }
+        .exp-search-input {
+            width: 100%; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            color: #1e272e; padding: 11px 14px; font-size: 13px;
+            font-family: 'Poppins', sans-serif; margin-bottom: 14px;
+        }
+        .exp-search-input::placeholder { color: rgba(255,255,255,0.35); }
+        .exp-form-card {
+            margin: 16px 15px;
+            background: white; border-radius: 18px;
+            padding: 20px 16px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+            border-top: 4px solid #e74c3c;
+            animation: slideDown 0.25s ease;
+        }
+        .exp-form-title { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .exp-form-title i { color: #e74c3c; }
+        .exp-status-toggle { display: flex; gap: 10px; margin-top: 6px; }
+        .exp-toggle-btn {
+            flex: 1; padding: 10px; border-radius: 10px;
+            border: 2px solid #f0f0f0; background: #f8f9fa;
+            color: #95a5a6; font-size: 12px; font-weight: 700;
+            font-family: 'Poppins', sans-serif; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        #expTogglePago.active     { background: #e8faf4; border-color: #00b894; color: #00b894; }
+        #expTogglePendente.active { background: #fff8e8; border-color: #f39c12; color: #f39c12; }
+
+        /* ============================================================
+           HISTÓRICO — HEADER PREMIUM
+           ============================================================ */
+        .hist-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+        .hist-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .hist-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 3px; }
+        .hist-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .hist-header-icon { width: 44px; height: 44px; background: rgba(9,132,227,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0984e3; font-size: 18px; }
+
+        /* Campo de busca dentro do header */
+        .hist-search-input {
+            width: 100%; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            color: #1e272e; padding: 11px 14px; font-size: 13px;
+            font-family: 'Poppins', sans-serif; margin-bottom: 14px;
+        }
+        .hist-search-input::placeholder { color: rgba(255,255,255,0.35); }
+
+        /* Botões de período */
+        .hist-period-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .hist-period-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; }
+        .hist-period-btn.active { background: #e74c3c; border-color: #e74c3c; color: white; }
+
+        /* Linha de datas */
+        .hist-date-row { display: flex; align-items: center; gap: 8px; }
+        .hist-date-box { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; }
+        .hist-date-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 2px; }
+        .hist-date-input { background: transparent; border: none; color: white; font-size: 12px; font-family: 'Poppins', sans-serif; width: 100%; padding: 0; height: auto; }
+        .hist-date-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); width: 14px; }
+        .hist-date-sep { color: rgba(255,255,255,0.3); font-size: 16px; }
+
+        /* Botões de status (Todos / Pendentes / Pagos / Orçamentos) */
+        .hist-status-row { display: flex; gap: 8px; padding: 14px 15px; overflow-x: auto; background: white; border-bottom: 1px solid #f0f0f0; }
+        .hist-status-btn { padding: 8px 16px; border-radius: 20px; border: 2px solid transparent; font-size: 11px; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; white-space: nowrap; transition: all 0.2s; background: #f5f6fa; color: #95a5a6; }
+        .hist-status-btn.active       { background: var(--dark);    color: white; border-color: var(--dark); }
+        .hist-status-btn.pend.active  { background: #f39c12;        color: white; border-color: #f39c12; }
+        .hist-status-btn.pago.active  { background: #00b894;        color: white; border-color: #00b894; }
+        .hist-status-btn.orc.active   { background: #7f8c8d;        color: white; border-color: #7f8c8d; }
+
+        /* ============================================================
+           FINANCEIRO — GRÁFICO E SEÇÕES PREMIUM
+           ============================================================ */
+
+        /* Seção label já definida em .fin-section-label acima */
+
+        /* Cards genéricos do financeiro (ranking, pagamento, despesa) */
+        .fin-card {
+            margin: 0 15px;
+            background: white;
+            border-radius: 18px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        /* Barras de progresso premium */
+        .fin-bar-row { margin-bottom: 16px; }
+        .fin-bar-row:last-child { margin-bottom: 0; }
+        .fin-bar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .fin-bar-name { font-size: 12px; font-weight: 600; color: #2d3436; }
+        .fin-bar-val  { font-size: 12px; font-weight: 700; }
+        .fin-bar-track { height: 8px; background: #f0f4f8; border-radius: 20px; overflow: hidden; }
+        .fin-bar-fill  { height: 100%; border-radius: 20px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+        .fin-bar-pct   { font-size: 10px; color: #95a5a6; margin-top: 3px; text-align: right; }
+
+        /* Tabela anual premium */
+        .fin-annual-card { margin: 0 15px; background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-annual-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .fin-annual-table thead tr { background: #1e272e; }
+        .fin-annual-table th { padding: 12px 10px; color: rgba(255,255,255,0.6); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-align: right; }
+        .fin-annual-table th:first-child { text-align: left; }
+        .fin-annual-table td { padding: 11px 10px; border-bottom: 1px solid #f5f6fa; text-align: right; font-size: 11px; }
+        .fin-annual-table td:first-child { text-align: left; font-weight: 700; color: var(--dark); font-size: 12px; }
+        .fin-annual-table tbody tr:last-child td { border-bottom: none; background: #f8f9fa; font-weight: 800; font-size: 12px; }
+        .fin-annual-table tbody tr:hover td { background: #fafbfc; }
+
+        /* Botão exportar */
+        .fin-export-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            background: linear-gradient(135deg, #1d6f42 0%, #27ae60 100%);
+            color: white; font-family: 'Poppins', sans-serif;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            gap: 10px; box-shadow: 0 6px 20px rgba(39,174,96,0.3);
+            transition: transform 0.2s;
+        }
+        .fin-export-btn:active { transform: scale(0.98); }
+
+        /* ── Variáveis das métricas secundárias ── */
+        :root {
+            --mc-purple: #8e44ad; --mc-orange: #e67e22; --mc-gray: #7f8c8d;
+            --mc-green: #00b894;  --mc-blue: #0984e3;   --mc-red: #e74c3c;
+        }
+
+        /* ── Header financeiro ── */
+        .fin-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px; position: relative; overflow: hidden;
+        }
+        
+        .fin-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .fin-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.45); text-transform: uppercase; margin-bottom: 3px; }
+        .fin-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .fin-header-title span { color: #e74c3c; }
+        .fin-header-icon { width: 44px; height: 44px; background: rgba(231,76,60,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #e74c3c; font-size: 18px; }
+        .fin-period-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .fin-period-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; }
+        .fin-period-btn.active { background: #e74c3c; border-color: #e74c3c; color: white; }
+        .fin-date-row { display: flex; align-items: center; gap: 8px; }
+        .fin-date-box { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; }
+        .fin-date-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 2px; }
+        .fin-date-input { background: transparent; border: none; color: white; font-size: 12px; font-family: 'Poppins', sans-serif; width: 100%; padding: 0; height: auto; }
+        .fin-date-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); width: 14px; }
+        .fin-date-sep { color: rgba(255,255,255,0.3); font-size: 16px; }
+        .fin-search-btn { width: 44px; height: 44px; border-radius: 10px; border: none; background: #e74c3c; color: white; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fin-main-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 15px 0; }
+        .fin-kpi-card { background: white; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-kpi-icon-wrap { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .fin-kpi-income .fin-kpi-icon-wrap { background: #e8faf4; color: #00b894; }
+        .fin-kpi-expense .fin-kpi-icon-wrap { background: #fef0ee; color: #e17055; }
+        .fin-kpi-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; margin-bottom: 4px; }
+        .fin-kpi-val { font-size: 15px; font-weight: 800; color: var(--dark); line-height: 1; }
+        .fin-kpi-income .fin-kpi-val { color: #00b894; }
+        .fin-kpi-expense .fin-kpi-val { color: #e17055; }
+        .fin-profit-card { margin: 12px 15px 0; background: linear-gradient(135deg, #1e272e 0%, #2d3436 100%); border-radius: 20px; padding: 24px 22px; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(30,39,46,0.35); }
+        .fin-profit-bg-circles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .fin-profit-circle { position: absolute; border-radius: 50%; }
+        .fin-profit-circle.c1 { width: 120px; height: 120px; top: -40px; right: -30px; background: rgba(231,76,60,0.15); }
+        .fin-profit-circle.c2 { width: 70px; height: 70px; bottom: -20px; left: 20px; background: rgba(0,184,148,0.1); }
+        .fin-profit-content { position: relative; z-index: 1; }
+        .fin-profit-lbl { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 8px; }
+        .fin-profit-val { font-family: 'Oswald', sans-serif; font-size: 38px; font-weight: 700; color: white; letter-spacing: -0.5px; line-height: 1; }
+        .fin-profit-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; }
+        .fin-section-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #95a5a6; padding: 20px 18px 8px; display: flex; align-items: center; gap: 7px; }
+        .fin-section-label i { color: #bdc3c7; font-size: 12px; }
+        .fin-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
+        .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
+        .fin-metric-card:active { transform: scale(0.97); }
+        .fin-metric-icon { font-size: 20px; color: var(--mc); margin-bottom: 6px; }
+        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #95a5a6; margin-bottom: 4px; }
+        .fin-metric-val { font-size: 17px; font-weight: 800; color: var(--mc); line-height: 1; }
+        .fin-meta-bar-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #f0f0f0; }
+        .fin-meta-bar-fill { height: 100%; width: 0%; background: var(--mc); transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+        .fin-chart-card { margin: 0 15px; background: white; border-radius: 18px; padding: 18px 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-chart-legend { display: flex; align-items: center; font-size: 11px; color: #95a5a6; font-weight: 600; margin-bottom: 14px; }
+        .fin-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+
         @media screen {
             #thermal-receipt { display: none !important; }
         }

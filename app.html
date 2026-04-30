@@ -127,7 +127,7 @@ function mostrarToastSucesso() {
 // ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
 async function verificarAssinaturaAposRetorno(user) {
     try {
-        const MP_TOKEN = 'APP_USR-6456093786550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
+        const MP_TOKEN = 'APP_USR-6456093788550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
         const res = await fetch(
             `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(user.email)}&status=authorized`,
             { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
@@ -324,7 +324,7 @@ function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
 // ── VERIFICA ASSINATURA NO MERCADO PAGO ──
 async function verificarAssinaturaMP(email, docId) {
     try {
-        const MP_TOKEN = 'APP_USR-6456093786550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
+        const MP_TOKEN = 'APP_USR-6456093788550895-042920-95393452ef4bcbb262a355745d9da4ab-201801021';
         const res = await fetch(
             `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(email)}&status=authorized`,
             { headers: { Authorization: `Bearer ${MP_TOKEN}` } }

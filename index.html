@@ -1080,6 +1080,7 @@
             goToCheckout(selectedPlan);
 
         } catch(e) {
+            redirecionandoParaMP = false;
             let msg = 'Erro ao criar conta. Tente novamente.';
             if(e.code === 'auth/email-already-in-use') msg = 'Este e-mail já está cadastrado. Faça login.';
             if(e.code === 'auth/invalid-email')        msg = 'E-mail inválido.';

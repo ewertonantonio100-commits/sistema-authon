@@ -112,90 +112,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 
-// ── TELA DE UPGRADE / TRIAL EXPIRADO ──
-function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
-    // Remove tela existente se houver
-    const old = document.getElementById('upgrade-overlay');
-    if(old) old.remove();
-
-    const titulo = planoVencido
-        ? '⚠️ Seu plano venceu'
-        : '🎉 Seu período de teste encerrou!';
-
-    const subtitulo = planoVencido
-        ? 'Renove agora para continuar usando o Authon e não perder nenhum dado.'
-        : 'Você aproveitou 7 dias grátis. Assine agora para continuar com acesso completo.';
-
-    const overlay = document.createElement('div');
-    overlay.id = 'upgrade-overlay';
-    overlay.style.cssText = `
-        position: fixed; inset: 0; z-index: 99999;
-        background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 100%);
-        display: flex; align-items: center; justify-content: center;
-        padding: 20px; font-family: 'Poppins', sans-serif;
-    `;
-
-    overlay.innerHTML = `
-        <div style="background:#111d2e; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px 32px; max-width:480px; width:100%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
-            
-            <div style="font-size:52px; margin-bottom:16px;">🔒</div>
-            
-            <h2 style="font-family:'Oswald',sans-serif; font-size:28px; color:white; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
-                ${titulo}
-            </h2>
-            
-            <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:1.7; margin-bottom:28px;">
-                ${subtitulo}
-            </p>
-
-            <!-- Planos -->
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px;">
-                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
-                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Basic</div>
-                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$67</div>
-                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
-                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$670/ano</div>
-                </div>
-                <div style="background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.3); border-radius:12px; padding:16px 10px; position:relative; text-align:center;">
-                    <div style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#00b894; color:white; font-size:8px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; letter-spacing:1px;">⭐ POPULAR</div>
-                    <div style="font-size:10px; font-weight:700; color:#00b894; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Pro</div>
-                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$97</div>
-                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
-                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$970/ano</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
-                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Premium</div>
-                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$147</div>
-                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
-                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$1.470/ano</div>
-                </div>
-            </div>
-            <p style="font-size:11px; color:#00b894; margin-bottom:20px; font-weight:600;">🎉 No plano anual você ganha 2 meses grátis!</p>
-
-            <!-- Botão principal -->
-            <a href="https://wa.me/5587996523840?text=Olá!%20Quero%20assinar%20o%20Sistema%20Authon" target="_blank"
-               style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:#D92525; color:white; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 8px 24px rgba(217,37,37,0.35); margin-bottom:12px; transition:all 0.2s;">
-                <i class="fab fa-whatsapp" style="font-size:18px;"></i>
-                ASSINAR AGORA
-            </a>
-
-            <!-- Sair -->
-            <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
-                style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer;">
-                Sair da conta
-            </button>
-
-            <p style="font-size:11px; color:rgba(255,255,255,0.2); margin-top:16px; line-height:1.6;">
-                Seus dados estão seguros e serão mantidos.<br>
-                Dúvidas? <a href="https://wa.me/5587996523840" target="_blank" style="color:rgba(255,255,255,0.4);">Fale conosco</a>
-            </p>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-}
-
-// ── FIM TELA UPGRADE ──
+// Substitua a função iniciarSistema inteira por esta versão:
 function iniciarSistema() {
     const user = auth.currentUser;
     if (!user) return;
@@ -222,23 +139,12 @@ function iniciarSistema() {
             const cfg = docSnap.data();
 
             // --- A GUILHOTINA: VERIFICA SE ESTÁ BLOQUEADO ---
+            // Se estiver bloqueado e o e-mail não for o seu (Dono), expulsa na hora!
             if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {
                 alert("⚠️ ATENÇÃO\nO acesso da sua oficina foi temporariamente suspenso. Por favor, entre em contato com o suporte financeiro.");
                 window.auth.signOut().then(() => location.reload());
-                return;
+                return; // Para o carregamento aqui
             }
-
-            // --- VERIFICA TRIAL EXPIRADO ---
-            const hoje = new Date().toLocaleDateString('en-CA');
-            if (cfg.status === 'admin') {
-    // Conta de teste/admin — acesso liberado sem verificação
-} else if (cfg.status === 'trial' && cfg.trialExpira && cfg.trialExpira < hoje && user.email !== window.ADMIN_EMAIL) {
-    mostrarTelaUpgrade(cfg.trialExpira);
-    return;
-} else if (cfg.status === 'ativo' && cfg.planoExpira && cfg.planoExpira < hoje && user.email !== window.ADMIN_EMAIL) {
-    mostrarTelaUpgrade(null, true);
-    return;
-}
 
             // --- GRAVA O ÚLTIMO ACESSO E O E-MAIL (Invisível) ---
             const todayStr = new Date().toLocaleDateString('en-CA');
@@ -255,11 +161,8 @@ function iniciarSistema() {
                 if(btnAdmin) btnAdmin.style.display = 'block';
             }
             
-            // Salva no LocalStorage
-            if(cfg.name)        localStorage.setItem('authon_cfg_name', cfg.name);
-            if(cfg.nomeOficina) localStorage.setItem('authon_cfg_name', cfg.nomeOficina); // cadastro novo
-            if(cfg.plano)       localStorage.setItem('authon_plano', cfg.plano);
-            if(cfg.status)      localStorage.setItem('authon_status', cfg.status);
+            // Salva no LocalStorage (O resto do seu código original continua igual abaixo)
+            if(cfg.name) localStorage.setItem('authon_cfg_name', cfg.name);
             if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
             if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
             if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
@@ -1333,68 +1236,35 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
     </div>
 
     <div id="modal-config"><div class="modal-box"><h3 style="text-align:center; margin-bottom:15px;">Alterar Logo</h3><input type="file" accept="image/*" onchange="saveLogo(event)"><button onclick="closeModal()" class="btn-action" style="margin-top:15px; background:#7f8c8d;">Fechar</button></div></div>
-        <!-- ============================================================ -->
-        <!-- PAINEL SUPER ADMIN — PREMIUM                                  -->
-        <!-- ============================================================ -->
-        <div id="modal-admin" style="display:none; position:fixed; inset:0; background:#0d1b2a; z-index:999999; overflow-y:auto;">
-
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#0d1b2a 0%,#1B2D42 100%); padding:20px; position:sticky; top:0; z-index:10; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:9px; font-weight:700; letter-spacing:2px; color:rgba(255,255,255,0.4); text-transform:uppercase; margin-bottom:3px;">Sistema Authon</div>
-                    <div style="font-family:'Oswald',sans-serif; font-size:22px; color:white; letter-spacing:1px;">
-                        <i class="fas fa-crown" style="color:#f0a500; margin-right:8px;"></i>Painel Admin
-                    </div>
-                </div>
-                <button onclick="document.getElementById('modal-admin').style.display='none'"
-                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.6); padding:9px 16px; border-radius:8px; font-size:12px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer; display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-times"></i> FECHAR
-                </button>
-            </div>
-
-            <!-- KPIs -->
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px 15px 0;">
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #00b894;">
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Total</div>
-                    <div style="font-size:26px; font-weight:800; color:white; font-family:'Oswald',sans-serif;" id="admin-total-users">0</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #00b894;">
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Ativos</div>
-                    <div style="font-size:26px; font-weight:800; color:#00b894; font-family:'Oswald',sans-serif;" id="admin-total-ativos">0</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #f39c12;">
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Trial</div>
-                    <div style="font-size:26px; font-weight:800; color:#f39c12; font-family:'Oswald',sans-serif;" id="admin-total-trial">0</div>
-                </div>
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px 10px; text-align:center; border-top:3px solid #e74c3c;">
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Bloqueados</div>
-                    <div style="font-size:26px; font-weight:800; color:#e74c3c; font-family:'Oswald',sans-serif;" id="admin-total-blocked">0</div>
-                </div>
-            </div>
-
-            <!-- MRR estimado -->
-            <div style="margin:12px 15px 0; background:linear-gradient(135deg,#0f2420,#0d1b2a); border:1px solid rgba(0,184,148,0.25); border-radius:14px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">💰 Receita Mensal Estimada (MRR)</div>
-                    <div style="font-size:28px; font-weight:800; color:#00b894; font-family:'Oswald',sans-serif;" id="admin-mrr">R$ 0</div>
-                </div>
-                <div style="text-align:right;">
-                    <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Anual Estimado</div>
-                    <div style="font-size:16px; font-weight:800; color:rgba(255,255,255,0.6); font-family:'Oswald',sans-serif;" id="admin-arr">R$ 0</div>
-                </div>
-            </div>
-
-            <!-- Busca -->
-            <div style="padding:14px 15px 0;">
-                <input type="text" id="admin-search" placeholder="🔍 Buscar oficina ou e-mail..."
-                    oninput="filterAdminList()"
-                    style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:11px 14px; color:white; font-size:13px; font-family:'Poppins',sans-serif;">
-            </div>
-
-            <!-- Lista de clientes -->
-            <div id="admin-cards-list" style="padding:14px 15px 30px;"></div>
-
+        <div id="modal-admin" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f6fa; z-index: 999999; overflow-y: auto;">
+        <div style="background: var(--dark); padding: 20px; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0;">
+            <h2 style="margin: 0; font-size: 18px;"><i class="fas fa-crown" style="color: #f1c40f;"></i> Painel Super Admin</h2>
+            <button onclick="document.getElementById('modal-admin').style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">FECHAR</button>
         </div>
+        
+        <div class="kpi-grid" style="padding: 20px; gap: 10px;">
+            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Total de Oficinas</div><div class="kpi-value" id="admin-total-users" style="color: var(--blue-grad)">0</div></div>
+            <div class="kpi-card" style="padding: 15px;"><div class="kpi-label">Bloqueadas</div><div class="kpi-value" id="admin-total-blocked" style="color: var(--primary)">0</div></div>
+        </div>
+
+        <div style="padding: 0 20px 20px 20px;">
+            <div style="background: white; border-radius: 12px; box-shadow: var(--shadow); overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                    <thead>
+                        <tr style="background: #ecf0f1; color: #2c3e50;">
+                            <th style="padding: 12px;">Oficina / E-mail</th>
+                            <th style="padding: 12px;">Contato</th>
+                            <th style="padding: 12px;">Último Acesso</th>
+                            <th style="padding: 12px; text-align: center;">Status</th>
+                            <th style="padding: 12px; text-align: center;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
             <div id="modal-pay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center;">
         <div style="background: white; width: 90%; max-width: 350px; padding: 25px; border-radius: 16px;">
@@ -1449,165 +1319,65 @@ document.querySelectorAll('input, textarea, select').forEach(element => {
         // --- SISTEMA SUPER ADMIN (CONTROLE DE CLIENTES) ---
         window.ADMIN_EMAIL = "admin@authon.com"; // ⚠️ ATENÇÃO: COLOQUE SEU E-MAIL REAL DE ACESSO AQUI!
 
-        // --- PAINEL SUPER ADMIN PREMIUM ---
-        window._adminData = []; // cache para filtro
-
         window.openSuperAdmin = async function() {
             const user = auth.currentUser;
             if(!user || user.email !== window.ADMIN_EMAIL) return alert("Acesso restrito.");
-
+            
             document.getElementById('modal-admin').style.display = 'block';
-            document.getElementById('admin-cards-list').innerHTML = `
-                <div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">
-                    <i class="fas fa-spinner fa-spin" style="font-size:28px; margin-bottom:12px; display:block;"></i>
-                    Carregando clientes...
-                </div>`;
-
+            document.getElementById('admin-users-list').innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center;">Carregando clientes...</td></tr>';
+            
             try {
+                // Busca TODOS os cadastros de oficinas
                 const querySnapshot = await window.getDocs(window.collection(window.db, "configuracoes"));
-                window._adminData = [];
-
-                let totalAtivos=0, totalBloqueados=0, totalTrial=0, mrr=0;
-                const hoje = new Date().toLocaleDateString('en-CA');
-
-                const planoPrecos = { basic:67, pro:97, premium:147 };
+                const list = document.getElementById('admin-users-list');
+                list.innerHTML = '';
+                
+                let totalAtivos = 0; let totalBloqueados = 0;
 
                 querySnapshot.forEach((docSnap) => {
                     const cfg = docSnap.data();
-                    window._adminData.push({ ...cfg, docId: docSnap.id });
+                    const docId = docSnap.id;
+                    const isBlocked = cfg.status === 'bloqueado';
+                    
+                    if(isBlocked) totalBloqueados++; else totalAtivos++;
 
-                    const st = cfg.status || 'ativo';
-                    if(st === 'ativo')      { totalAtivos++;    mrr += planoPrecos[cfg.plano] || 97; }
-                    if(st === 'trial')       totalTrial++;
-                    if(st === 'bloqueado')   totalBloqueados++;
+                    const statusBadge = isBlocked 
+                        ? '<span style="background:#ffebee; color:#c0392b; padding:4px 8px; border-radius:4px; font-weight:bold;">BLOQUEADO</span>' 
+                        : '<span style="background:#e8f5e9; color:#27ae60; padding:4px 8px; border-radius:4px; font-weight:bold;">ATIVO</span>';
+
+                    const actionBtn = isBlocked
+                        ? `<button onclick="toggleBlockClient('${docId}', 'ativo')" style="background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Liberar</button>`
+                        : `<button onclick="toggleBlockClient('${docId}', 'bloqueado')" style="background:#c0392b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">Bloquear</button>`;
+
+                    const dataAcesso = cfg.lastAccess ? cfg.lastAccess.split('-').reverse().join('/') : 'Nunca';
+
+                    list.innerHTML += `
+                        <tr style="border-bottom: 1px solid #f1f2f6;">
+                            <td style="padding: 12px;"><strong>${cfg.name || 'Sem Nome'}</strong><br><small style="color:#7f8c8d">${cfg.email || 'E-mail não salvo'}</small></td>
+                            <td style="padding: 12px;">${cfg.phone || '-'}</td>
+                            <td style="padding: 12px;">${dataAcesso}</td>
+                            <td style="padding: 12px; text-align: center;">${statusBadge}</td>
+                            <td style="padding: 12px; text-align: center;">${actionBtn}</td>
+                        </tr>
+                    `;
                 });
 
-                document.getElementById('admin-total-users').innerText   = window._adminData.length;
-                document.getElementById('admin-total-ativos').innerText  = totalAtivos;
-                document.getElementById('admin-total-trial').innerText   = totalTrial;
+                document.getElementById('admin-total-users').innerText = totalAtivos + totalBloqueados;
                 document.getElementById('admin-total-blocked').innerText = totalBloqueados;
-                document.getElementById('admin-mrr').innerText  = 'R$ ' + mrr.toLocaleString('pt-BR');
-                document.getElementById('admin-arr').innerText  = 'R$ ' + (mrr*12).toLocaleString('pt-BR');
-
-                renderAdminCards(window._adminData);
 
             } catch(e) {
                 console.error(e);
-                document.getElementById('admin-cards-list').innerHTML = `<div style="color:#e74c3c; text-align:center; padding:30px;">Erro ao carregar clientes.</div>`;
+                alert("Erro ao carregar clientes.");
             }
-        };
+        }
 
-        window.renderAdminCards = function(data) {
-            const hoje = new Date().toLocaleDateString('en-CA');
-            const list = document.getElementById('admin-cards-list');
-            if(!list) return;
-
-            if(data.length === 0) {
-                list.innerHTML = `<div style="text-align:center; padding:40px; color:rgba(255,255,255,0.3);">Nenhum cliente encontrado.</div>`;
-                return;
-            }
-
-            list.innerHTML = data.map(cfg => {
-                const st = cfg.status || 'ativo';
-                const isAdmin    = st === 'admin';
-                const isAtivo    = st === 'ativo';
-                const isTrial    = st === 'trial';
-                const isBloqueado= st === 'bloqueado';
-
-                // Badge de status
-                let badge = '';
-                if(isAdmin)     badge = `<span style="background:rgba(240,165,0,0.15); color:#f0a500; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">👑 Admin</span>`;
-                if(isAtivo)     badge = `<span style="background:rgba(0,184,148,0.15); color:#00b894; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">✓ Ativo</span>`;
-                if(isTrial)     badge = `<span style="background:rgba(243,156,18,0.15); color:#f39c12; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">⏳ Trial</span>`;
-                if(isBloqueado) badge = `<span style="background:rgba(231,76,60,0.15); color:#e74c3c; font-size:9px; font-weight:700; padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;">🔒 Bloqueado</span>`;
-
-                // Cor da borda
-                const borderColor = isAdmin?'#f0a500': isAtivo?'#00b894': isTrial?'#f39c12':'#e74c3c';
-
-                // Vencimento
-                const venceEm = cfg.planoExpira || cfg.trialExpira || '—';
-                const venceFormatted = venceEm !== '—' ? venceEm.split('-').reverse().join('/') : '—';
-                const vencido = venceEm !== '—' && venceEm < hoje;
-
-                // Plano
-                const planoNome = (cfg.plano || 'pro').toUpperCase();
-                const period = cfg.periodicidade === 'anual' ? 'Anual' : 'Mensal';
-
-                // Último acesso
-                const lastAccess = cfg.lastAccess ? cfg.lastAccess.split('-').reverse().join('/') : 'Nunca';
-
-                // Botões de ação
-                let acoes = '';
-                if(!isAdmin) {
-                    if(isBloqueado) {
-                        acoes += `<button onclick="adminSetStatus('${cfg.docId}','ativo')" style="flex:1; padding:8px; background:rgba(0,184,148,0.15); color:#00b894; border:1px solid rgba(0,184,148,0.3); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-unlock"></i> Liberar</button>`;
-                    } else {
-                        acoes += `<button onclick="adminSetStatus('${cfg.docId}','bloqueado')" style="flex:1; padding:8px; background:rgba(231,76,60,0.1); color:#e74c3c; border:1px solid rgba(231,76,60,0.2); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-ban"></i> Bloquear</button>`;
-                    }
-                    acoes += `<button onclick="adminExtendPlan('${cfg.docId}','${cfg.plano||'pro'}')" style="flex:1; padding:8px; background:rgba(0,184,148,0.15); color:#00b894; border:1px solid rgba(0,184,148,0.3); border-radius:8px; font-size:11px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer;"><i class="fas fa-calendar-plus"></i> Renovar</button>`;
-                }
-
-                return `
-                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-left:3px solid ${borderColor}; border-radius:14px; padding:16px; margin-bottom:10px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                        <div>
-                            <div style="font-size:15px; font-weight:700; color:white; margin-bottom:3px;">${cfg.nomeOficina || cfg.name || 'Sem nome'}</div>
-                            <div style="font-size:11px; color:rgba(255,255,255,0.4);">${cfg.email || '—'}</div>
-                            <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:2px;">${cfg.phone || '—'}</div>
-                        </div>
-                        <div style="text-align:right; flex-shrink:0; margin-left:10px;">
-                            ${badge}
-                            <div style="font-size:11px; color:rgba(255,255,255,0.5); margin-top:6px; font-weight:700;">${planoNome} · ${period}</div>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                        <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:8px 10px;">
-                            <div style="font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Último acesso</div>
-                            <div style="font-size:12px; font-weight:700; color:rgba(255,255,255,0.7);">${lastAccess}</div>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:8px 10px;">
-                            <div style="font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Vencimento</div>
-                            <div style="font-size:12px; font-weight:700; color:${vencido?'#e74c3c':'rgba(255,255,255,0.7)'};">${venceFormatted} ${vencido?'⚠':''}</div>
-                        </div>
-                    </div>
-                    ${acoes ? `<div style="display:flex; gap:8px;">${acoes}</div>` : ''}
-                </div>`;
-            }).join('');
-        };
-
-        window.filterAdminList = function() {
-            const term = document.getElementById('admin-search').value.toLowerCase();
-            const filtered = window._adminData.filter(c =>
-                (c.nomeOficina||c.name||'').toLowerCase().includes(term) ||
-                (c.email||'').toLowerCase().includes(term)
-            );
-            renderAdminCards(filtered);
-        };
-
-        window.adminSetStatus = async function(docId, newStatus) {
+        window.toggleBlockClient = async function(docId, newStatus) {
             const acao = newStatus === 'bloqueado' ? 'BLOQUEAR' : 'LIBERAR';
-            if(!confirm(`Tem certeza que deseja ${acao} esta oficina?`)) return;
-            await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
-            window.openSuperAdmin();
-        };
-
-        window.adminExtendPlan = async function(docId, plano) {
-            const meses = prompt('Renovar por quantos meses?', '1');
-            if(!meses || isNaN(meses)) return;
-            const hoje = new Date();
-            hoje.setMonth(hoje.getMonth() + parseInt(meses));
-            const novaData = hoje.toLocaleDateString('en-CA');
-            await window.updateDoc(window.doc(window.db, "configuracoes", docId), {
-                status: 'ativo',
-                plano: plano,
-                planoExpira: novaData
-            });
-            alert(`✅ Plano renovado até ${novaData.split('-').reverse().join('/')}!`);
-            window.openSuperAdmin();
-        };
-
-        // Mantém compatibilidade com o botão antigo
-        window.toggleBlockClient = window.adminSetStatus;
+            if(confirm(`Tem certeza que deseja ${acao} esta oficina?`)) {
+                await window.updateDoc(window.doc(window.db, "configuracoes", docId), { status: newStatus });
+                window.openSuperAdmin(); // Recarrega a lista
+            }
+        }
 
         // --- ONBOARDING AUTOMÁTICO (INJEÇÃO DE CATÁLOGO) ---
         window.injectStarterCatalog = async function(user) {

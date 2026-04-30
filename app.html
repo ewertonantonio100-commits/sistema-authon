@@ -230,13 +230,14 @@ function mostrarTelaPendente(plano, periodicidade) {
 }
 
 async function verificarPagamentoManual() {
-    const user = auth.currentUser;
+    const user = window.auth ? window.auth.currentUser : auth.currentUser;
     if(!user) return;
     const link = document.querySelector('#pendente-overlay a');
     if(link) link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     await verificarAssinaturaAposRetorno(user);
     setTimeout(() => window.location.reload(), 1500);
 }
+window.verificarPagamentoManual = verificarPagamentoManual;
 
 // ── TELA DE UPGRADE / TRIAL EXPIRADO ──
 function mostrarTelaUpgrade(trialExpira, planoVencido = false) {

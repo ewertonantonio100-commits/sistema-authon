@@ -922,7 +922,7 @@
     function goToCheckout(plan) {
         const key = plan + '-' + billingCycle;
         const link = MP_LINKS[key];
-        if(link) window.open(link, '_blank');
+        if(link) window.location.href = link;
     }
 
     // ── TOGGLE MENSAL / ANUAL ──
@@ -1058,6 +1058,9 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
 
         try {
+            // Seta flag para não redirecionar pro app durante o cadastro
+            redirecionandoParaMP = true;
+
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
             const uid  = cred.user.uid;
 
@@ -1135,9 +1138,10 @@
         else entrar();
     });
 
-    // Se já está logado, vai direto pro app
+    // Se já está logado E não está no meio de um cadastro, vai pro app
+    let redirecionandoParaMP = false;
     auth.onAuthStateChanged(user => {
-        if(user) window.location.href = 'app.html';
+        if(user && !redirecionandoParaMP) window.location.href = 'app.html';
     });
 </script>
 

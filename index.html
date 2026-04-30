@@ -797,21 +797,17 @@
             <div class="modal-tab"        id="tab-login"    onclick="switchTab('login')">Já sou cliente</div>
         </div>
 
-        <!-- FORMULÁRIO DE CADASTRO -->
+        <!-- SELETOR DE PLANO → CHECKOUT MP -->
         <div class="modal-form active" id="form-cadastro">
-            <label>Nome completo</label>
-            <input type="text" class="modal-input" id="reg-name" placeholder="Ex: João Silva">
 
-            <label>Nome da Oficina</label>
-            <input type="text" class="modal-input" id="reg-oficina" placeholder="Ex: Oficina do João">
+            <div style="background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.2); border-radius:10px; padding:12px 14px; margin-bottom:18px; text-align:center;">
+                <div style="font-size:13px; color:rgba(255,255,255,0.7); line-height:1.7;">
+                    ✅ <strong style="color:#00b894;">Sua conta é criada automaticamente</strong><br>
+                    <span style="font-size:12px; color:rgba(255,255,255,0.4);">Após o pagamento você recebe o acesso por e-mail. Sem burocracia.</span>
+                </div>
+            </div>
 
-            <label>E-mail</label>
-            <input type="email" class="modal-input" id="reg-email" placeholder="seu@email.com">
-
-            <label>Senha</label>
-            <input type="password" class="modal-input" id="reg-pass" placeholder="Mínimo 6 caracteres">
-
-            <label style="margin-top:18px;">Periodicidade</label>
+            <label style="margin-top:4px;">Periodicidade</label>
             <div class="billing-toggle" style="margin-bottom:12px; width:100%; justify-content:center;">
                 <button class="billing-btn active" id="modal-btn-mensal" onclick="setModalBilling('mensal')" style="flex:1; text-align:center;">Mensal</button>
                 <button class="billing-btn" id="modal-btn-anual" onclick="setModalBilling('anual')" style="flex:1; text-align:center;">Anual <span class="billing-save-badge" style="font-size:9px;">2 meses grátis</span></button>
@@ -821,15 +817,15 @@
             <div class="modal-plan-selector">
                 <div class="modal-plan-opt" id="opt-basic" onclick="selectPlan('basic')">
                     <div class="plan-opt-name">Basic</div>
-                    <div class="plan-opt-price" id="modal-basic-price">R$67</div>
+                    <div class="plan-opt-price" id="modal-basic-price">R$67/mês</div>
                 </div>
                 <div class="modal-plan-opt selected" id="opt-pro" onclick="selectPlan('pro')">
                     <div class="plan-opt-name">Pro ⭐</div>
-                    <div class="plan-opt-price" id="modal-pro-price">R$97</div>
+                    <div class="plan-opt-price" id="modal-pro-price">R$97/mês</div>
                 </div>
                 <div class="modal-plan-opt" id="opt-premium" onclick="selectPlan('premium')">
                     <div class="plan-opt-name">Premium</div>
-                    <div class="plan-opt-price" id="modal-premium-price">R$147</div>
+                    <div class="plan-opt-price" id="modal-premium-price">R$147/mês</div>
                 </div>
             </div>
             <div style="font-size:11px; color:rgba(255,255,255,0.3); text-align:center; margin-top:8px;" id="modal-billing-note">Cobrado mensalmente</div>
@@ -840,11 +836,23 @@
             </div>
 
             <button class="btn-modal-submit" id="btn-cadastrar" onclick="goToCheckout(selectedPlan)">
-                <i class="fas fa-rocket"></i> ASSINAR AGORA — 7 DIAS GRÁTIS
+                <i class="fas fa-lock"></i> IR PARA O PAGAMENTO SEGURO
             </button>
 
+            <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-top:14px; flex-wrap:wrap;">
+                <span style="font-size:11px; color:rgba(255,255,255,0.3); display:flex; align-items:center; gap:5px;">
+                    <i class="fas fa-lock" style="color:#00b894;"></i> Pagamento seguro
+                </span>
+                <span style="font-size:11px; color:rgba(255,255,255,0.3); display:flex; align-items:center; gap:5px;">
+                    <i class="fas fa-undo" style="color:#00b894;"></i> Cancele quando quiser
+                </span>
+                <span style="font-size:11px; color:rgba(255,255,255,0.3); display:flex; align-items:center; gap:5px;">
+                    <i class="fas fa-envelope" style="color:#00b894;"></i> Acesso por e-mail
+                </span>
+            </div>
+
             <div class="modal-switch">
-                Já assinou? <a onclick="switchTab('login')">Fazer login</a>
+                Já pagou? <a onclick="switchTab('login')">Fazer login</a>
             </div>
         <div class="modal-form" id="form-login">
             <label>E-mail</label>
@@ -1019,58 +1027,6 @@
         });
     }
 
-    // ── CADASTRO ──
-    async function cadastrar() {
-        const name    = document.getElementById('reg-name').value.trim();
-        const oficina = document.getElementById('reg-oficina').value.trim();
-        const email   = document.getElementById('reg-email').value.trim();
-        const pass    = document.getElementById('reg-pass').value;
-
-        if(!name || !oficina || !email || !pass) return showError('reg-error', 'Preencha todos os campos.');
-        if(pass.length < 6) return showError('reg-error', 'A senha deve ter pelo menos 6 caracteres.');
-
-        const btn = document.getElementById('btn-cadastrar');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
-
-        try {
-            // Cria o usuário no Firebase Auth
-            const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            const uid  = cred.user.uid;
-
-            // Calcula o trial (7 dias)
-            const trialExpira = new Date();
-            trialExpira.setDate(trialExpira.getDate() + 7);
-
-            // Salva o perfil no Firestore
-            await db.collection('configuracoes').add({
-                uid,
-                nome:          name,
-                nomeOficina:   oficina,
-                email,
-                plano:         selectedPlan,
-                periodicidade: billingCycle,       // 'mensal' ou 'anual'
-                status:        'trial',
-                trialExpira:   trialExpira.toLocaleDateString('en-CA'),
-                planoExpira:   '',
-                criadoEm:      new Date().toLocaleDateString('en-CA'),
-                lastAccess:    new Date().toLocaleDateString('en-CA')
-            });
-
-            // Redireciona para o app
-            window.location.href = 'app.html';
-
-        } catch(e) {
-            let msg = 'Erro ao criar conta. Tente novamente.';
-            if(e.code === 'auth/email-already-in-use') msg = 'Este e-mail já está cadastrado. Faça login.';
-            if(e.code === 'auth/invalid-email')        msg = 'E-mail inválido.';
-            if(e.code === 'auth/weak-password')        msg = 'Senha muito fraca. Use pelo menos 6 caracteres.';
-            showError('reg-error', msg);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-rocket"></i> CRIAR CONTA GRÁTIS';
-        }
-    }
-
     // ── LOGIN ──
     async function entrar() {
         const email = document.getElementById('log-email').value.trim();
@@ -1112,11 +1068,10 @@
         }
     }
 
-    // Enter nos inputs
+    // Enter no login
     document.addEventListener('keydown', function(e) {
         if(e.key !== 'Enter') return;
-        if(document.getElementById('form-cadastro').classList.contains('active')) cadastrar();
-        else entrar();
+        if(document.getElementById('form-login').classList.contains('active')) entrar();
     });
 
     // Se já está logado, vai direto pro app

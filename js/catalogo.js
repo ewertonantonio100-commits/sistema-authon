@@ -135,6 +135,54 @@ window.renderCatalogList = function () {
         return;
     }
 
+    // ── ALERTAS DE ESTOQUE BAIXO / ZERADO ──
+    const zerados = cat.filter(c => c.type === 'produto' && c.stock !== null && c.stock <= 0);
+    const baixos  = cat.filter(c => c.type === 'produto' && c.stock !== null && c.stock > 0 && c.stock < 6);
+
+    if (!term && (zerados.length > 0 || baixos.length > 0)) {
+        let alertHtml = '';
+
+        if (zerados.length > 0) {
+            alertHtml += `
+            <div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:14px;
+                        padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:36px;height:36px;background:#e74c3c;border-radius:10px;
+                            display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-exclamation-triangle" style="color:white;font-size:15px;"></i>
+                </div>
+                <div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#e74c3c;margin-bottom:4px;">
+                        ⛔ ${zerados.length} produto${zerados.length > 1 ? 's' : ''} ESGOTADO${zerados.length > 1 ? 'S' : ''}
+                    </div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#c0392b;line-height:1.5;">
+                        ${zerados.map(c => `<strong>${c.name}</strong>`).join(', ')}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        if (baixos.length > 0) {
+            alertHtml += `
+            <div style="background:#fff8e8;border:1px solid #fde8b0;border-radius:14px;
+                        padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:36px;height:36px;background:#f39c12;border-radius:10px;
+                            display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-box-open" style="color:white;font-size:15px;"></i>
+                </div>
+                <div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#f39c12;margin-bottom:4px;">
+                        ⚠️ ${baixos.length} produto${baixos.length > 1 ? 's' : ''} com ESTOQUE BAIXO
+                    </div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#e67e22;line-height:1.5;">
+                        ${baixos.map(c => `<strong>${c.name}</strong> (${c.stock} restante${c.stock > 1 ? 's' : ''})`).join(', ')}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        div.innerHTML = alertHtml;
+    }
+
     filtered.forEach((c, idx) => {
         let stockHtml = '';
         if (c.type === 'servico') {
@@ -145,20 +193,42 @@ window.renderCatalogList = function () {
         }
 
         const icon = c.type === 'servico'
-            ? '<i class="fas fa-wrench" style="color:#ccc;"></i>'
-            : '<i class="fas fa-box" style="color:#ccc;"></i>';
+            ? '<i class="fas fa-wrench" style="color:#0984e3;font-size:14px;"></i>'
+            : '<i class="fas fa-box" style="color:#636e72;font-size:14px;"></i>';
+
+        // Borda colorida por status
+        const borderColor = c.type === 'servico' ? '#0984e3'
+            : c.stock <= 0 ? '#e74c3c'
+            : c.stock < 6  ? '#f39c12'
+            : '#00b894';
 
         div.innerHTML += `
-        <div class="catalog-item">
-            <div style="font-size:13px;">
-                ${icon} <strong>${c.name}</strong> <small>(${c.code})</small><br>
-                <span style="font-size:10px;background:#f5f5f5;padding:2px 5px;border-radius:4px;">${c.category}</span>
-                ${stockHtml}
+        <div class="catalog-item" style="border-left-color:${borderColor};">
+            <div style="font-size:13px;flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                    ${icon}
+                    <strong style="font-size:14px;color:#1e272e;">${c.name}</strong>
+                    <small style="color:#b2bec3;">(${c.code})</small>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                    <span style="background:#f0f3f9;color:#636e72;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;">${c.category}</span>
+                    ${stockHtml}
+                </div>
             </div>
-            <div style="display:flex;align-items:center;gap:15px;">
-                <strong>R$ ${parseFloat(c.price||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>
-                <i class="fas fa-edit" style="color:#2980b9;cursor:pointer;" onclick="editCatalogItem(${idx})"></i>
-                <i class="fas fa-trash" style="color:var(--primary);cursor:pointer;" onclick="delCatalog(${idx})"></i>
+            <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                <div style="text-align:right;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#1e272e;">
+                        R$ ${parseFloat(c.price||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button style="width:32px;height:32px;border-radius:8px;border:none;background:#e8f4fd;color:#0984e3;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="editCatalogItem(${idx})">
+                        <i class="fas fa-pen" style="font-size:12px;"></i>
+                    </button>
+                    <button style="width:32px;height:32px;border-radius:8px;border:none;background:#fef0ee;color:#e74c3c;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="delCatalog(${idx})">
+                        <i class="fas fa-trash" style="font-size:12px;"></i>
+                    </button>
+                </div>
             </div>
         </div>`;
     });
@@ -197,4 +267,3 @@ window.injectStarterCatalog = async function (user) {
 };
 
 console.log('📦 Catálogo carregado');
-

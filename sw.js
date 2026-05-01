@@ -4,7 +4,7 @@
 // Para forçar atualização: suba arquivos novos no GitHub
 // ============================================================
 
-const CACHE_VERSION = 'authon-cache-v32';
+const CACHE_VERSION = 'authon-cache-v33';
 
 const urlsToCache = [
   // ── Fontes e ícones externos ──
@@ -18,6 +18,7 @@ const urlsToCache = [
 
   // ── CSS do app ──
   'css/app.css',
+  'css/nova-operacao.css',
 
   // ── Módulos JS (ordem de carregamento) ──
   'js/ui.js',

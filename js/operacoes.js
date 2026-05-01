@@ -296,8 +296,14 @@ window.renderHistory = function (filter) {
     if (filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
     if (filter === 'pendente')  filtered = filtered.filter(x => x.status === 'pendente');
     if (filter === 'pago')      filtered = filtered.filter(x => x.status === 'pago');
-    if (hStart) filtered = filtered.filter(x => x.date >= hStart);
-    if (hEnd)   filtered = filtered.filter(x => x.date <= hEnd);
+    // Só aplica filtro de data se ambos os campos tiverem valor
+    if (hStart && hEnd) {
+        filtered = filtered.filter(x => x.date >= hStart && x.date <= hEnd);
+    } else if (hStart) {
+        filtered = filtered.filter(x => x.date >= hStart);
+    } else if (hEnd) {
+        filtered = filtered.filter(x => x.date <= hEnd);
+    }
     filtered.sort((a, b) => b.id - a.id);
 
     if (!document.getElementById('style-soft-pulse')) {
@@ -321,6 +327,15 @@ window.renderHistory = function (filter) {
         if (!grouped[item.date]) grouped[item.date] = [];
         grouped[item.date].push(item);
     });
+
+    // Se após filtro de busca não sobrou nada
+    if (!Object.keys(grouped).length) {
+        list.innerHTML = `<div style="text-align:center;padding:50px 20px;color:#bdc3c7;">
+            <i class="fas fa-search" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+            <div style="font-size:14px;font-weight:600;">Nenhum resultado encontrado</div>
+        </div>`;
+        return;
+    }
 
     const today     = new Date().toLocaleDateString('en-CA');
     const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');

@@ -19,6 +19,7 @@ const urlsToCache = [
   // ── CSS do app ──
   'css/app.css',
   'css/nova-operacao.css',
+  'css/historico.css',
 
   // ── Módulos JS (ordem de carregamento) ──
   'js/ui.js',

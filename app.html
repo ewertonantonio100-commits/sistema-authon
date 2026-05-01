@@ -125,11 +125,10 @@ function mostrarToastSucesso() {
 }
 
 // ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
-// Usa uid apenas — payer_email pode vir vazio no MP
 async function verificarAssinaturaAposRetorno(user) {
     try {
         const res = await fetch(
-            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinaturaV2',
+            'https://verificarassinatura-ndsydp7hna-uc.a.run.app',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -137,7 +136,6 @@ async function verificarAssinaturaAposRetorno(user) {
             }
         );
         const data = await res.json();
-
         if (data.ativa) {
             console.log('✅ Conta ativada após retorno do MP');
             if (data.primeiraAtivacao) {
@@ -332,7 +330,7 @@ async function verificarAssinaturaMP(email, docId) {
         if (!user) return;
 
         const res = await fetch(
-            'https://us-central1-sistema-authon-f7045.cloudfunctions.net/verificarAssinaturaV2',
+            'https://verificarassinatura-ndsydp7hna-uc.a.run.app',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

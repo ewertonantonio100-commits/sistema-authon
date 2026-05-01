@@ -568,19 +568,26 @@ window.generatePDF = function (data) {
     document.getElementById('pdf-payment-method').innerText = data.payment || 'À Combinar';
     document.getElementById('pdf-title').innerText = data.type === 'orcamento' ? 'ORÇAMENTO' : data.type === 'agendamento' ? 'AGENDAMENTO' : 'RECIBO / PEDIDO';
 
+    // Assinatura — garante container dentro do invoice-paper
     let sigContainer = document.getElementById('pdf-signature-container');
     if (!sigContainer) {
         sigContainer = document.createElement('div');
         sigContainer.id = 'pdf-signature-container';
-        sigContainer.style.textAlign = 'center';
-        sigContainer.style.marginTop = '30px';
-        const warEl2 = document.getElementById('pdf-warranty-text');
-        if (warEl2?.parentNode) warEl2.parentNode.appendChild(sigContainer);
+        sigContainer.style.cssText = 'text-align:center;margin:24px 0 8px;padding-top:16px;';
+        document.getElementById('invoice-paper').appendChild(sigContainer);
     }
     if (data.signature) {
-        sigContainer.innerHTML = `<img src="${data.signature}" style="max-width:250px;max-height:100px;display:block;margin:0 auto;mix-blend-mode:multiply;"><div style="border-top:1px solid #333;width:80%;margin:0 auto;padding-top:5px;font-size:14px;font-weight:bold;color:#333;">Assinatura do Cliente</div>`;
+        sigContainer.innerHTML = `
+            <img src="${data.signature}"
+                 style="max-width:220px;max-height:80px;display:block;margin:0 auto 8px;mix-blend-mode:multiply;">
+            <div style="border-top:1.5px solid #333;width:60%;margin:0 auto;padding-top:6px;
+                        font-size:12px;font-weight:700;color:#333;letter-spacing:0.5px;">
+                Assinatura do Cliente
+            </div>`;
         sigContainer.style.display = 'block';
-    } else { sigContainer.style.display = 'none'; }
+    } else {
+        sigContainer.style.display = 'none';
+    }
 
     const savedLogo = localStorage.getItem('oficina_logo');
     const imgEl = document.getElementById('pdf-logo');
@@ -628,7 +635,14 @@ window.downloadCurrentPDF = function () {
         if (c) document.body.removeChild(c);
     }
 
-    const opt = { margin:0, filename:'recibo_authon.pdf', image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true,scrollY:0,windowWidth:794,width:794,x:0,y:0}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+    // Nome do arquivo: tipo_cliente_data.pdf
+    const receiptData = window.currentReceiptData;
+    const clientSlug  = (receiptData?.client || 'cliente').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+    const dateSlug    = (receiptData?.date || new Date().toLocaleDateString('en-CA')).replace(/-/g,'');
+    const typeSlug    = receiptData?.type === 'orcamento' ? 'Orcamento' : 'Recibo';
+    const filename    = `${typeSlug}_${clientSlug}_${dateSlug}.pdf`;
+
+    const opt = { margin:0, filename: filename, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true,scrollY:0,windowWidth:794,width:794,x:0,y:0}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
     const safetyTimer = setTimeout(() => restoreScreen(), 3500);
     setTimeout(() => {
         html2pdf().set(opt).from(element).save()

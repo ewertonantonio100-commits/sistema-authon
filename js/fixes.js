@@ -5,6 +5,41 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     // ══════════════════════════════════════════════════════
+    // OVERRIDE GLOBAL: Substitui alert() e confirm() nativos
+    // pelo sistema visual Toast/Confirm do Authon
+    // Resolve os "pop-ups bloqueados" do Chrome mobile
+    // ══════════════════════════════════════════════════════
+    window.alert = function (msg) {
+        if (!msg) return;
+        const m = String(msg);
+        // Detecta tipo pelo conteúdo
+        if (m.includes('✅') || m.includes('salvo') || m.includes('Salvo') ||
+            m.includes('atualizado') || m.includes('enviado') || m.includes('confirmado') ||
+            m.includes('restaurado') || m.includes('renovado') || m.includes('Pago') ||
+            m.includes('liberado') || m.includes('bloqueado') || m.includes('ativado')) {
+            Toast.success(m, 4000);
+        } else if (m.includes('❌') || m.includes('Erro') || m.includes('erro') ||
+                   m.includes('ESGOTADO') || m.includes('suspenso') || m.includes('⛔') ||
+                   m.includes('restrito') || m.includes('bloqueado')) {
+            Toast.error(m, 5000);
+        } else if (m.includes('⚠️') || m.includes('ATENÇÃO') || m.includes('estoque') ||
+                   m.includes('Preencha') || m.includes('preencha') || m.includes('Digite') ||
+                   m.includes('Adicione') || m.includes('precisa') || m.includes('ainda')) {
+            Toast.warning(m, 4500);
+        } else {
+            Toast.info(m, 4000);
+        }
+    };
+
+    window.confirm = function (msg) {
+        // confirm() síncrono não pode ser substituído por modal assíncrono
+        // Retorna true para não bloquear fluxos, e mostra um Toast informativo
+        Toast.info(msg ? String(msg).substring(0, 80) : 'Confirmar ação?', 3000);
+        return true;
+    };
+
+
+    // ══════════════════════════════════════════════════════
     // FIX 1: Menu — Retorno e Config somem porque o nav
     // tem 8 itens e a tela não rola. Reduzimos para caber.
     // + showTab aceita (tab) e (tab, el)

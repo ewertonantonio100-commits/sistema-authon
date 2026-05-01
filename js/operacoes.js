@@ -580,7 +580,7 @@ window.generatePDF = function (data) {
         sigContainer.innerHTML = `
             <img src="${data.signature}"
                  style="max-width:220px;max-height:80px;display:block;margin:0 auto 8px;mix-blend-mode:multiply;">
-            <div style="border-top:1.5px solid #333;width:60%;margin:0 auto;padding-top:6px;
+            <div style="border-top:1.5px solid #333;width:35%;margin:0 auto;padding-top:6px;
                         font-size:12px;font-weight:700;color:#333;letter-spacing:0.5px;">
                 Assinatura do Cliente
             </div>`;

@@ -313,75 +313,91 @@ window.renderHistory = function (filter) {
         return;
     }
 
+    // ── AGRUPA POR DATA ──
+    const grouped = {};
     filtered.forEach(item => {
         const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate || '') + ' ' + item.total).toLowerCase();
         if (term && !fullText.includes(term)) return;
+        if (!grouped[item.date]) grouped[item.date] = [];
+        grouped[item.date].push(item);
+    });
 
-        let badgeClass = '', statusText = item.type.toUpperCase();
-        let actionBtn = '', highlightPayBtn = '';
+    const today     = new Date().toLocaleDateString('en-CA');
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
 
-        let priceDisplay = `<div style="font-weight:900;font-size:22px;color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
-        if (item.netTotal && item.netTotal < item.total) {
-            priceDisplay = `<div style="font-weight:900;font-size:22px;color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                <div style="font-size:11px;color:#c0392b;font-weight:700;margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
-        }
+    Object.keys(grouped).sort().reverse().forEach(date => {
+        // ── Label do dia ──
+        let dayLabel = date.split('-').reverse().join('/');
+        if (date === today)     dayLabel = `📅 Hoje — ${dayLabel}`;
+        if (date === yesterday) dayLabel = `📆 Ontem — ${dayLabel}`;
 
-        const esc = s => (s || '').replace(/'/g, "\\'");
-        const btnAntesDepois = `<button class="btn-card" style="background:#7f8c8d;color:white;flex:1;box-shadow:none;" onclick="openBeforeAfterModal('${esc(item.client)}','${esc(item.vehicle)}','${item.phone}','${esc(item.plate)}')"><i class="fas fa-camera-retro" style="opacity:0.8;"></i> Antes & Depois</button>`;
+        list.innerHTML += `<div class="hist-date-separator">${dayLabel}</div>`;
 
-        if (item.type === 'venda') {
-            if (item.status === 'pendente') {
-                badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
-                let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                const zapMsg  = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
-                const zapLink = `https://wa.me/55${(item.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
-                actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
-                highlightPayBtn = `<button class="btn-action" style="background:var(--green-grad);display:block;width:80%;max-width:260px;margin:15px auto 10px;font-size:13px;padding:12px;border-radius:12px;animation:softPulse 2.5s infinite;" onclick="window.openPayModal('${item.docId}',${item.total})"><i class="fas fa-hand-holding-usd" style="font-size:16px;margin-right:8px;"></i> RECEBER PAGAMENTO</button>`;
-            } else {
-                badgeClass = 'bg-venda'; statusText = 'PAGO';
-                actionBtn = `${btnAntesDepois}`;
+        grouped[date].forEach(item => {
+            let badgeClass = '', statusText = item.type.toUpperCase();
+            let actionBtn = '', highlightPayBtn = '';
+
+            const val = item.netTotal && item.netTotal < item.total ? item.netTotal : item.total;
+            let priceDisplay = `<div style="font-family:'Oswald',sans-serif;font-size:26px;font-weight:700;color:#1e272e;letter-spacing:0.5px;">R$ ${val.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+            if (item.netTotal && item.netTotal < item.total) {
+                priceDisplay += `<div style="font-size:11px;color:#c0392b;font-weight:700;margin-top:2px;">Bruto: R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
             }
-        } else { badgeClass = 'bg-orcamento'; }
 
-        let itemsHtml = '<ul style="margin:8px 0 8px 18px;padding:0;font-size:12px;color:#555;">';
-        if (item.items?.length > 0) {
-            item.items.forEach(i => {
-                let d = i.desc;
-                if (d.includes(' - ') && d.includes('(')) { try { d = d.split(' - ')[1].split(' (')[0]; } catch(e){} }
-                itemsHtml += `<li>${i.qty}x ${d}</li>`;
-            });
-        } else { itemsHtml += '<li>(Sem itens)</li>'; }
-        itemsHtml += '</ul>';
+            const esc = s => (s || '').replace(/'/g, "\\'");
+            const btnAntesDepois = `<button class="btn-card" style="background:#f0f3f9;color:#636e72;flex:1;" onclick="openBeforeAfterModal('${esc(item.client)}','${esc(item.vehicle)}','${item.phone}','${esc(item.plate)}')"><i class="fas fa-camera-retro"></i> Antes & Depois</button>`;
 
-        const plateInfo     = item.plate ? ` | <span style="font-weight:bold;background:#eee;padding:2px 5px;border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
-        const dateFormatted = item.date.split('-').reverse().join('/');
+            if (item.type === 'venda') {
+                if (item.status === 'pendente') {
+                    badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
+                    let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
+                    const zapMsg  = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
+                    const zapLink = `https://wa.me/55${(item.phone||'').replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
+                    actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="background:#e8fdf4;color:#00b894;flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
+                    highlightPayBtn = `<button class="btn-action" style="background:var(--green-grad);display:block;width:100%;margin:12px 0 6px;font-size:13px;padding:14px;border-radius:14px;animation:softPulse 2.5s infinite;box-shadow:0 6px 20px rgba(0,184,148,0.4);" onclick="window.openPayModal('${item.docId}',${item.total})"><i class="fas fa-hand-holding-usd" style="margin-right:8px;"></i> RECEBER PAGAMENTO</button>`;
+                } else {
+                    badgeClass = 'bg-venda'; statusText = 'PAGO';
+                    actionBtn = `${btnAntesDepois}`;
+                }
+            } else { badgeClass = 'bg-orcamento'; }
 
-        list.innerHTML += `
-        <div class="item-card" style="padding:20px;border-left:6px solid #ccc;position:relative;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <h3 style="font-size:16px;margin:0;color:var(--dark);font-weight:800;">${dateFormatted}</h3>
-                <span class="status-badge ${badgeClass}" style="position:static;">${statusText}</span>
-            </div>
-            <div style="margin-bottom:5px;">
-                <div style="font-size:16px;font-weight:600;color:#2c3e50;">${item.client}</div>
-                <div style="font-size:12px;color:#7f8c8d;margin-top:3px;line-height:1.4;">${item.vehicle || ''}${plateInfo}<br>${item.phone || ''}</div>
-            </div>
-            ${itemsHtml}
-            <hr style="border:0;border-top:1px dashed #eee;margin:10px 0;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;">
-                <div style="flex-shrink:0;"><span style="font-size:11px;color:#7f8c8d;font-weight:bold;text-transform:uppercase;">Valor Total:</span>${priceDisplay}</div>
-            </div>
-            ${highlightPayBtn}
-            <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:space-between;margin-top:10px;">
-                <div style="display:flex;gap:5px;flex:1;">${actionBtn}</div>
-                <div style="display:flex;gap:5px;">
-                    <button class="btn-card" style="background:var(--dark);color:white;min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
-                    <button class="btn-card" style="background:#ecf0f1;color:var(--dark);min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
-                    <button class="btn-card" style="color:var(--primary);background:#ffebee;min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
+            let itemsHtml = '<ul style="margin:8px 0 10px 18px;padding:0;font-size:12px;color:#636e72;line-height:1.7;">';
+            if (item.items?.length > 0) {
+                item.items.forEach(i => {
+                    let d = i.desc;
+                    if (d.includes(' - ') && d.includes('(')) { try { d = d.split(' - ')[1].split(' (')[0]; } catch(e){} }
+                    itemsHtml += `<li>${i.qty > 1 ? i.qty + 'x ' : ''}${d}</li>`;
+                });
+            } else { itemsHtml += '<li style="color:#bdc3c7;">Sem itens</li>'; }
+            itemsHtml += '</ul>';
+
+            const plateInfo = item.plate
+                ? ` <span style="background:#f0f3f9;color:#636e72;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;letter-spacing:0.5px;">${item.plate.toUpperCase()}</span>`
+                : '';
+
+            const borderColor = item.status === 'pago' ? '#00b894' : item.type === 'orcamento' ? '#95a5a6' : '#f39c12';
+
+            list.innerHTML += `
+            <div class="item-card" style="border-left:4px solid ${borderColor};">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                    <div>
+                        <div style="font-size:17px;font-weight:800;color:#1e272e;">${item.client}</div>
+                        <div style="font-size:12px;color:#95a5a6;margin-top:3px;">${item.vehicle || ''}${plateInfo} · ${item.phone || ''}</div>
+                    </div>
+                    <span class="status-badge ${badgeClass}">${statusText}</span>
                 </div>
-            </div>
-            <style>.item-card:has(.bg-venda){border-left-color:#27ae60!important;}.item-card:has(.bg-pendente){border-left-color:#f1c40f!important;}.item-card:has(.bg-orcamento){border-left-color:#95a5a6!important;}</style>
-        </div>`;
+                ${itemsHtml}
+                <div style="border-top:1px solid #f5f6fa;padding-top:10px;margin-bottom:6px;">${priceDisplay}</div>
+                ${highlightPayBtn}
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                    <div style="display:flex;gap:6px;flex:1;">${actionBtn}</div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn-card" style="background:#f0f3f9;color:#2d3436;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
+                        <button class="btn-card" style="background:#e8f4fd;color:#0984e3;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
+                        <button class="btn-card" style="background:#fef0ee;color:#e74c3c;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`;
+        });
     });
 };
 
@@ -727,4 +743,3 @@ window.backupSystem  = function () { const data={db:localStorage.getItem('oficin
 window.restoreSystem = function (event) { const reader=new FileReader(); reader.onload=e=>{ try{const d=JSON.parse(e.target.result); if(d.db)localStorage.setItem('oficina_db_master',d.db); if(d.cat)localStorage.setItem('catalog_v1',d.cat); if(d.logo)localStorage.setItem('oficina_logo',d.logo); if(d.pix)localStorage.setItem('authon_cfg_pix',d.pix); if(d.war)localStorage.setItem('authon_cfg_warranty',d.war); Toast.success('Sistema restaurado!'); setTimeout(()=>location.reload(),1500); }catch(err){Toast.error('Erro ao ler arquivo.');} }; reader.readAsText(event.target.files[0]); };
 
 console.log('📋 Operações carregado');
-

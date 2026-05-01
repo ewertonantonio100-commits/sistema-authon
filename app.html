@@ -43,8 +43,6 @@
 
     <!-- CSS do App (extraído para arquivo separado) -->
     <link rel="stylesheet" href="css/app.css">
-    <!-- CSS tela Nova Operação -->
-    <link rel="stylesheet" href="css/nova-operacao.css">
 
 
     
@@ -2163,142 +2161,9 @@ window.renderAgenda = function() {
     });
 }
 // ── HISTÓRICO: Renderiza com filtro de status + período ──
-window.renderHistory = function(filter) { 
-    window.currentHistoryFilter = filter;
+// renderHistory movido para js/operacoes.js
 
-    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
-    const list = document.getElementById('history-list'); 
-    
-    const term = (document.getElementById('historySearch')?.value || '').toLowerCase();
-    const hStart = document.getElementById('histFilterStart')?.value || '';
-    const hEnd   = document.getElementById('histFilterEnd')?.value   || '';
-
-    list.innerHTML = ''; 
-    const compName = localStorage.getItem('authon_cfg_name') || "SUA OFICINA";
-
-    // Filtro de tipo/status
-    let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
-    if(filter === 'venda')     filtered = filtered.filter(x => x.type === 'venda');
-    if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
-    if(filter === 'pendente')  filtered = filtered.filter(x => x.status === 'pendente');
-    if(filter === 'pago')      filtered = filtered.filter(x => x.status === 'pago');
-
-    // Filtro de período
-    if(hStart) filtered = filtered.filter(x => x.date >= hStart);
-    if(hEnd)   filtered = filtered.filter(x => x.date <= hEnd);
-
-    filtered.sort((a,b) => b.id - a.id);
-    const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
-
-    // Animação do botão receber
-    if (!document.getElementById('style-soft-pulse')) {
-        document.head.insertAdjacentHTML('beforeend', '<style id="style-soft-pulse">@keyframes softPulse { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } 50% { transform: scale(1.02); box-shadow: 0 6px 15px rgba(39, 174, 96, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } }</style>');
-    }
-
-    if(filtered.length === 0) {
-        list.innerHTML = `<div style="text-align:center; padding:50px 20px; color:#bdc3c7;">
-            <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:12px; display:block;"></i>
-            <div style="font-size:14px; font-weight:600;">Nenhum registro encontrado</div>
-            <div style="font-size:12px; margin-top:5px;">Tente mudar o período ou filtro</div>
-        </div>`;
-        return;
-    }
-
-    filtered.forEach(item => { 
-        const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
-        if(term && !fullText.includes(term)) return;
-
-        let badgeClass = ''; let statusText = item.type.toUpperCase(); 
-        let actionBtn = ''; let highlightPayBtn = '';
-        
-        let priceDisplay = `<div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
-        if(item.netTotal && item.netTotal < item.total) {
-            priceDisplay = `
-                <div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-                <div style="font-size:11px; color:#c0392b; font-weight:700; margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
-            `;
-        }
-
-        const escapedName    = item.client  ? item.client.replace(/'/g, "\\'")  : '';
-        const escapedVehicle = item.vehicle ? item.vehicle.replace(/'/g, "\\'") : '';
-        const escapedPlate   = item.plate   ? item.plate.replace(/'/g, "\\'")   : '';
-        
-        const btnAntesDepois = `<button class="btn-card" style="background:#7f8c8d; color:white; flex:1; box-shadow:none;" onclick="openBeforeAfterModal('${escapedName}', '${escapedVehicle}', '${item.phone}', '${escapedPlate}')"><i class="fas fa-camera-retro" style="opacity:0.8;"></i> Antes & Depois</button>`;
-
-        if(item.type === 'venda') {
-            if(item.status === 'pendente') {
-                badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
-                let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
-                const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
-                const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
-                actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
-                highlightPayBtn = `
-                <button class="btn-action" style="background:var(--green-grad); display:block; width:80%; max-width:260px; margin: 15px auto 10px auto; font-size:13px; padding:12px; border-radius:12px; animation: softPulse 2.5s infinite;" onclick="window.openPayModal('${item.docId}', ${item.total})">
-                    <i class="fas fa-hand-holding-usd" style="font-size:16px; margin-right:8px;"></i> RECEBER PAGAMENTO
-                </button>`;
-            } else { 
-                badgeClass = 'bg-venda'; statusText = 'PAGO'; 
-                actionBtn = `${btnAntesDepois}`; 
-            }
-        } else { 
-            badgeClass = 'bg-orcamento'; 
-        }
-
-        let itemsHtml = '<ul style="margin:8px 0 8px 18px; padding:0; font-size:12px; color:#555;">';
-        if(item.items && item.items.length > 0) {
-            item.items.forEach(i => {
-                let cleanDesc = i.desc;
-                if(cleanDesc.includes(' - ') && cleanDesc.includes('(')) { 
-                    try { cleanDesc = cleanDesc.split(' - ')[1].split(' (')[0]; } catch(e) {} 
-                }
-                itemsHtml += `<li>${i.qty}x ${cleanDesc}</li>`;
-            });
-        } else { itemsHtml += '<li>(Sem itens descritos)</li>'; }
-        itemsHtml += '</ul>';
-
-        const plateInfo    = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
-        const subInfo      = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
-        const dateFormatted = item.date.split('-').reverse().join('/');
-
-        list.innerHTML += `
-        <div class="item-card" style="padding: 20px; border-left: 6px solid #ccc; position:relative;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="font-size:16px; margin:0; color:var(--dark); font-weight:800;">${dateFormatted}</h3>
-                <span class="status-badge ${badgeClass}" style="position:static;">${statusText}</span>
-            </div>
-            <div style="margin-bottom:5px;">
-                <div style="font-size:16px; font-weight:600; color:#2c3e50;">${item.client}</div>
-                <div style="font-size:12px; color:#7f8c8d; margin-top:3px; line-height:1.4;">${subInfo}</div>
-            </div>
-            ${itemsHtml}
-            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
-                <div style="flex-shrink:0;">
-                    <span style="font-size:11px; color:#7f8c8d; font-weight:bold; text-transform:uppercase;">Valor Total:</span>
-                    ${priceDisplay}
-                </div>
-            </div>
-            ${highlightPayBtn}
-            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:space-between; margin-top:10px;">
-                <div style="display:flex; gap:5px; flex:1;">${actionBtn}</div>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-card" style="background:var(--dark); color:white; min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
-                    <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
-                    <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-            <style>
-                .item-card:has(.bg-venda) { border-left-color: #27ae60 !important; }
-                .item-card:has(.bg-pendente) { border-left-color: #f1c40f !important; }
-                .item-card:has(.bg-orcamento) { border-left-color: #95a5a6 !important; }
-            </style>
-        </div>`; 
-    }); 
-}
-
-
-
-                        // 1. Abre o Modal e já faz o primeiro cálculo
+                        // 1. Abre o Modal                        // 1. Abre o Modal e já faz o primeiro cálculo
         window.openPayModal = function(docId, totalVal) {
             document.getElementById('modal-pay').style.display = 'flex';
             document.getElementById('modal-pay-value').innerText = "R$ " + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2});

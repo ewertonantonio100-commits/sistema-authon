@@ -344,5 +344,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (_gp) _gp(data);
     };
 
+    // ── CORRIGE toggleCatType (bug: classe não resetava corretamente) ──
+    window.toggleCatType = function (type) {
+        const catTypeEl = document.getElementById('catType');
+        if (catTypeEl) catTypeEl.value = type;
+
+        const divStock = document.getElementById('div-stock-input');
+        if (divStock) divStock.style.display = (type === 'produto') ? 'block' : 'none';
+
+        const btnProd = document.getElementById('btn-type-prod');
+        const btnServ = document.getElementById('btn-type-serv');
+        if (btnProd) btnProd.className = 'op-btn' + (type === 'produto' ? ' active' : '');
+        if (btnServ) btnServ.className = 'op-btn' + (type === 'servico' ? ' active' : '');
+    };
+
     console.log('✅ fixes.js v4');
 });

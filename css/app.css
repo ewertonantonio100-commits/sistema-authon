@@ -1027,3 +1027,165 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
     margin-top: 8px !important;
     box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
 }
+
+
+/* ============================================================
+   AGENDA — Header e Cards
+   ============================================================ */
+
+#tab-agenda .container {
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%) !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 18px 16px 16px !important;
+}
+
+#tab-agenda .header-title h1 {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 22px !important;
+    color: white !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 12px !important;
+}
+
+#tab-agenda #agendaSearch {
+    background: rgba(255,255,255,0.95) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    color: #1e272e !important;
+    font-size: 13px !important;
+    padding: 11px 14px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+#tab-agenda #agendaSearch::placeholder { color: rgba(30,39,46,0.45) !important; }
+
+/* Fundo da lista */
+#agenda-list {
+    background: #f5f6fa !important;
+    padding: 12px 15px 90px !important;
+    min-height: 200px !important;
+}
+
+/* Label do dia */
+.agenda-day {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    color: #95a5a6 !important;
+    padding: 16px 4px 6px !important;
+    display: block !important;
+}
+
+/* Card de agendamento */
+#agenda-list .item-card {
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin-bottom: 10px !important;
+    border-left: 4px solid #0984e3 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* Badge AGENDA */
+#agenda-list .status-badge {
+    background: #e8f4fd !important;
+    color: #0984e3 !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    padding: 3px 10px !important;
+    border-radius: 20px !important;
+}
+
+/* Horário */
+#agenda-list .agenda-time,
+#agenda-list strong[style*="color:#0984e3"] {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #0984e3 !important;
+}
+
+/* Nome cliente */
+#agenda-list .agenda-client,
+#agenda-list [style*="font-size:16px"] {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #1e272e !important;
+    margin: 6px 0 3px !important;
+}
+
+/* Veículo e telefone */
+#agenda-list .agenda-vehicle,
+#agenda-list [style*="font-size:12px"][style*="color:#7f8c8d"] {
+    font-size: 12px !important;
+    color: #95a5a6 !important;
+}
+
+/* Botão lembrar cliente */
+#agenda-list .btn-card.btn-notify,
+#agenda-list [class*="btn-card"][onclick*="wa.me"],
+#agenda-list .btn-card[style*="25D366"] {
+    background: #e8fdf4 !important;
+    color: #00b894 !important;
+    border: none !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    flex: 1 !important;
+}
+
+/* Botão atender */
+#agenda-list .btn-card[style*="27ae60"],
+#agenda-list .btn-card[onclick*="loadToEdit"] {
+    background: #e8faf4 !important;
+    color: #00b894 !important;
+    border: none !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    flex: 1 !important;
+}
+
+/* Botão lixeira agenda */
+#agenda-list .btn-card[onclick*="deleteItem"] {
+    background: #fef0ee !important;
+    color: #e74c3c !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    flex: none !important;
+}
+
+/* Estado vazio */
+#agenda-list > div[style*="text-align:center"] {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 50px 20px !important;
+    margin-top: 8px !important;
+}
+
+/* ============================================================
+   HISTÓRICO — Agrupamento por dia (igual à agenda)
+   ============================================================ */
+
+/* Separador de data */
+.hist-date-separator {
+    font-family: 'Poppins', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #95a5a6;
+    padding: 16px 4px 6px;
+    display: block;
+}
+
+/* Remover label "VALOR TOTAL:" — via CSS não dá, mas
+   o JS do renderHistory já cuida disso */

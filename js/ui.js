@@ -251,7 +251,7 @@ window.Onboarding = {
 // ── BOTÃO DE SUPORTE FLUTUANTE ──
 window.SupportButton = {
     init() {
-        const WHATSAPP_NUMBER = '5511999999999'; // ← troque pelo número real do suporte
+        const WHATSAPP_NUMBER = '5587996523840'; // Suporte Authon
         const btn = document.createElement('div');
         btn.id = 'support-btn';
         btn.innerHTML = `
@@ -380,4 +380,3 @@ window.showTrialBadge = function(diasRestantes) {
 document.addEventListener('DOMContentLoaded', function () {
     window.SupportButton.init();
 });
-

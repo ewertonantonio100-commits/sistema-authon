@@ -1,0 +1,368 @@
+/* ============================================================
+   nova-operacao.css — Tela NOVO — Authon v2.0
+   ============================================================ */
+
+/* ── HEADER DA TELA ── */
+#tab-new .container {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#tab-new .header-title {
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+    padding: 18px 20px 20px;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+
+#tab-new .header-title h1 {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 22px !important;
+    color: white !important;
+    letter-spacing: 1px !important;
+    margin: 0 !important;
+    flex: 1;
+}
+
+/* Botão de câmera / placa */
+#tab-new .header-title .btn-action {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+    transition: background 0.2s !important;
+}
+#tab-new .header-title .btn-action:active {
+    background: rgba(231,76,60,0.3) !important;
+}
+#tab-new .header-title .btn-action span {
+    font-size: 7px !important;
+    color: rgba(255,255,255,0.5) !important;
+    letter-spacing: 1px !important;
+}
+#tab-new .header-title .btn-action i {
+    font-size: 17px !important;
+    color: white !important;
+}
+
+/* ── SWITCH VENDA / ORÇAMENTO / AGENDAR ── */
+#tab-new .op-type-switch {
+    display: flex !important;
+    gap: 0 !important;
+    margin: 0 0 0 0 !important;
+    background: #f0f2f5;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 15px;
+}
+
+#tab-new .op-btn {
+    flex: 1 !important;
+    padding: 10px 6px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #95a5a6 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+    letter-spacing: 0.3px !important;
+}
+#tab-new .op-btn i {
+    font-size: 18px !important;
+}
+#tab-new .op-btn.active.venda {
+    background: linear-gradient(135deg, #00b894, #00cec9) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(0,184,148,0.35) !important;
+}
+#tab-new .op-btn.active.orcamento {
+    background: linear-gradient(135deg, #e67e22, #f39c12) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(230,126,34,0.35) !important;
+}
+#tab-new .op-btn.active.agendamento {
+    background: linear-gradient(135deg, #0984e3, #74b9ff) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(9,132,227,0.35) !important;
+}
+
+/* ── FORMULÁRIO PRINCIPAL ── */
+#tab-new .form-grid {
+    background: white;
+    padding: 18px 16px 4px;
+    margin: 0;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 12px !important;
+}
+
+#tab-new .form-grid label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #95a5a6 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 5px !important;
+    margin-top: 12px !important;
+    display: block !important;
+}
+
+#tab-new .form-grid input,
+#tab-new .form-grid select {
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 11px 13px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+    color: #2d3436 !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+#tab-new .form-grid input:focus,
+#tab-new .form-grid select:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.1) !important;
+    background: white !important;
+}
+
+/* Vendedor com cor azul */
+#div-seller label {
+    color: #0984e3 !important;
+}
+#sellerName {
+    border-color: #d5e8f7 !important;
+    background: #f0f8ff !important;
+}
+
+/* ── SEÇÃO DE INSPEÇÃO ── */
+#tab-new .full-width[style*="margin-top:10px"] {
+    background: white;
+    padding: 12px 16px 16px;
+    margin: 0 !important;
+}
+
+#tab-new [onclick="openChecklist()"] {
+    background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+    border-radius: 14px !important;
+    font-size: 13px !important;
+    padding: 13px !important;
+    margin-top: 0 !important;
+    letter-spacing: 0.5px !important;
+}
+
+#checklist-summary {
+    font-size: 12px !important;
+    margin-top: 10px !important;
+    padding: 8px 12px !important;
+    background: #fff5f5 !important;
+    border-radius: 10px !important;
+    border: 1px solid #fde8e8 !important;
+    color: #c0392b !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+/* ── SEÇÃO SERVIÇOS & PEÇAS ── */
+#tab-new h3 {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #636e72 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    margin: 0 !important;
+    padding: 14px 16px 10px !important;
+    background: white !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    border-top: 8px solid #f5f6fa !important;
+}
+
+/* Service row — layout horizontal compacto */
+.service-row {
+    background: white !important;
+    padding: 10px 16px !important;
+    border-bottom: 1px solid #f5f6fa !important;
+    display: grid !important;
+    grid-template-columns: 52px 1fr 90px 36px !important;
+    gap: 8px !important;
+    align-items: end !important;
+}
+
+.service-row .stock-warning-text {
+    grid-column: span 4 !important;
+    font-size: 10px !important;
+    color: #e74c3c !important;
+    font-weight: 700 !important;
+    margin-bottom: -4px !important;
+}
+
+.service-row .input-group {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.service-row label {
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: #b2bec3 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 4px !important;
+    margin-top: 0 !important;
+}
+
+.service-row input {
+    border-radius: 10px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 9px 10px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+    width: 100% !important;
+}
+
+.service-row input:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.08) !important;
+    background: white !important;
+}
+
+/* Botão lixeira — compacto e bonito */
+.btn-trash {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid #fde8e8 !important;
+    background: #fff5f5 !important;
+    color: #e74c3c !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.15s !important;
+    flex-shrink: 0 !important;
+    align-self: flex-end !important;
+}
+.btn-trash:active {
+    background: #e74c3c !important;
+    color: white !important;
+}
+
+/* Botão Adicionar Item */
+.btn-add {
+    background: white !important;
+    color: #e74c3c !important;
+    border: 2px dashed #e74c3c !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 12px !important;
+    margin: 10px 16px !important;
+    width: calc(100% - 32px) !important;
+    box-shadow: none !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.2s !important;
+}
+.btn-add:active {
+    background: #fff5f5 !important;
+}
+
+/* ── TOTAL BOX ── */
+.total-box-container {
+    background: white !important;
+    padding: 14px 16px !important;
+    border-top: 1px solid #f0f0f0 !important;
+}
+
+.discount-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+}
+
+.discount-row label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #95a5a6 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+}
+
+.discount-input {
+    flex: 1 !important;
+    border-radius: 10px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+}
+
+.final-total {
+    background: linear-gradient(135deg, #1e272e, #2d3436) !important;
+    color: rgba(255,255,255,0.6) !important;
+    border-radius: 16px !important;
+    padding: 16px 20px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.final-total #display-total {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    color: #00b894 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* ── BOTÕES FINAIS ── */
+#tab-new [onclick="openSignatureModal()"] {
+    background: #f8f9fa !important;
+    color: #636e72 !important;
+    border: 1.5px solid #ecf0f1 !important;
+    border-radius: 14px !important;
+    font-size: 13px !important;
+    padding: 12px !important;
+    margin: 8px 16px 0 !important;
+    width: calc(100% - 32px) !important;
+    box-shadow: none !important;
+}
+
+#sigPreview {
+    margin: 12px 16px 0 !important;
+    width: calc(100% - 32px) !important;
+    max-width: none !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+}
+
+.btn-gen {
+    margin: 12px 16px 16px !important;
+    width: calc(100% - 32px) !important;
+    border-radius: 16px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    padding: 16px !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 8px 24px rgba(0,184,148,0.35) !important;
+}

@@ -4,7 +4,7 @@
 // Para forçar atualização: suba arquivos novos no GitHub
 // ============================================================
 
-const CACHE_VERSION = 'authon-cache-v31';
+const CACHE_VERSION = 'authon-cache-v32';
 
 const urlsToCache = [
   // ── Fontes e ícones externos ──
@@ -29,6 +29,7 @@ const urlsToCache = [
   'js/despesas.js',
   'js/agenda.js',
   'js/inspecao.js',
+  'js/admin.js',
   'js/fixes.js',
 
   // ── Assets ──

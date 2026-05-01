@@ -516,5 +516,120 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    // ── OVERRIDE FINAL: garante renderHistory correto ──
+    window.renderHistory = function (filter) {
+        window.currentHistoryFilter = filter;
+        const db   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+        const list = document.getElementById('history-list');
+        if (!list) return;
+
+        const term   = (document.getElementById('historySearch')?.value || '').toLowerCase();
+        const hStart = document.getElementById('histFilterStart')?.value || '';
+        const hEnd   = document.getElementById('histFilterEnd')?.value   || '';
+        const compName = localStorage.getItem('authon_cfg_name') || 'SUA OFICINA';
+        const savedPix = localStorage.getItem('authon_cfg_pix') || '';
+
+        list.innerHTML = '';
+
+        let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense');
+        if (filter === 'venda')     filtered = filtered.filter(x => x.type === 'venda');
+        if (filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
+        if (filter === 'pendente')  filtered = filtered.filter(x => x.status === 'pendente');
+        if (filter === 'pago')      filtered = filtered.filter(x => x.status === 'pago');
+        if (hStart) filtered = filtered.filter(x => x.date >= hStart);
+        if (hEnd)   filtered = filtered.filter(x => x.date <= hEnd);
+        filtered.sort((a, b) => b.id - a.id);
+
+        if (!filtered.length) {
+            list.innerHTML = `<div style="text-align:center;padding:50px 20px;color:#bdc3c7;">
+                <i class="fas fa-folder-open" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+                <div style="font-size:14px;font-weight:600;">Nenhum registro encontrado</div>
+                <div style="font-size:12px;margin-top:5px;">Tente mudar o período ou filtro</div>
+            </div>`;
+            return;
+        }
+
+        // Agrupa por data
+        const grouped = {};
+        filtered.forEach(item => {
+            const fullText = ((item.client||'') + ' ' + (item.vehicle||'') + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
+            if (term && !fullText.includes(term)) return;
+            if (!grouped[item.date]) grouped[item.date] = [];
+            grouped[item.date].push(item);
+        });
+
+        if (!Object.keys(grouped).length) {
+            list.innerHTML = `<div style="text-align:center;padding:50px 20px;color:#bdc3c7;">
+                <i class="fas fa-search" style="font-size:40px;margin-bottom:12px;display:block;"></i>
+                <div style="font-size:14px;font-weight:600;">Nenhum resultado para a busca</div>
+            </div>`;
+            return;
+        }
+
+        const today     = new Date().toLocaleDateString('en-CA');
+        const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
+
+        Object.keys(grouped).sort().reverse().forEach(date => {
+            let dayLabel = date.split('-').reverse().join('/');
+            if (date === today)     dayLabel = '📅 Hoje — ' + dayLabel;
+            if (date === yesterday) dayLabel = '📆 Ontem — ' + dayLabel;
+            list.innerHTML += '<div class="hist-date-separator">' + dayLabel + '</div>';
+
+            grouped[date].forEach(item => {
+                const esc = s => (s || '').replace(/'/g, "\\'");
+                const borderColor = item.status === 'pago' ? '#00b894' : item.type === 'orcamento' ? '#95a5a6' : '#f39c12';
+                const badgeClass  = item.status === 'pago' ? 'bg-venda' : item.type === 'orcamento' ? 'bg-orcamento' : 'bg-pendente';
+                const statusText  = item.status === 'pago' ? 'PAGO' : item.type === 'orcamento' ? 'ORÇAMENTO' : 'PENDENTE';
+
+                const val = (item.netTotal && item.netTotal < item.total) ? item.netTotal : item.total;
+                const priceHtml = '<div style="font-family:Oswald,sans-serif;font-size:26px;font-weight:700;color:#1e272e;">R$ ' + val.toLocaleString('pt-BR',{minimumFractionDigits:2}) + '</div>';
+
+                let itemsHtml = '<ul style="margin:8px 0 10px 18px;padding:0;font-size:12px;color:#636e72;line-height:1.7;">';
+                (item.items||[]).forEach(i => {
+                    let d = i.desc || '';
+                    if (d.includes(' - ') && d.includes('(')) { try { d = d.split(' - ')[1].split(' (')[0]; } catch(e){} }
+                    itemsHtml += '<li>' + (i.qty > 1 ? i.qty + 'x ' : '') + d + '</li>';
+                });
+                itemsHtml += '</ul>';
+
+                const plateInfo = item.plate
+                    ? ' <span style="background:#f0f3f9;color:#636e72;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;">' + item.plate.toUpperCase() + '</span>'
+                    : '';
+
+                let payBtn = '';
+                let actionBtn = '<button class="btn-card" style="background:#f0f3f9;color:#636e72;flex:1;" onclick="openBeforeAfterModal('' + esc(item.client) + '','' + esc(item.vehicle) + '','' + (item.phone||'') + '','' + esc(item.plate) + '')"><i class="fas fa-camera-retro"></i> Antes & Depois</button>';
+
+                if (item.type === 'venda' && item.status === 'pendente') {
+                    let pixText = savedPix ? '\n\n🔑 Pix: ' + savedPix : '';
+                    const zapMsg  = '*' + compName + '*\n--------------------------------\nOlá *' + item.client + '*, o serviço no seu *' + (item.vehicle||'veículo') + '* foi finalizado! ✨\n\n💰 *Total:* R$ ' + item.total.toLocaleString('pt-BR',{minimumFractionDigits:2}) + pixText + '\n\nAguardamos! 🤝';
+                    const zapLink = 'https://wa.me/55' + (item.phone||'').replace(/\D/g,'') + '?text=' + encodeURIComponent(zapMsg);
+                    actionBtn += '<button class="btn-card" style="background:#e8fdf4;color:#00b894;flex:1;" onclick="window.open('' + zapLink + '')"><i class="fab fa-whatsapp"></i> AVISAR</button>';
+                    payBtn = '<button class="btn-action" style="background:var(--green-grad);width:100%;margin:12px 0 6px;font-size:13px;padding:14px;border-radius:14px;animation:softPulse 2.5s infinite;box-shadow:0 6px 20px rgba(0,184,148,0.4);" onclick="window.openPayModal('' + item.docId + '',' + item.total + ')"><i class="fas fa-hand-holding-usd" style="margin-right:8px;"></i> RECEBER PAGAMENTO</button>';
+                }
+
+                list.innerHTML += '<div class="item-card" style="border-left:4px solid ' + borderColor + ';">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+                        '<div>' +
+                            '<div style="font-size:17px;font-weight:800;color:#1e272e;">' + (item.client||'') + '</div>' +
+                            '<div style="font-size:12px;color:#95a5a6;margin-top:3px;">' + (item.vehicle||'') + plateInfo + ' · ' + (item.phone||'') + '</div>' +
+                        '</div>' +
+                        '<span class="status-badge ' + badgeClass + '">' + statusText + '</span>' +
+                    '</div>' +
+                    itemsHtml +
+                    '<div style="border-top:1px solid #f5f6fa;padding-top:10px;margin-bottom:6px;">' + priceHtml + '</div>' +
+                    payBtn +
+                    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
+                        '<div style="display:flex;gap:6px;flex:1;">' + actionBtn + '</div>' +
+                        '<div style="display:flex;gap:6px;">' +
+                            '<button class="btn-card" style="background:#f0f3f9;color:#2d3436;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="generatePDFFromHistory(' + item.id + ')"><i class="fas fa-file-pdf"></i></button>' +
+                            '<button class="btn-card" style="background:#e8f4fd;color:#0984e3;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="loadToEdit(' + item.id + ')"><i class="fas fa-pen"></i></button>' +
+                            '<button class="btn-card" style="background:#fef0ee;color:#e74c3c;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:10px;" onclick="deleteItem('' + item.docId + '')"><i class="fas fa-trash"></i></button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            });
+        });
+    };
+
     console.log('✅ fixes.js v3 — aplicado');
 });

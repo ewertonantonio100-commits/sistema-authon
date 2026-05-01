@@ -330,5 +330,191 @@ document.addEventListener('DOMContentLoaded', function () {
         if (m) { m.style.display = 'none'; }
     };
 
+    // ══════════════════════════════════════════════════════
+    // CORREÇÃO CONFIRM() — Deletes e ações críticas
+    // Substitui confirm() síncrono por Confirm() assíncrono
+    // com modal visual bonito e seguro
+    // ══════════════════════════════════════════════════════
+
+    // 1. EXCLUIR ITEM (histórico, agenda, despesas)
+    window.deleteItem = async function (docId) {
+        if (localStorage.getItem('authon_mode_locked') === 'true') {
+            Toast.error('Funcionários não podem excluir registros.');
+            return;
+        }
+        if (!docId || docId === 'undefined') {
+            Toast.error('Item sem ID. Recarregue a página.');
+            return;
+        }
+        Confirm(
+            'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.',
+            async () => {
+                try {
+                    await window.deleteDoc(window.doc(window.db, 'operacoes', docId));
+                    Toast.success('Registro excluído com sucesso!');
+                } catch (e) {
+                    console.error(e);
+                    Toast.error('Erro ao excluir. Tente novamente.');
+                }
+            }
+        );
+    };
+
+    // 2. EXCLUIR DO CATÁLOGO
+    window.delCatalog = async function (idx) {
+        if (localStorage.getItem('authon_mode_locked') === 'true') {
+            Toast.error('Bloqueado para funcionários.');
+            return;
+        }
+        const cat  = JSON.parse(localStorage.getItem('catalog_v1') || '[]');
+        const item = cat[idx];
+        if (!item?.docId) { Toast.error('Item sem ID. Recarregue a página.'); return; }
+
+        Confirm(
+            `Excluir "<strong>${item.name}</strong>" do catálogo permanentemente?`,
+            async () => {
+                try {
+                    await window.deleteDoc(window.doc(window.db, 'catalogo', item.docId));
+                    Toast.success('Item excluído do catálogo!');
+                } catch (e) {
+                    Toast.error('Erro ao excluir: ' + e.message);
+                }
+            }
+        );
+    };
+
+    // 3. LOGOUT
+    window.logout = function () {
+        Confirm(
+            'Deseja sair e bloquear o sistema?',
+            async () => {
+                await window.auth.signOut();
+                location.reload();
+            }
+        );
+    };
+
+    // 4. REDEFINIR SENHA
+    window.resetPassword = async function () {
+        const user = window.auth?.currentUser;
+        if (!user) return;
+        Confirm(
+            `Enviar link de troca de senha para <strong>${user.email}</strong>?`,
+            async () => {
+                try {
+                    const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                    await sendPasswordResetEmail(window.auth, user.email);
+                    Toast.success('E-mail enviado! Verifique sua caixa de entrada.');
+                } catch (e) {
+                    Toast.error('Erro: ' + e.message);
+                }
+            }
+        );
+    };
+
+    // 5. ATIVAR MODO FUNCIONÁRIO
+    window.toggleEmployeeMode = function (activate) {
+        if (activate) {
+            const pin = localStorage.getItem('authon_cfg_pin');
+            Confirm(
+                'Ativar modo funcionário? O financeiro e configurações serão bloqueados.',
+                () => {
+                    localStorage.setItem('authon_mode_locked', 'true');
+                    document.body.classList.add('employee-mode');
+                    const btn = document.getElementById('unlock-btn');
+                    if (btn) btn.style.display = 'flex';
+                    Toast.info('Modo funcionário ativado.');
+                }
+            );
+        } else {
+            // Desbloquear — pede PIN
+            const pin = localStorage.getItem('authon_cfg_pin');
+            if (pin) {
+                // Cria mini modal de PIN
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+                modal.innerHTML = `
+                    <div style="background:white;border-radius:20px;padding:28px 24px;max-width:300px;width:100%;text-align:center;">
+                        <div style="font-size:32px;margin-bottom:12px;">🔐</div>
+                        <h3 style="font-family:'Oswald',sans-serif;font-size:18px;color:#1e272e;margin-bottom:8px;">PIN do Proprietário</h3>
+                        <p style="font-family:'Poppins',sans-serif;font-size:12px;color:#95a5a6;margin-bottom:16px;">Digite o PIN para desbloquear</p>
+                        <input id="pin-input" type="password" inputmode="numeric" maxlength="6"
+                            style="width:100%;padding:12px;border:2px solid #e74c3c;border-radius:12px;font-size:20px;text-align:center;font-family:'Poppins',sans-serif;letter-spacing:8px;outline:none;box-sizing:border-box;"
+                            placeholder="••••">
+                        <div style="display:flex;gap:10px;margin-top:16px;">
+                            <button id="pin-cancel" style="flex:1;padding:12px;border-radius:12px;border:2px solid #ecf0f1;background:#f8f9fa;color:#7f8c8d;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Cancelar</button>
+                            <button id="pin-ok" style="flex:1;padding:12px;border-radius:12px;border:none;background:#e74c3c;color:white;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Desbloquear</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+                setTimeout(() => document.getElementById('pin-input')?.focus(), 100);
+
+                document.getElementById('pin-ok').onclick = () => {
+                    const entered = document.getElementById('pin-input').value;
+                    if (entered === pin) {
+                        localStorage.setItem('authon_mode_locked', 'false');
+                        document.body.classList.remove('employee-mode');
+                        const btn = document.getElementById('unlock-btn');
+                        if (btn) btn.style.display = 'none';
+                        modal.remove();
+                        Toast.success('Sistema desbloqueado!');
+                    } else {
+                        Toast.error('PIN incorreto. Tente novamente.');
+                        document.getElementById('pin-input').value = '';
+                        document.getElementById('pin-input').focus();
+                    }
+                };
+                document.getElementById('pin-cancel').onclick = () => modal.remove();
+                document.getElementById('pin-input').addEventListener('keyup', e => {
+                    if (e.key === 'Enter') document.getElementById('pin-ok').click();
+                });
+            } else {
+                localStorage.setItem('authon_mode_locked', 'false');
+                document.body.classList.remove('employee-mode');
+                const btn = document.getElementById('unlock-btn');
+                if (btn) btn.style.display = 'none';
+                Toast.success('Sistema desbloqueado!');
+            }
+        }
+    };
+
+    // 6. BLOQUEAR/LIBERAR CLIENTE (admin)
+    window.adminSetStatus = async function (docId, newStatus) {
+        const acao = newStatus === 'bloqueado' ? 'BLOQUEAR' : 'LIBERAR';
+        Confirm(
+            `Tem certeza que deseja <strong>${acao}</strong> esta oficina?`,
+            async () => {
+                try {
+                    await window.updateDoc(window.doc(window.db, 'configuracoes', docId), { status: newStatus });
+                    Toast.success(`Oficina ${acao === 'BLOQUEAR' ? 'bloqueada' : 'liberada'} com sucesso!`);
+                    window.openSuperAdmin?.();
+                } catch (e) {
+                    Toast.error('Erro ao alterar status.');
+                }
+            }
+        );
+    };
+    window.toggleBlockClient = window.adminSetStatus;
+
+    // 7. PREENCHER DADOS DO CLIENTE (fillClientData)
+    window.fillClientData = function (input) {
+        const name = input.value;
+        const db   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+        const last = db.find(i => i.client === name);
+        if (last) {
+            Confirm(
+                `Cliente encontrado! Preencher dados do <strong>${last.vehicle}</strong>?`,
+                () => {
+                    if (document.getElementById('phone'))   document.getElementById('phone').value   = last.phone   || '';
+                    if (document.getElementById('vehicle')) document.getElementById('vehicle').value = last.vehicle || '';
+                    if (document.getElementById('plate'))   document.getElementById('plate').value   = last.plate   || '';
+                    if (document.getElementById('color'))   document.getElementById('color').value   = last.color   || '';
+                    if (last.cpf && document.getElementById('clientCpf')) document.getElementById('clientCpf').value = last.cpf;
+                    Toast.success('Dados preenchidos automaticamente!');
+                }
+            );
+        }
+    };
+
     console.log('✅ fixes.js v3 — aplicado');
 });

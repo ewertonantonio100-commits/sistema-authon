@@ -1189,3 +1189,201 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 
 /* Remover label "VALOR TOTAL:" — via CSS não dá, mas
    o JS do renderHistory já cuida disso */
+
+
+/* ============================================================
+   CATÁLOGO & ESTOQUE — Authon v2.0
+   ============================================================ */
+
+#tab-catalog .container {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* ── HEADER ── */
+#tab-catalog .header-title {
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+    padding: 18px 16px 16px;
+    margin: 0 !important;
+}
+#tab-catalog .header-title h1 {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 22px !important;
+    color: white !important;
+    letter-spacing: 1px !important;
+    margin: 0 !important;
+}
+
+/* ── BUSCA ── */
+#tab-catalog #catalogSearch {
+    background: rgba(255,255,255,0.95) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    color: #1e272e !important;
+    font-size: 13px !important;
+    padding: 11px 14px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+    margin: 14px 0 0 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* ── SWITCH PRODUTO / SERVIÇO ── */
+#tab-catalog .op-type-switch {
+    background: #f0f2f5 !important;
+    padding: 10px 16px !important;
+    margin: 0 !important;
+    gap: 8px !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+#tab-catalog .op-btn {
+    flex: 1 !important;
+    padding: 10px 8px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    background: white !important;
+    color: #95a5a6 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+#tab-catalog .op-btn i { font-size: 18px !important; }
+
+/* Produto ativo — azul */
+#btn-type-prod.active {
+    background: linear-gradient(135deg, #0984e3, #74b9ff) !important;
+    color: white !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(9,132,227,0.35) !important;
+}
+/* Serviço ativo — verde */
+#btn-type-serv.active {
+    background: linear-gradient(135deg, #00b894, #00cec9) !important;
+    color: white !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(0,184,148,0.35) !important;
+}
+
+/* ── FORMULÁRIO ── */
+#tab-catalog .form-grid {
+    background: white !important;
+    padding: 16px 16px 20px !important;
+    margin: 0 !important;
+    gap: 0 12px !important;
+    border-bottom: 8px solid #f5f6fa !important;
+}
+#tab-catalog .form-grid label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #95a5a6 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 5px !important;
+    margin-top: 12px !important;
+    display: block !important;
+}
+#tab-catalog .form-grid input {
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 11px 13px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+}
+#tab-catalog .form-grid input:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.1) !important;
+    background: white !important;
+}
+
+/* Botão salvar catálogo — tracejado igual ao Nova Op */
+#tab-catalog .btn-add {
+    background: white !important;
+    color: #e74c3c !important;
+    border: 2px dashed #e74c3c !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 12px !important;
+    margin-top: 16px !important;
+    box-shadow: none !important;
+    letter-spacing: 0.5px !important;
+    width: 100% !important;
+    grid-column: span 2 !important;
+}
+
+/* ── LISTA DO CATÁLOGO ── */
+#catalog-list {
+    padding: 12px 15px 90px !important;
+    background: #f5f6fa !important;
+}
+
+.catalog-item {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
+    border-left: 4px solid #ecf0f1 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+/* Cor da borda por tipo */
+.catalog-item:has(.stock-badge[style*="e1f5fe"]) { border-left-color: #0984e3 !important; }
+.catalog-item:has(.stock-ok)  { border-left-color: #00b894 !important; }
+.catalog-item:has(.stock-low) { border-left-color: #f39c12 !important; }
+.catalog-item:has(.stock-zero){ border-left-color: #e74c3c !important; }
+
+/* Nome do item */
+.catalog-item strong {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1e272e !important;
+}
+.catalog-item small {
+    font-size: 10px !important;
+    color: #b2bec3 !important;
+    background: #f5f6fa !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+}
+
+/* Badge categoria */
+.catalog-item span[style*="background:#f5f5f5"] {
+    background: #f0f3f9 !important;
+    color: #636e72 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+}
+
+/* Preço */
+.catalog-item > div:last-child > strong {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1e272e !important;
+}
+
+/* Ícones editar/excluir */
+.catalog-item .fa-edit,
+.catalog-item .fa-trash { font-size: 16px !important; cursor: pointer !important; }
+.catalog-item .fa-edit  { color: #0984e3 !important; }
+.catalog-item .fa-trash { color: #e74c3c !important; }
+
+/* Estado vazio */
+#catalog-list > div[style*="text-align:center"] {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 50px 20px !important;
+}

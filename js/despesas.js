@@ -119,42 +119,59 @@ window.expPeriod = function (btn, range) {
 
 // ── RENDER LISTA ──
 window.renderExpensesList = function () {
-    // ── Calcula alertas ──
+    // ── Calcula alertas (sempre busca do banco completo) ──
     const dbAll   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
     const hoje    = new Date().toLocaleDateString('en-CA');
     const em3dias = new Date(Date.now() + 3 * 86400000).toLocaleDateString('en-CA');
-    const vencidas = dbAll.filter(x => x.type==='expense' && x.status==='pendente' && x.vencimento && x.vencimento < hoje);
-    const proximas = dbAll.filter(x => x.type==='expense' && x.status==='pendente' && x.vencimento && x.vencimento >= hoje && x.vencimento <= em3dias);
+
+    // Busca TODAS as despesas pendentes com vencimento, independente do filtro de período
+    const todasPendentes = dbAll.filter(x => x.type === 'expense' && x.status === 'pendente' && x.vencimento);
+    const vencidas = todasPendentes.filter(x => x.vencimento < hoje);
+    const proximas = todasPendentes.filter(x => x.vencimento >= hoje && x.vencimento <= em3dias);
 
     let alertHtml = '';
     if (vencidas.length > 0) {
-        const tot = vencidas.reduce((s,x) => s+x.total, 0);
-        alertHtml += `<div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:36px;height:36px;background:#e74c3c;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        const tot = vencidas.reduce((s, x) => s + (parseFloat(x.total) || 0), 0);
+        // vehicle = descrição da despesa no modelo de dados
+        const nomes = vencidas.map(x => `<strong>${x.vehicle || x.client || 'Despesa'}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ');
+        alertHtml += `
+        <div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:14px;
+                    padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:36px;height:36px;background:#e74c3c;border-radius:10px;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <i class="fas fa-circle-exclamation" style="color:white;font-size:15px;"></i>
             </div>
-            <div>
-                <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#e74c3c;margin-bottom:3px;">
-                    ⛔ ${vencidas.length} conta${vencidas.length>1?'s':''} VENCIDA${vencidas.length>1?'S':''} — R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+            <div style="flex:1;min-width:0;">
+                <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;
+                            color:#e74c3c;margin-bottom:4px;">
+                    ⛔ ${vencidas.length} conta${vencidas.length > 1 ? 's' : ''} VENCIDA${vencidas.length > 1 ? 'S' : ''}
+                    — R$ ${tot.toLocaleString('pt-BR', {minimumFractionDigits:2})}
                 </div>
-                <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#c0392b;line-height:1.5;">
-                    ${vencidas.map(x=>`<strong>${x.vehicle}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ')}
+                <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#c0392b;line-height:1.6;">
+                    ${nomes}
                 </div>
             </div>
         </div>`;
     }
+
     if (proximas.length > 0) {
-        const tot = proximas.reduce((s,x) => s+x.total, 0);
-        alertHtml += `<div style="background:#fff8e8;border:1px solid #fde8b0;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:36px;height:36px;background:#f39c12;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        const tot = proximas.reduce((s, x) => s + (parseFloat(x.total) || 0), 0);
+        const nomes = proximas.map(x => `<strong>${x.vehicle || x.client || 'Despesa'}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ');
+        alertHtml += `
+        <div style="background:#fff8e8;border:1px solid #fde8b0;border-radius:14px;
+                    padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:36px;height:36px;background:#f39c12;border-radius:10px;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <i class="fas fa-clock" style="color:white;font-size:15px;"></i>
             </div>
-            <div>
-                <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#f39c12;margin-bottom:3px;">
-                    ⚠️ ${proximas.length} conta${proximas.length>1?'s':''} vencem em até 3 dias — R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+            <div style="flex:1;min-width:0;">
+                <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;
+                            color:#f39c12;margin-bottom:4px;">
+                    ⚠️ ${proximas.length} conta${proximas.length > 1 ? 's' : ''} vence${proximas.length > 1 ? 'm' : ''} em até 3 dias
+                    — R$ ${tot.toLocaleString('pt-BR', {minimumFractionDigits:2})}
                 </div>
-                <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#e67e22;line-height:1.5;">
-                    ${proximas.map(x=>`<strong>${x.vehicle}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ')}
+                <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#e67e22;line-height:1.6;">
+                    ${nomes}
                 </div>
             </div>
         </div>`;

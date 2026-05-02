@@ -115,6 +115,28 @@ window.doLogin = async function () {
         await signInWithEmailAndPassword(auth, email, pass);
         // onAuthStateChanged cuida do redirecionamento
     } catch (e) {
+        // Tenta login como funcionário antes de mostrar erro
+        if (window.tentarLoginFuncionario) {
+            try {
+                const isFuncLogin = await window.tentarLoginFuncionario(email, pass);
+                if (isFuncLogin) {
+                    if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
+                    // Esconde tela de login e mostra sistema
+                    const loginScreen = document.getElementById('login-screen');
+                    if (loginScreen) loginScreen.style.display = 'none';
+                    const nav = document.querySelector('.bottom-nav');
+                    if (nav) nav.style.display = 'flex';
+                    setTimeout(() => {
+                        window.aplicarRestricoesFuncionario?.();
+                        window.showTab('new');
+                    }, 300);
+                    return;
+                }
+            } catch (funcErr) {
+                console.error('[Funcionário] Erro:', funcErr);
+            }
+        }
+
         const msgs = {
             'auth/invalid-credential': 'E-mail ou senha incorretos.',
             'auth/wrong-password':     'E-mail ou senha incorretos.',

@@ -297,7 +297,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 const bc  = item.status === 'pago' ? '#00b894' : item.type === 'orcamento' ? '#95a5a6' : '#f39c12';
                 const sc  = item.status === 'pago' ? 'bg-venda' : item.type === 'orcamento' ? 'bg-orcamento' : 'bg-pendente';
                 const st  = item.status === 'pago' ? 'PAGO' : item.type === 'orcamento' ? 'ORÇAMENTO' : 'PENDENTE';
-                const val = (item.netTotal && item.netTotal < item.total) ? item.netTotal : item.total;
+                // Mostra valor bruto + taxa abaixo (se houver)
+                const bruto = item.total;
+                const liquido = (item.netTotal && item.netTotal < item.total) ? item.netTotal : item.total;
+                const taxa = bruto - liquido;
                 const plate = item.plate ? ' <span style="background:#f0f3f9;color:#636e72;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;">' + item.plate.toUpperCase() + '</span>' : '';
 
                 let items = '<ul style="margin:8px 0 10px 18px;padding:0;font-size:12px;color:#636e72;line-height:1.7;">';
@@ -322,7 +325,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         '<span class="status-badge '+sc+'">'+st+'</span>' +
                     '</div>' + items +
                     '<div style="border-top:1px solid #f5f6fa;padding-top:10px;margin-bottom:6px;">' +
-                        '<div style="font-family:Oswald,sans-serif;font-size:26px;font-weight:700;color:#1e272e;">R$ '+val.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>' +
+                        '<div style="font-family:Oswald,sans-serif;font-size:26px;font-weight:700;color:#1e272e;">R$ '+bruto.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>' +
+                    (taxa > 0 ? '<div style="font-size:11px;color:#e74c3c;font-weight:700;margin-top:2px;"><i class=\"fas fa-percent\" style=\"margin-right:4px;font-size:9px;\"></i>Taxa: - R$ '+taxa.toLocaleString('pt-BR',{minimumFractionDigits:2})+' | Líq: R$ '+liquido.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>' : '') +
                     '</div>' + payBtn +
                     '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' +
                         '<div style="display:flex;gap:6px;flex:1;">'+actBtn+'</div>' +

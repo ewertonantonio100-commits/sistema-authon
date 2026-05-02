@@ -383,6 +383,7 @@ function iniciarSistema() {
         localStorage.setItem('oficina_db_master', JSON.stringify(dbLocal));
         if (window.renderHistory)       window.renderHistory('all');
         if (window.renderAgenda)        window.renderAgenda();
+        if (window.renderCRM)           window.renderCRM();
         if (window.updateDashboard)     window.updateDashboard();
         if (window.renderExpensesList)  window.renderExpensesList();
     });

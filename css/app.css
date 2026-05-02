@@ -1476,3 +1476,241 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
     border-radius: 0 8px 8px 0 !important;
     font-family: 'Poppins', sans-serif !important;
 }
+
+
+/* ============================================================
+   DESPESAS — Authon v2.0
+   ============================================================ */
+
+/* ── HEADER ── */
+.exp-header {
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%) !important;
+    padding: 18px 16px 16px !important;
+}
+.exp-header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 14px !important;
+}
+.exp-header-label { display: none !important; }
+.exp-header-title {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: white !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}
+
+/* ── BOTÃO NOVA DESPESA ── */
+.exp-new-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 9px 16px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    box-shadow: 0 3px 10px rgba(231,76,60,0.35) !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* ── BUSCA ── */
+.exp-search-input {
+    width: calc(100% - 30px) !important;
+    margin: 0 15px 0 !important;
+    background: rgba(255,255,255,0.95) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    color: #1e272e !important;
+    font-size: 13px !important;
+    padding: 11px 14px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    display: block !important;
+}
+
+/* ── PERÍODO ── */
+.exp-header .hist-period-row {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+}
+.exp-header .hist-period-btn {
+    flex: 1 !important;
+    padding: 9px 0 !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.5) !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+}
+.exp-header .hist-period-btn.active {
+    background: #e74c3c !important;
+    border-color: #e74c3c !important;
+    color: white !important;
+    box-shadow: 0 3px 10px rgba(231,76,60,0.4) !important;
+}
+
+/* ── FILTROS STATUS ── */
+#tab-expenses .hist-status-row {
+    background: white !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    display: flex !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+}
+#tab-expenses .hist-status-btn { background: #f8f9fa !important; color: #95a5a6 !important; border: 1.5px solid #ecf0f1 !important; padding: 7px 16px !important; border-radius: 20px !important; font-size: 11px !important; font-weight: 700 !important; cursor: pointer !important; white-space: nowrap !important; }
+#tab-expenses .hist-status-btn.active { background: #2d3436 !important; color: white !important; border-color: #2d3436 !important; }
+
+/* ── LISTA ── */
+#expense-list-mini {
+    padding: 12px 15px 90px !important;
+    background: #f5f6fa !important;
+}
+
+/* Card de total do período */
+#expense-list-mini > div:first-child {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 14px 18px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+/* Cards de despesa */
+#expense-list-mini > div:not(:first-child) {
+    background: white !important;
+    border-radius: 16px !important;
+    margin-bottom: 10px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
+    overflow: hidden !important;
+}
+
+/* Botão marcar como pago */
+#expense-list-mini button[onclick*="markExpensePaid"] {
+    background: #e8faf4 !important;
+    color: #00b894 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 9px 14px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+/* Botão lixeira despesa */
+#expense-list-mini button[onclick*="deleteItem"] {
+    background: #fef0ee !important;
+    color: #e74c3c !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+
+/* ── FORMULÁRIO NOVA DESPESA ── */
+#exp-form-wrapper {
+    background: white !important;
+    margin: 0 !important;
+    padding: 20px 16px !important;
+    border-bottom: 8px solid #f5f6fa !important;
+    display: none;
+}
+.exp-form-title {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1e272e !important;
+    letter-spacing: 0.5px !important;
+    margin-bottom: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+.exp-form-title i { color: #e74c3c !important; }
+
+#tab-expenses .form-grid input,
+#tab-expenses .form-grid select {
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 11px 13px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+}
+#tab-expenses .form-grid input:focus,
+#tab-expenses .form-grid select:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.1) !important;
+    background: white !important;
+}
+
+/* Botão salvar despesa */
+#btn-save-expense {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    margin-top: 16px !important;
+    cursor: pointer !important;
+    box-shadow: 0 6px 20px rgba(231,76,60,0.35) !important;
+    grid-column: span 2 !important;
+}
+
+/* Toggle pago/pendente */
+.exp-status-toggle { gap: 10px !important; margin-top: 6px !important; }
+.exp-toggle-btn {
+    flex: 1 !important; padding: 10px !important;
+    border-radius: 10px !important; border: 2px solid #f0f0f0 !important;
+    background: #f8f9fa !important; color: #95a5a6 !important;
+    font-family: 'Poppins', sans-serif !important; font-size: 12px !important;
+    font-weight: 700 !important; cursor: pointer !important;
+    display: flex !important; align-items: center !important;
+    justify-content: center !important; gap: 6px !important;
+    transition: all 0.2s !important;
+}
+#expTogglePago.active     { background: #e8faf4 !important; border-color: #00b894 !important; color: #00b894 !important; }
+#expTogglePendente.active { background: #fff8e8 !important; border-color: #f39c12 !important; color: #f39c12 !important; }
+
+/* Campo vencimento — aparece ao clicar Pendente */
+#expVencWrapper, #div-exp-venc {
+    grid-column: span 2 !important;
+    animation: slideDown 0.2s ease !important;
+}
+
+/* Botão Nova Despesa com ícone X ao abrir */
+.exp-new-btn .fa-times {
+    font-size: 14px !important;
+}
+
+/* Alertas de vencimento no topo da lista */
+#exp-alert-banner {
+    padding: 12px 15px 0 !important;
+}

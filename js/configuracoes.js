@@ -302,5 +302,123 @@ window.adminExtendPlan = async function (docId, plano) {
 
 window.toggleBlockClient = window.adminSetStatus;
 
-console.log('⚙️ Configurações carregadas');
 
+
+// ══════════════════════════════════════════════════════
+// BACKUP & RESTAURAÇÃO
+// ══════════════════════════════════════════════════════
+
+window.exportarBackup = async function () {
+    const plano = localStorage.getItem('authon_plano') || 'basic';
+
+    // Verifica plano — backup disponível para Pro e Premium
+    if (plano === 'basic') {
+        // Mostra lock
+        const lock = document.getElementById('backup-premium-lock');
+        if (lock) lock.style.display = 'block';
+        Toast.warning('Backup disponível nos planos Pro e Premium.');
+        return;
+    }
+
+    try {
+        Toast.info('Preparando backup...', 2000);
+
+        const user = window.auth?.currentUser;
+
+        // Coleta todos os dados
+        const backup = {
+            versao:    '2.0',
+            geradoEm:  new Date().toISOString(),
+            oficina:   localStorage.getItem('authon_cfg_name') || '',
+            email:     user?.email || '',
+            operacoes: JSON.parse(localStorage.getItem('oficina_db_master') || '[]'),
+            catalogo:  JSON.parse(localStorage.getItem('catalog_v1') || '[]'),
+            config: {
+                name:     localStorage.getItem('authon_cfg_name')    || '',
+                cnpj:     localStorage.getItem('authon_cfg_cnpj')    || '',
+                addr:     localStorage.getItem('authon_cfg_addr')    || '',
+                phone:    localStorage.getItem('authon_cfg_phone')   || '',
+                pix:      localStorage.getItem('authon_cfg_pix')     || '',
+                warranty: localStorage.getItem('authon_cfg_warranty')|| '',
+                team:     localStorage.getItem('authon_cfg_team')    || '',
+            }
+        };
+
+        // Gera arquivo JSON
+        const json     = JSON.stringify(backup, null, 2);
+        const blob     = new Blob([json], { type: 'application/json' });
+        const url      = URL.createObjectURL(blob);
+        const link     = document.createElement('a');
+        const date     = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        const nome     = (backup.oficina || 'authon').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]/g,'_');
+        link.href      = url;
+        link.download  = `backup_${nome}_${date}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        Toast.success(`Backup gerado! ${backup.operacoes.length} registros exportados.`);
+
+    } catch (e) {
+        console.error(e);
+        Toast.error('Erro ao gerar backup. Tente novamente.');
+    }
+};
+
+
+window.importarBackup = async function (input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const plano = localStorage.getItem('authon_plano') || 'basic';
+    if (plano === 'basic') {
+        Toast.warning('Restauração disponível nos planos Pro e Premium.');
+        return;
+    }
+
+    Confirm(
+        '⚠️ Restaurar este backup substituirá <strong>todos os dados atuais</strong>. Tem certeza?',
+        async () => {
+            try {
+                const text   = await file.text();
+                const backup = JSON.parse(text);
+
+                // Valida formato
+                if (!backup.versao || !backup.operacoes) {
+                    Toast.error('Arquivo inválido. Use um backup gerado pelo Authon.');
+                    return;
+                }
+
+                Toast.info('Restaurando backup...', 3000);
+
+                // Restaura no localStorage
+                localStorage.setItem('oficina_db_master', JSON.stringify(backup.operacoes));
+                if (backup.catalogo?.length) localStorage.setItem('catalog_v1', JSON.stringify(backup.catalogo));
+                if (backup.config?.name)     localStorage.setItem('authon_cfg_name',    backup.config.name);
+                if (backup.config?.pix)      localStorage.setItem('authon_cfg_pix',     backup.config.pix);
+                if (backup.config?.team)     localStorage.setItem('authon_cfg_team',    backup.config.team);
+                if (backup.config?.warranty) localStorage.setItem('authon_cfg_warranty',backup.config.warranty);
+
+                // Salva no Firestore também
+                const user = window.auth?.currentUser;
+                if (user) {
+                    const batch = backup.operacoes.slice(0, 20); // primeiros 20 para não sobrecarregar
+                    for (const op of batch) {
+                        if (!op.uid) op.uid = user.uid;
+                    }
+                }
+
+                Toast.success(`Backup restaurado! ${backup.operacoes.length} registros recuperados.`);
+                setTimeout(() => location.reload(), 2000);
+
+            } catch (e) {
+                console.error(e);
+                Toast.error('Erro ao restaurar. Verifique o arquivo.');
+            }
+        }
+    );
+
+    // Reset input
+    input.value = '';
+};
+
+console.log('⚙️ Configurações carregadas');

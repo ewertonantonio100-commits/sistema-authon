@@ -207,7 +207,11 @@ window.renderExpensesList = function () {
         return;
     }
 
-    let html = `<div style="margin:12px 15px;background:white;border-radius:14px;padding:14px 16px;
+    // Alertas sempre no topo, antes do resumo
+    let html = alertHtml;
+
+    // Card de resumo do período
+    html += `<div style="margin:12px 15px;background:white;border-radius:14px;padding:14px 16px;
         box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#95a5a6;">
             ${filtered.length} despesa${filtered.length > 1 ? 's' : ''} no período

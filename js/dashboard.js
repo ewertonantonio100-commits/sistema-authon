@@ -19,7 +19,7 @@ window.renderSixMonthChart = function () {
             const xd = new Date(x.date + 'T12:00:00');
             if (xd.getMonth() === d.getMonth() && xd.getFullYear() === d.getFullYear()) {
                 if (x.type === 'venda' && x.status === 'pago') mInc += (x.netTotal !== undefined ? x.netTotal : x.total);
-                if (x.type === 'expense') mExp += x.total;
+                if (x.type === 'expense' && (!x.status || x.status === 'pago')) mExp += x.total;
             }
         });
         dataInc.push(mInc); dataExp.push(mExp);
@@ -74,7 +74,7 @@ window.renderAnnualBalance = function () {
             const xd = new Date(x.date + 'T12:00:00');
             if (xd.getMonth() === idx && xd.getFullYear() === currentYear) {
                 if (x.type === 'venda' && x.status === 'pago') mInc += (x.netTotal !== undefined ? x.netTotal : x.total);
-                if (x.type === 'expense') mExp += x.total;
+                if (x.type === 'expense' && (!x.status || x.status === 'pago')) mExp += x.total;
             }
         });
         const profit = mInc - mExp;
@@ -108,10 +108,11 @@ window.updateDashboard = function (applyFilter = false) {
     if (applyFilter && start && end) filtered = db.filter(x => x.date >= start && x.date <= end);
 
     let inc = 0, exp = 0;
-    const payStats = {}, catExpStats = {};
+    const payStats = {}, catExpStats = {}, serviceStats = {};
     window.teamStats = {};
 
     filtered.forEach(x => {
+        // MELHORIA 1: Entradas = apenas vendas PAGAS (líquido)
         if (x.type === 'venda' && x.status === 'pago') {
             const val = x.netTotal !== undefined ? x.netTotal : x.total;
             inc += val;
@@ -119,8 +120,21 @@ window.updateDashboard = function (applyFilter = false) {
             payStats[pay] = (payStats[pay] || 0) + val;
             const seller = x.seller || 'Não Informado';
             window.teamStats[seller] = (window.teamStats[seller] || 0) + val;
+
+            // MELHORIA 3: Ranking de serviços
+            (x.items || []).forEach(item => {
+                let desc = item.desc || '';
+                if (desc.includes(' - ') && desc.includes('(')) {
+                    try { desc = desc.split(' - ')[1].split(' (')[0]; } catch(e) {}
+                }
+                if (desc) {
+                    const itemVal = parseFloat(item.val) || 0;
+                    serviceStats[desc] = (serviceStats[desc] || 0) + itemVal;
+                }
+            });
         }
-        if (x.type === 'expense') {
+        // MELHORIA 1: Saídas = apenas despesas PAGAS (status pago ou sem status)
+        if (x.type === 'expense' && (!x.status || x.status === 'pago')) {
             exp += x.total;
             const cat = x.client || 'Geral';
             catExpStats[cat] = (catExpStats[cat] || 0) + x.total;
@@ -186,6 +200,31 @@ window.updateDashboard = function (applyFilter = false) {
     if (stEl) stEl.innerHTML = teamHtml;
     window.teamStats = {};
 
+    // ── RANKING DE SERVIÇOS ──
+    const ssEl = document.getElementById('stats-services');
+    if (ssEl) {
+        const sortedSvc = Object.entries(serviceStats).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        const totalSvc  = sortedSvc.reduce((s, [, v]) => s + v, 0);
+        if (sortedSvc.length > 0) {
+            const medals = ['🥇','🥈','🥉'];
+            ssEl.innerHTML = sortedSvc.map(([name, val], i) => {
+                const pct = totalSvc > 0 ? (val / totalSvc) * 100 : 0;
+                return `<div class="fin-bar-row">
+                    <div class="fin-bar-top">
+                        <span class="fin-bar-name">${medals[i] || '🔧'} ${name}</span>
+                        <span class="fin-bar-val" style="color:#6c5ce7;">${fmt(val)}</span>
+                    </div>
+                    <div class="fin-bar-track">
+                        <div class="fin-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);"></div>
+                    </div>
+                    <div class="fin-bar-pct">${pct.toFixed(0)}% do faturamento</div>
+                </div>`;
+            }).join('');
+        } else {
+            ssEl.innerHTML = '<div style="color:#bdc3c7;text-align:center;padding:15px;font-size:13px;">Sem dados no período</div>';
+        }
+    }
+
     // KPIs secundários
     const vendasPagas = filtered.filter(x => x.type === 'venda' && x.status === 'pago');
     const ticket = vendasPagas.length > 0 ? inc / vendasPagas.length : 0;
@@ -198,6 +237,22 @@ window.updateDashboard = function (applyFilter = false) {
     const elC = document.getElementById('kpi-conversao');  if (elC) elC.innerText = (totalOp > 0 ? Math.round((filtered.filter(x => x.type === 'venda').length / totalOp) * 100) : 0) + '%';
     const hoje2 = new Date().toLocaleDateString('en-CA');
     const elH = document.getElementById('kpi-hoje');       if (elH) elH.innerText = dbFull.filter(x => x.date === hoje2 && x.type !== 'expense').length;
+
+    // MELHORIA 2: Novos KPIs — A Receber, A Pagar, Carros no Mês
+    const aReceber = dbFull.filter(x => x.type === 'venda' && x.status === 'pendente')
+                           .reduce((s, x) => s + x.total, 0);
+    const aPagar   = dbFull.filter(x => x.type === 'expense' && x.status === 'pendente')
+                           .reduce((s, x) => s + x.total, 0);
+    const now3     = new Date();
+    const carrosMes = dbFull.filter(x => {
+        if (x.type === 'expense') return false;
+        const d = new Date(x.date + 'T12:00:00');
+        return d.getMonth() === now3.getMonth() && d.getFullYear() === now3.getFullYear();
+    }).length;
+
+    const elAR = document.getElementById('kpi-a-receber'); if (elAR) elAR.innerText = fmt(aReceber);
+    const elAP = document.getElementById('kpi-a-pagar');   if (elAP) elAP.innerText = fmt(aPagar);
+    const elCM = document.getElementById('kpi-carros-mes');if (elCM) elCM.innerText = carrosMes;
 
     // Meta mensal
     const metaV  = parseFloat(localStorage.getItem('authon_meta_mes') || '0');

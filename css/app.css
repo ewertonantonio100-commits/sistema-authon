@@ -1714,3 +1714,136 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 #exp-alert-banner {
     padding: 12px 15px 0 !important;
 }
+
+
+/* ============================================================
+   CONFIGURAÇÕES — Authon v2.0
+   ============================================================ */
+
+#tab-settings > .container {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* ── HEADER ── */
+#tab-settings .header-title {
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%) !important;
+    padding: 18px 16px 20px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+#tab-settings .header-title h1 {
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 22px !important;
+    color: white !important;
+    letter-spacing: 1px !important;
+    margin: 0 !important;
+    text-transform: uppercase !important;
+}
+
+/* ── SEÇÕES SANFONA ── */
+#tab-settings > .container > div[style*="border-radius: 12px"],
+#tab-settings > .container > div[style*="border-radius:12px"] {
+    margin: 12px 15px 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+
+.settings-btn {
+    width: 100% !important;
+    padding: 16px 18px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: white !important;
+    border: none !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #2d3436 !important;
+    cursor: pointer !important;
+    transition: background 0.2s !important;
+    text-align: left !important;
+}
+.settings-btn:active { background: #f8f9fa !important; }
+.settings-btn i:first-child { color: #e74c3c !important; margin-right: 10px !important; font-size: 16px !important; }
+.settings-btn .fa-chevron-down { color: #bdc3c7 !important; font-size: 12px !important; transition: transform 0.2s !important; }
+
+.settings-content {
+    padding: 0 18px 18px !important;
+    background: white !important;
+    animation: slideDown 0.2s ease !important;
+    border-top: 1px solid #f5f6fa !important;
+}
+.settings-content label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #95a5a6 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-top: 14px !important;
+    margin-bottom: 6px !important;
+    display: block !important;
+}
+.settings-content input,
+.settings-content textarea {
+    border-radius: 12px !important;
+    border: 1.5px solid #ecf0f1 !important;
+    padding: 11px 13px !important;
+    font-size: 13px !important;
+    background: #fafbfc !important;
+    color: #2d3436 !important;
+}
+.settings-content input:focus,
+.settings-content textarea:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231,76,60,0.1) !important;
+    background: white !important;
+}
+
+/* ── BOTÕES DE AÇÃO ── */
+#tab-settings .btn-action {
+    margin: 12px 15px 0 !important;
+    width: calc(100% - 30px) !important;
+    border-radius: 14px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 14px !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Redefinir senha — escuro */
+#tab-settings .btn-action[onclick*="resetPassword"] {
+    background: #2d3436 !important;
+    box-shadow: 0 4px 14px rgba(45,52,54,0.3) !important;
+}
+
+/* Sair do sistema — vermelho */
+#tab-settings .btn-action[onclick*="logout"] {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    box-shadow: 0 4px 14px rgba(231,76,60,0.35) !important;
+}
+
+/* Painel admin — dourado */
+#btn-super-admin {
+    margin: 12px 15px 0 !important;
+    width: calc(100% - 30px) !important;
+    border-radius: 14px !important;
+}
+
+/* ── BADGE SINCRONIZADO ── */
+#tab-settings > .container > div[style*="rgba(39, 174, 96"],
+#tab-settings > .container > div[style*="rgba(39,174,96"] {
+    margin: 16px 15px 30px !important;
+    background: linear-gradient(135deg, rgba(0,184,148,0.08), rgba(0,184,148,0.12)) !important;
+    border: 1px solid rgba(0,184,148,0.3) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    text-align: center !important;
+    color: #00b894 !important;
+}

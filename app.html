@@ -651,24 +651,44 @@
     </div>
 </div>
     <div id="tab-crm" class="tab-content">
-        <div class="container">
-            <div class="header-title" style="margin-bottom: 10px;">
-                <h1>Máquina de Retorno</h1>
-                <p style="font-size:11px; color:#7f8c8d; margin-top:5px; text-transform:none;">Resgate clientes e gere novas vendas!</p>
+
+        <!-- Header -->
+        <div style="background:linear-gradient(145deg,#1e272e 0%,#2d3436 60%,#1a252f 100%);padding:18px 16px 16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <div>
+                    <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;
+                                color:white;letter-spacing:1px;">MÁQUINA DE RETORNO</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:3px;">
+                        Resgate clientes inativos e gere novas vendas
+                    </div>
+                </div>
+                <div style="width:44px;height:44px;background:rgba(231,76,60,0.2);border-radius:12px;
+                            display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-bullhorn" style="color:#e74c3c;font-size:18px;"></i>
+                </div>
             </div>
-            
-            <div style="background:#f9f9f9; padding:15px; border-radius:12px; border:1px solid #eee; text-align:center; margin-bottom:15px;">
-                <label style="color:var(--primary); font-size:12px;"><i class="fas fa-filter"></i> Mostrar clientes sumidos há mais de:</label>
-                <select id="crm-days" onchange="renderCRM()" style="margin-top:5px; background:white; font-weight:bold; color:var(--dark);">
-                    <option value="60">60 dias (2 meses)</option>
-                    <option value="90" selected>90 dias (3 meses)</option>
-                    <option value="120">120 dias (4 meses)</option>
-                    <option value="180">180 dias (6 meses)</option>
+
+            <!-- Filtro de período -->
+            <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);
+                        border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+                <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);
+                            text-transform:uppercase;letter-spacing:1px;white-space:nowrap;">
+                    Inativos há mais de
+                </div>
+                <select id="crm-days" onchange="renderCRM()"
+                    style="flex:1;background:transparent;border:none;color:white;
+                           font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;
+                           outline:none;cursor:pointer;">
+                    <option value="30"  style="background:#2d3436;">30 dias (1 mês)</option>
+                    <option value="60"  style="background:#2d3436;">60 dias (2 meses)</option>
+                    <option value="90"  style="background:#2d3436;" selected>90 dias (3 meses)</option>
+                    <option value="120" style="background:#2d3436;">120 dias (4 meses)</option>
+                    <option value="180" style="background:#2d3436;">180 dias (6 meses)</option>
                 </select>
             </div>
         </div>
-        
-        <div id="crm-list" class="card-list" style="padding-bottom: 30px;"></div>
+
+        <div id="crm-list" style="padding:12px 15px 90px;background:#f5f6fa;"></div>
     </div>
 
 

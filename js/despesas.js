@@ -4,11 +4,30 @@
 
 // ── TOGGLE FORMULÁRIO ──
 window.toggleExpForm = function (forceClose = false) {
-    const form = document.getElementById('exp-form-card');
-    if (!form) return;
-    if (forceClose) { form.style.display = 'none'; return; }
-    form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    if (form.style.display === 'block') form.scrollIntoView({ behavior: 'smooth' });
+    const wrapper     = document.getElementById('exp-form-wrapper')
+                     || document.getElementById('exp-form-card');
+    const icon        = document.getElementById('exp-new-icon');
+    const listDiv     = document.getElementById('expense-list-mini');
+    const filterRow   = document.querySelector('#tab-expenses .hist-status-row');
+    const alertBanner = document.getElementById('exp-alert-banner');
+
+    if (!wrapper) return;
+    const isOpen = wrapper.style.display === 'block';
+
+    if (forceClose || isOpen) {
+        wrapper.style.display = 'none';
+        if (icon) icon.className = 'fas fa-plus';
+        if (listDiv)     listDiv.style.display     = 'block';
+        if (filterRow)   filterRow.style.display   = 'flex';
+        if (alertBanner) alertBanner.style.display = 'block';
+    } else {
+        wrapper.style.display = 'block';
+        if (icon) icon.className = 'fas fa-times';
+        if (listDiv)     listDiv.style.display     = 'none';
+        if (filterRow)   filterRow.style.display   = 'none';
+        if (alertBanner) alertBanner.style.display = 'none';
+        setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
 };
 
 // ── STATUS PAGO/PENDENTE ──
@@ -17,7 +36,10 @@ window.setExpStatus = function (status) {
     window._expStatus = status;
     const btnPago     = document.getElementById('expTogglePago');
     const btnPendente = document.getElementById('expTogglePendente');
-    const divVenc     = document.getElementById('div-exp-venc');
+
+    // Tenta os dois IDs possíveis para o campo de vencimento
+    const divVenc  = document.getElementById('div-exp-venc')
+                  || document.getElementById('expVencWrapper');
 
     if (btnPago)     btnPago.classList.toggle('active',     status === 'pago');
     if (btnPendente) btnPendente.classList.toggle('active', status === 'pendente');
@@ -97,6 +119,67 @@ window.expPeriod = function (btn, range) {
 
 // ── RENDER LISTA ──
 window.renderExpensesList = function () {
+    // ── Remove alertas anteriores ──
+    const oldAlert = document.getElementById('exp-alert-banner');
+    if (oldAlert) oldAlert.remove();
+
+    // ── Calcula alertas ──
+    const dbAll  = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+    const hoje   = new Date().toLocaleDateString('en-CA');
+    const em3dias = new Date(Date.now() + 3 * 86400000).toLocaleDateString('en-CA');
+
+    const vencidas  = dbAll.filter(x => x.type === 'expense' && x.status === 'pendente' && x.vencimento && x.vencimento < hoje);
+    const proximas  = dbAll.filter(x => x.type === 'expense' && x.status === 'pendente' && x.vencimento && x.vencimento >= hoje && x.vencimento <= em3dias);
+
+    if (vencidas.length > 0 || proximas.length > 0) {
+        const banner = document.createElement('div');
+        banner.id = 'exp-alert-banner';
+        banner.style.cssText = 'padding:12px 15px 0;';
+
+        let html = '';
+        if (vencidas.length > 0) {
+            const total = vencidas.reduce((s, x) => s + x.total, 0);
+            html += `<div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:14px;
+                        padding:14px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:36px;height:36px;background:#e74c3c;border-radius:10px;
+                            display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-circle-exclamation" style="color:white;font-size:15px;"></i>
+                </div>
+                <div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#e74c3c;margin-bottom:3px;">
+                        ⛔ ${vencidas.length} conta${vencidas.length > 1 ? 's' : ''} VENCIDA${vencidas.length > 1 ? 'S' : ''} — R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                    </div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#c0392b;line-height:1.5;">
+                        ${vencidas.map(x => `<strong>${x.vehicle}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ')}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        if (proximas.length > 0) {
+            const total = proximas.reduce((s, x) => s + x.total, 0);
+            html += `<div style="background:#fff8e8;border:1px solid #fde8b0;border-radius:14px;
+                        padding:14px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="width:36px;height:36px;background:#f39c12;border-radius:10px;
+                            display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-clock" style="color:white;font-size:15px;"></i>
+                </div>
+                <div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;color:#f39c12;margin-bottom:3px;">
+                        ⚠️ ${proximas.length} conta${proximas.length > 1 ? 's' : ''} vencem em até 3 dias — R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2})}
+                    </div>
+                    <div style="font-family:'Poppins',sans-serif;font-size:11px;color:#e67e22;line-height:1.5;">
+                        ${proximas.map(x => `<strong>${x.vehicle}</strong> (${x.vencimento.split('-').reverse().join('/')})`).join(' · ')}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        banner.innerHTML = html;
+        const listEl = document.getElementById('expense-list-mini');
+        if (listEl?.parentNode) listEl.parentNode.insertBefore(banner, listEl);
+    }
+
     const db   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
     const list = document.getElementById('expense-list-mini');
     if (!list) return;

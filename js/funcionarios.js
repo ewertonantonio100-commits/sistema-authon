@@ -26,30 +26,41 @@ window.getLimiteFuncionarios = function () {
 };
 
 // ── LOGIN DE FUNCIONÁRIO ──
-// Chamado na tela de login quando o e-mail é do dono mas a senha não bate
+// Busca funcionários pelo e-mail da oficina — sem precisar de autenticação Firebase
 window.tentarLoginFuncionario = async function (email, senha) {
     try {
-        // Busca configurações do dono pelo e-mail
-        const q  = window.query(window.collection(window.db, 'configuracoes'), window.where('email', '==', email));
-        const qs = await window.getDocs(q);
-        if (qs.empty) return false;
-
-        const cfg   = qs.docs[0].data();
-        const docId = qs.docs[0].id;
-
-        // Busca funcionários desta oficina
-        const qF  = window.query(window.collection(window.db, 'funcionarios'), window.where('ownerUid', '==', cfg.uid));
+        // Busca funcionários pelo e-mail do dono (campo ownerEmail)
+        const qF  = window.query(
+            window.collection(window.db, 'funcionarios'),
+            window.where('ownerEmail', '==', email),
+            window.where('ativo', '!=', false)
+        );
         const qFs = await window.getDocs(qF);
 
+        if (qFs.empty) return false;
+
         let funcionarioEncontrado = null;
+        let cfg = null;
+        let docId = null;
+
         qFs.forEach(d => {
             const f = d.data();
-            if (f.senha === btoa(senha) && f.ativo !== false) {
+            if (f.senha === btoa(senha)) {
                 funcionarioEncontrado = { ...f, docId: d.id };
             }
         });
 
         if (!funcionarioEncontrado) return false;
+
+        // Busca configurações do dono pelo ownerUid
+        const qC  = window.query(
+            window.collection(window.db, 'configuracoes'),
+            window.where('uid', '==', funcionarioEncontrado.ownerUid)
+        );
+        const qCs = await window.getDocs(qC);
+        if (qCs.empty) return false;
+        cfg   = qCs.docs[0].data();
+        docId = qCs.docs[0].id;
 
         // Salva sessão de funcionário
         localStorage.setItem('authon_is_funcionario', 'true');

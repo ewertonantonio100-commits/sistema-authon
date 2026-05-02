@@ -96,6 +96,11 @@ window.confirm = function (msg) {
 // ── 3. DOM Ready ──
 document.addEventListener('DOMContentLoaded', function () {
 
+    // Aplica restrições se for funcionário logado
+    if (window.isFuncionario?.()) {
+        window.aplicarRestricoesFuncionario?.();
+    }
+
     // Brand header
     const bh = document.querySelector('.brand-header');
     if (bh) bh.innerHTML = `
@@ -147,6 +152,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tab === 'dashboard') { window.updateDashboard?.(true); window.renderSixMonthChart?.(); window.renderAnnualBalance?.(); }
         if (tab === 'history')   window.renderHistory?.(window.currentHistoryFilter || 'all');
         if (tab === 'expenses')  window.renderExpensesList?.();
+        if (tab === 'settings')  setTimeout(() => window.renderFuncionariosList?.(), 300);
         if (tab === 'catalog')   window.renderCatalogList?.();
         if (tab === 'agenda')    window.renderAgenda?.();
         if (tab === 'crm')       window.renderCRM?.();
@@ -181,7 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // Confirms/deletes críticos
-    window.logout = function () { Confirm('Deseja sair?', () => window.auth.signOut().then(() => location.reload())); };
+    window.logout = function () {
+        if (window.isFuncionario?.()) {
+            Confirm('Deseja sair do sistema?', () => window.logoutFuncionario());
+        } else {
+            Confirm('Deseja sair?', () => window.auth.signOut().then(() => location.reload()));
+        }
+    };
     window.deleteItem = async function (docId) {
         if (localStorage.getItem('authon_mode_locked') === 'true') { Toast.error('Funcionários não podem excluir.'); return; }
         if (!docId || docId === 'undefined') { Toast.error('Item sem ID.'); return; }

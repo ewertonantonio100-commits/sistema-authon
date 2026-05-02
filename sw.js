@@ -32,6 +32,7 @@ const urlsToCache = [
   'js/agenda.js',
   'js/inspecao.js',
   'js/admin.js',
+  'js/funcionarios.js',
   'js/fixes.js',
 
   // ── Assets ──

@@ -384,6 +384,8 @@ function iniciarSistema() {
         if (window.renderHistory)       window.renderHistory('all');
         if (window.renderAgenda)        window.renderAgenda();
         if (window.renderCRM)           window.renderCRM();
+        // Dispara evento para outros módulos saberem que dados chegaram
+        document.dispatchEvent(new Event('authon:dados-carregados'));
         if (window.updateDashboard)     window.updateDashboard();
         if (window.renderExpensesList)  window.renderExpensesList();
     });
@@ -394,6 +396,14 @@ function iniciarSistema() {
         snapshot.forEach((docSnap) => {
             const cfg = docSnap.data();
             const hoje = new Date();
+
+            // ── ADMIN: mostra botão e define plano ANTES de qualquer verificação ──
+            if (user.email === window.ADMIN_EMAIL) {
+                const btnAdmin = document.getElementById('btn-super-admin');
+                if (btnAdmin) btnAdmin.style.display = 'block';
+                localStorage.setItem('authon_plano', 'premium');
+                localStorage.setItem('authon_status', 'admin');
+            }
 
             // Bloqueio
             if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {

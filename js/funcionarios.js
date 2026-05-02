@@ -192,7 +192,15 @@ window.renderFuncionariosList = async function () {
     container.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-spin"></i></div>';
 
     try {
-        const q  = window.query(window.collection(window.db, 'funcionarios'), window.where('ownerUid', '==', user.uid));
+        if (!user?.uid) {
+            container.innerHTML = '<div style="color:#e74c3c;padding:12px;font-size:12px;">Usuário não autenticado.</div>';
+            return;
+        }
+
+        const q  = window.query(
+            window.collection(window.db, 'funcionarios'),
+            window.where('ownerUid', '==', user.uid)
+        );
         const qs = await window.getDocs(q);
 
         const funcs = [];
@@ -258,8 +266,20 @@ window.renderFuncionariosList = async function () {
         });
 
     } catch (e) {
-        console.error(e);
-        container.innerHTML = '<div style="color:#e74c3c;padding:12px;">Erro ao carregar.</div>';
+        console.error('[Funcionários] Erro:', e.code, e.message);
+        if (e.code === 'permission-denied') {
+            container.innerHTML = `<div style="background:#fff0f0;border:1px solid #ffd5d5;border-radius:12px;padding:14px;font-size:12px;color:#c0392b;">
+                🔒 Permissão negada no Firestore.<br><br>
+                <strong>Solução:</strong> Adicione esta regra no Firebase Console → Firestore → Regras:<br><br>
+                <code style="background:#f5f5f5;padding:4px 8px;border-radius:6px;font-size:11px;display:block;margin-top:6px;">
+                match /funcionarios/{id} {<br>
+                &nbsp;&nbsp;allow read, write: if request.auth != null;<br>
+                }
+                </code>
+            </div>`;
+        } else {
+            container.innerHTML = '<div style="color:#e74c3c;padding:12px;font-size:12px;">Erro: ' + (e.message || e.code || 'desconhecido') + '</div>';
+        }
     }
 };
 

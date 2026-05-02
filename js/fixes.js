@@ -362,5 +362,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnServ) btnServ.className = 'op-btn' + (type === 'servico' ? ' active' : '');
     };
 
+    // ── Garante que renderCRM é chamado ao abrir a aba ──
+    // e também ao mudar o select
+    setTimeout(() => {
+        const crmDays = document.getElementById('crm-days');
+        if (crmDays && !crmDays._fixed) {
+            crmDays._fixed = true;
+            crmDays.addEventListener('change', () => window.renderCRM?.());
+        }
+    }, 1000);
+
     console.log('✅ fixes.js v4');
 });

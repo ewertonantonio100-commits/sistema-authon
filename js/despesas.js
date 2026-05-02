@@ -177,7 +177,7 @@ window.renderExpensesList = function () {
         </div>`;
     }
 
-    const db   = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+    const db   = dbAll; // reutiliza dbAll já carregado
     const list = document.getElementById('expense-list-mini');
     if (!list) return;
 
@@ -185,7 +185,7 @@ window.renderExpensesList = function () {
     const eStart  = document.getElementById('expFilterStart')?.value || '';
     const eEnd    = document.getElementById('expFilterEnd')?.value   || '';
     const statusF = window._expFilterStatus || 'all';
-    const hoje    = new Date().toLocaleDateString('en-CA');
+    // hoje já está declarado acima — não redeclarar
 
     let filtered = db.filter(x => x.type === 'expense');
     if (eStart) filtered = filtered.filter(x => x.date >= eStart);

@@ -107,7 +107,7 @@ window.updateDashboard = function (applyFilter = false) {
     let filtered = db;
     if (applyFilter && start && end) filtered = db.filter(x => x.date >= start && x.date <= end);
 
-    let inc = 0, exp = 0;
+    let inc = 0, exp = 0, taxas = 0;
     const payStats = {}, catExpStats = {}, serviceStats = {};
     window.teamStats = {};
 
@@ -116,6 +116,7 @@ window.updateDashboard = function (applyFilter = false) {
         if (x.type === 'venda' && x.status === 'pago') {
             const val = x.netTotal !== undefined ? x.netTotal : x.total;
             inc += val;
+            taxas += (x.total - val); // bruto - líquido = taxa cobrada
             const pay = x.payment || 'Outros';
             payStats[pay] = (payStats[pay] || 0) + val;
             const seller = x.seller || 'Não Informado';
@@ -253,6 +254,28 @@ window.updateDashboard = function (applyFilter = false) {
     const elAR = document.getElementById('kpi-a-receber'); if (elAR) elAR.innerText = fmt(aReceber);
     const elAP = document.getElementById('kpi-a-pagar');   if (elAP) elAP.innerText = fmt(aPagar);
     const elCM = document.getElementById('kpi-carros-mes');if (elCM) elCM.innerText = carrosMes;
+
+    // KPI Taxas de Cartão
+    const elTX = document.getElementById('kpi-taxas');
+    if (elTX) {
+        elTX.innerText = fmt(taxas);
+        // Tooltip motivacional — argumento de venda
+        if (taxas > 0) {
+            elTX.title = `Você perdeu ${fmt(taxas)} em taxas neste período. O Authon te ajuda a controlar isso!`;
+            elTX.style.color = '#d63031';
+            // Mostra alerta discreto se taxas > R$100
+            if (taxas > 100) {
+                const parent = elTX.closest('.fin-metric-card');
+                if (parent && !parent.querySelector('.taxa-sub')) {
+                    const sub = document.createElement('div');
+                    sub.className = 'taxa-sub';
+                    sub.style.cssText = 'font-size:9px;color:#d63031;margin-top:4px;font-weight:600;opacity:0.8;';
+                    sub.innerText = '⚠ Custo do cartão';
+                    parent.appendChild(sub);
+                }
+            }
+        }
+    }
 
     // Meta mensal
     const metaV  = parseFloat(localStorage.getItem('authon_meta_mes') || '0');

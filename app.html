@@ -246,7 +246,18 @@
             <!-- Formulário (oculto por padrão) -->
             <div id="exp-form-wrapper" style="display:none;">
                 <div class="exp-form-card">
-                    <h3 class="exp-form-title"><i class="fas fa-wallet"></i> Nova Despesa</h3>
+                    <!-- Cabeçalho com botão X para fechar -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 class="exp-form-title" style="margin:0;">
+                            <i class="fas fa-wallet"></i> Nova Despesa
+                        </h3>
+                        <button onclick="toggleExpForm(true)"
+                            style="width:34px;height:34px;border-radius:10px;border:none;
+                                   background:#fef0ee;color:#e74c3c;font-size:14px;
+                                   cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                     <div class="form-grid">
 
                         <div><label>Data do Lançamento</label>
@@ -257,6 +268,10 @@
                                 <option>Peças/Material</option>
                                 <option>Aluguel/Contas</option>
                                 <option>Salário/Pessoal</option>
+                                <option>Combustível</option>
+                                <option>Ferramentas/Equipamentos</option>
+                                <option>Marketing/Publicidade</option>
+                                <option>Impostos/Taxas</option>
                                 <option>Alimentação</option>
                                 <option>Outros</option>
                             </select>
@@ -266,7 +281,7 @@
                             <input type="text" id="expDesc" placeholder="Ex: Conta de Luz, Aluguel..."></div>
 
                         <div class="full-width"><label>Valor (R$)</label>
-                            <input type="number" id="expVal" placeholder="0.00"></div>
+                            <input type="number" id="expVal" placeholder="0.00" step="0.01"></div>
 
                         <!-- Status de pagamento -->
                         <div class="full-width">
@@ -283,17 +298,19 @@
 
                         <!-- Data de vencimento (só aparece se pendente) -->
                         <div class="full-width" id="expVencWrapper" style="display:none;">
-                            <label>Data de Vencimento</label>
-                            <input type="date" id="expVenc" placeholder="Vencimento">
+                            <label>Data de Vencimento <span style="color:#95a5a6;font-weight:400;">(opcional)</span></label>
+                            <input type="date" id="expVenc">
                         </div>
 
                         <!-- Observação (opcional) -->
                         <div class="full-width">
-                            <label>Observação <span style="color:#95a5a6; font-weight:400;">(opcional)</span></label>
+                            <label>Observação <span style="color:#95a5a6;font-weight:400;">(opcional)</span></label>
                             <input type="text" id="expObs" placeholder="Ex: Parcela 1/3, NF #1234...">
                         </div>
 
-                        <button class="btn-action" style="background:var(--primary); color:white; grid-column:span 2;" onclick="saveExpense()">
+                        <button id="btn-save-expense" class="btn-action"
+                            style="background:var(--primary);color:white;grid-column:span 2;"
+                            onclick="saveExpense()">
                             <i class="fas fa-wallet"></i> LANÇAR DESPESA
                         </button>
                     </div>

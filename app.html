@@ -633,6 +633,43 @@
             </div>
         </div>
 
+        <!-- ── BACKUP & RESTAURAÇÃO ── -->
+        <button class="settings-btn" onclick="toggleSettingsSection('sect-backup'); window.setTimeout(()=>window.checkBackupPlano?.(),100)">
+            <span><i class="fas fa-cloud-download-alt"></i> Backup & Restauração</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="settings-content" id="sect-backup" style="display:none;">
+            <p style="font-size:11px;color:#636e72;margin:10px 0 14px;line-height:1.6;">
+                Exporte todos os dados como arquivo JSON. Importe para restaurar em outro aparelho.
+            </p>
+            <button onclick="window.exportarBackup()"
+                style="width:100%;padding:12px;background:linear-gradient(135deg,#1E3A5F,#2d5a8e);
+                       color:white;border:none;border-radius:12px;font-family:'Poppins',sans-serif;
+                       font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;
+                       display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fas fa-download"></i> EXPORTAR BACKUP
+            </button>
+            <label style="width:100%;padding:12px;background:#f5f6fa;border:2px dashed #bdc3c7;
+                          color:#636e72;border-radius:12px;font-family:'Poppins',sans-serif;
+                          font-size:13px;font-weight:700;cursor:pointer;
+                          display:flex;align-items:center;justify-content:center;gap:8px;">
+                <i class="fas fa-upload"></i> IMPORTAR BACKUP
+                <input type="file" accept=".json" onchange="window.importarBackup(this)" style="display:none;">
+            </label>
+            <p style="font-size:10px;color:#bdc3c7;text-align:center;margin-top:8px;">
+                ⚠️ Restaurar substituirá todos os dados atuais
+            </p>
+        </div>
+
+        <!-- ── FUNCIONÁRIOS ── -->
+        <button class="settings-btn" onclick="toggleSettingsSection('sect-funcionarios'); window.setTimeout(()=>window.renderFuncionariosList?.(),150)">
+            <span><i class="fas fa-users"></i> Funcionários</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="settings-content" id="sect-funcionarios" style="display:none;">
+            <div id="funcionarios-list" style="margin-top:10px;"></div>
+        </div>
+
         <button class="btn-action" style="background:var(--dark); margin-bottom:10px;" onclick="resetPassword()">
             <i class="fas fa-key"></i> REDEFINIR MINHA SENHA
         </button>

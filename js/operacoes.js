@@ -709,18 +709,70 @@ window.renderCRM = function () {
         .filter(([, c]) => Math.floor((today - c.lastDate) / 86400000) >= daysFilter)
         .sort((a, b) => a[1].lastDate - b[1].lastDate);
 
-    if (!inactive.length) { list.innerHTML = `<div style="text-align:center;padding:40px;color:#bdc3c7;"><i class="fas fa-smile-beam" style="font-size:40px;display:block;margin-bottom:10px;"></i><div style="font-size:14px;font-weight:600;">Nenhum cliente inativo</div><div style="font-size:12px;margin-top:5px;">Todos retornaram nos últimos ${daysFilter} dias!</div></div>`; return; }
+    if (!inactive.length) {
+        list.innerHTML = `<div style="text-align:center;padding:50px 20px;color:#bdc3c7;background:white;border-radius:16px;">
+            <i class="fas fa-smile-beam" style="font-size:44px;display:block;margin-bottom:14px;color:#00b894;"></i>
+            <div style="font-size:15px;font-weight:700;color:#2d3436;">Nenhum cliente inativo!</div>
+            <div style="font-size:12px;margin-top:6px;">Todos voltaram nos últimos ${daysFilter} dias 🎉</div>
+        </div>`;
+        return;
+    }
+
+    // Card de resumo
+    list.innerHTML = `<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;
+        box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#95a5a6;">
+            ${inactive.length} cliente${inactive.length > 1 ? 's' : ''} para resgatar
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#e74c3c;">
+            <i class="fas fa-bullhorn" style="margin-right:6px;"></i>Potencial de vendas
+        </div>
+    </div>`;
 
     inactive.forEach(([name, c]) => {
         const days = Math.floor((today - c.lastDate) / 86400000);
-        const msg  = `Olá *${name}*! 👋\n\nFaz um tempo que você não nos visita.\n\nQue tal agendar uma revisão para o seu *${c.vehicle}*? Temos ofertas especiais para clientes fiéis! 😊\n\n*${compName}*`;
+
+        // Badge colorido por urgência
+        const badgeColor = days >= 180 ? '#e74c3c' : days >= 90 ? '#f39c12' : '#0984e3';
+        const badgeBg    = days >= 180 ? '#fff0f0' : days >= 90 ? '#fff8e8' : '#e8f4fd';
+        const urgencia   = days >= 180 ? '🔴' : days >= 90 ? '🟡' : '🔵';
+
+        const lastDateFmt = c.lastDate.toLocaleDateString('pt-BR');
+        const msg  = `Olá *${name}*! 👋\n\nSaudades! Faz um tempo que você não nos visita.\n\nQue tal agendar uma revisão para o seu *${c.vehicle}*? Temos condições especiais para clientes fiéis! 😊\n\n📍 *${compName}*`;
         const link = `https://wa.me/55${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
-        list.innerHTML += `<div class="item-card" style="border-left:4px solid #f39c12;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <div><div style="font-size:15px;font-weight:700;color:var(--dark);">${name}</div><div style="font-size:12px;color:#95a5a6;">${c.vehicle} · ${c.count} visita${c.count>1?'s':''}</div></div>
-                <span style="background:#fff8e8;color:#f39c12;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;">${days} dias</span>
+
+        list.innerHTML += `
+        <div style="background:white;border-radius:16px;padding:18px;margin-bottom:10px;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.05);border-left:4px solid ${badgeColor};">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                <div>
+                    <div style="font-size:16px;font-weight:800;color:#1e272e;">${name}</div>
+                    <div style="font-size:12px;color:#95a5a6;margin-top:3px;">
+                        <i class="fas fa-car" style="margin-right:4px;color:#bdc3c7;"></i>${c.vehicle}
+                    </div>
+                    <div style="font-size:12px;color:#95a5a6;margin-top:2px;">
+                        <i class="fas fa-mobile-alt" style="margin-right:4px;color:#bdc3c7;"></i>${c.phone}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <span style="background:${badgeBg};color:${badgeColor};padding:5px 12px;
+                                 border-radius:20px;font-size:11px;font-weight:800;">
+                        ${urgencia} ${days} dias
+                    </span>
+                </div>
             </div>
-            <button class="btn-action" style="background:#25D366;margin-top:8px;font-size:13px;" onclick="window.open('${link}')"><i class="fab fa-whatsapp"></i> CHAMAR DE VOLTA</button>
+            <div style="display:flex;gap:12px;font-size:11px;color:#95a5a6;
+                        border-top:1px solid #f5f6fa;padding-top:10px;margin-bottom:12px;">
+                <span><i class="fas fa-clock" style="margin-right:4px;"></i>Última visita: <strong>${lastDateFmt}</strong></span>
+                <span><i class="fas fa-star" style="margin-right:4px;"></i>${c.count} visita${c.count > 1 ? 's' : ''}</span>
+            </div>
+            <button onclick="window.open('${link}')"
+                style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);
+                       color:white;border:none;border-radius:12px;font-family:'Poppins',sans-serif;
+                       font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+                       justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(37,211,102,0.35);">
+                <i class="fab fa-whatsapp" style="font-size:16px;"></i> CHAMAR DE VOLTA
+            </button>
         </div>`;
     });
 };

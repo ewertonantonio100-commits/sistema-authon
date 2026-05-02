@@ -372,5 +372,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, 1000);
 
+    // ── Header de Configurações ──
+    const settingsTitle = document.querySelector('#tab-settings .header-title');
+    if (settingsTitle && !settingsTitle.querySelector('.settings-icon')) {
+        const icon = document.createElement('div');
+        icon.className = 'settings-icon';
+        icon.style.cssText = 'width:44px;height:44px;background:rgba(231,76,60,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+        icon.innerHTML = '<i class="fas fa-cog" style="color:#e74c3c;font-size:18px;"></i>';
+        settingsTitle.appendChild(icon);
+    }
+
     console.log('✅ fixes.js v4');
 });

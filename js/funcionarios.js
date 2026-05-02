@@ -13,8 +13,14 @@ window.getFuncionarioLogado = function () {
 
 // ── LIMITES POR PLANO ──
 window.getLimiteFuncionarios = function () {
-    const plano = localStorage.getItem('authon_plano') || 'basic';
-    if (plano === 'premium') return 999;
+    const plano = localStorage.getItem('authon_plano') || '';
+    const email = window.auth?.currentUser?.email || '';
+
+    // Admin sempre tem acesso ilimitado
+    if (email === window.ADMIN_EMAIL) return 999;
+
+    // Plano premium ou indefinido = ilimitado por padrão seguro
+    if (plano === 'premium' || !plano || plano === 'undefined') return 999;
     if (plano === 'pro')     return 3;
     return 0; // basic não tem funcionários
 };

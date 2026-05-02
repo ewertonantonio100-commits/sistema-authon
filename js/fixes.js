@@ -394,5 +394,24 @@ document.addEventListener('DOMContentLoaded', function () {
         settingsTitle.appendChild(icon);
     }
 
+    // ── Corrige plano e botão admin ──
+    setTimeout(() => {
+        const email = window.auth?.currentUser?.email;
+
+        // Admin sempre tem plano premium
+        if (email === window.ADMIN_EMAIL) {
+            localStorage.setItem('authon_plano', 'premium');
+            const btnAdmin = document.getElementById('btn-super-admin');
+            if (btnAdmin) btnAdmin.style.display = 'block';
+        }
+
+        // Se plano não está definido, define como pro por padrão
+        const plano = localStorage.getItem('authon_plano');
+        if (!plano || plano === 'undefined' || plano === 'null') {
+            localStorage.setItem('authon_plano', 'pro');
+        }
+
+    }, 2000); // aguarda firebase carregar
+
     console.log('✅ fixes.js v4');
 });

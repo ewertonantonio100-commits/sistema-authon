@@ -899,7 +899,28 @@
             // --- FIM DO BLOCO ---
 
         // --- SISTEMA SUPER ADMIN (CONTROLE DE CLIENTES) ---
-        window.ADMIN_EMAIL = "admin@authon.com"; // ⚠️ ATENÇÃO: COLOQUE SEU E-MAIL REAL DE ACESSO AQUI!
+        window.ADMIN_EMAIL = "admin@authon.com";
+
+        // Garante que o botão admin aparece assim que o DOM estiver pronto
+        function ensureAdminBtn() {
+            const user = window.auth?.currentUser;
+            if (!user) return;
+            if (user.email === window.ADMIN_EMAIL) {
+                const btn = document.getElementById('btn-super-admin');
+                if (btn) {
+                    btn.style.display = 'block';
+                    localStorage.setItem('authon_plano', 'premium');
+                } else {
+                    // Tenta novamente em 500ms se o botão ainda não existir
+                    setTimeout(ensureAdminBtn, 500);
+                }
+            }
+        }
+
+        // Dispara quando Firebase autentica
+        document.addEventListener('authon:dados-carregados', ensureAdminBtn);
+        // Também tenta após 3s como fallback
+        setTimeout(ensureAdminBtn, 3000);
 
         // --- PAINEL SUPER ADMIN PREMIUM ---
         window._adminData = []; // cache para filtro

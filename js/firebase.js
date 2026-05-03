@@ -100,42 +100,6 @@ window.deleteFromCloud = async function (collectionName, docId) {
 
 
 // ── AUTH: LOGIN ──
-// ── LOGIN DE FUNCIONÁRIO (definido aqui para garantir disponibilidade) ──
-async function tentarLoginFuncionario(email, senha) {
-    try {
-        const colRef = collection(db, 'funcionarios');
-        const snap   = await getDocs(colRef);
-
-        if (snap.empty) return false;
-
-        let func = null;
-        snap.forEach(d => {
-            const f = d.data();
-            if (f.ownerEmail === email && f.ativo !== false) {
-                // Aceita senha em texto puro OU em btoa
-                const senhaCorreta = f.senha === senha || f.senha === btoa(senha);
-                if (senhaCorreta) func = { ...f, docId: d.id };
-            }
-        });
-
-        if (!func) return false;
-
-        // Salva sessão do funcionário
-        // Configs do dono serão carregadas depois pelo onAuthStateChanged
-        localStorage.setItem('authon_is_funcionario', 'true');
-        localStorage.setItem('authon_funcionario_atual', JSON.stringify(func));
-        localStorage.setItem('authon_owner_uid', func.ownerUid);
-        localStorage.setItem('authon_owner_email', func.ownerEmail);
-
-        return true;
-
-    } catch (e) {
-        console.error('[Func] Erro:', e.code, e.message);
-        return false;
-    }
-}
-window.tentarLoginFuncionario = tentarLoginFuncionario;
-
 window.doLogin = async function () {
     const email = document.getElementById('loginEmail').value.trim();
     const pass  = document.getElementById('loginPass').value;
@@ -147,58 +111,6 @@ window.doLogin = async function () {
     if (btn) window.setLoading(btn, true, 'Verificando...');
     msg.innerText = '';
 
-    // ── PASSO 1: Verifica funcionário ANTES do Firebase Auth ──
-    try {
-        const snap = await getDocs(collection(db, 'funcionarios'));
-        let func = null;
-        snap.forEach(d => {
-            const f = d.data();
-            if (f.ownerEmail === email && f.ativo !== false) {
-                if (f.senha === pass || f.senha === btoa(pass)) {
-                    func = { ...f, docId: d.id };
-                }
-            }
-        });
-
-        if (func) {
-            // Login de funcionário bem sucedido
-            localStorage.setItem('authon_is_funcionario', 'true');
-            localStorage.setItem('authon_funcionario_atual', JSON.stringify(func));
-            localStorage.setItem('authon_owner_uid', func.ownerUid);
-            localStorage.setItem('authon_owner_email', func.ownerEmail);
-
-            // Carrega catálogo do dono para funcionário poder lançar vendas
-            try {
-                const qCat    = query(collection(db, 'catalogo'), where('uid', '==', func.ownerUid));
-                const snapCat = await getDocs(qCat);
-                const catLocal = [];
-                snapCat.forEach(d => catLocal.push({ ...d.data(), docId: d.id }));
-                localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
-
-                // Operações apenas do funcionário
-                const qOp    = query(collection(db, 'operacoes'), where('uid', '==', func.ownerUid), where('seller', '==', func.nome));
-                const snapOp = await getDocs(qOp);
-                const ops = [];
-                snapOp.forEach(d => ops.push({ ...d.data(), docId: d.id }));
-                localStorage.setItem('oficina_db_master', JSON.stringify(ops));
-            } catch(ex) { console.warn('[Func] dados:', ex.message); }
-
-            if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
-            document.getElementById('login-screen').style.display = 'none';
-            const nav = document.querySelector('.bottom-nav');
-            if (nav) nav.style.display = 'flex';
-            setTimeout(() => {
-                window.aplicarRestricoesFuncionario?.();
-                window.showTab?.('new');
-            }, 300);
-            return;
-        }
-    } catch(funcErr) {
-        console.error('[Func]', funcErr.code, funcErr.message);
-        // Se falhar, continua tentando Firebase Auth normalmente
-    }
-
-    // ── PASSO 2: Tenta Firebase Auth normal ──
     try {
         await signInWithEmailAndPassword(auth, email, pass);
         // onAuthStateChanged cuida do redirecionamento
@@ -598,10 +510,6 @@ onAuthStateChanged(auth, async (user) => {
     const appNav      = document.querySelector('.bottom-nav');
 
     if (user) {
-        // Garante que não está marcado como funcionário quando Firebase autentica
-        localStorage.removeItem('authon_is_funcionario');
-        localStorage.removeItem('authon_funcionario_atual');
-
         const params = new URLSearchParams(window.location.search);
         if (params.get('sucesso') === '1') {
             window.history.replaceState({}, '', 'app.html');

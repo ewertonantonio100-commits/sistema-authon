@@ -127,20 +127,16 @@ window.aplicarRestricoesFuncionario = function () {
         brandHeader.appendChild(badge);
     }
 
-    // Bloqueia abas restritas
-    const abasRestritas = ['dashboard', 'expenses', 'crm', 'settings'];
-    abasRestritas.forEach(aba => {
-        const navItem = document.querySelector(`.nav-item[onclick*="'${aba}'"]`);
-        if (navItem) {
-            navItem.style.opacity = '0.3';
-            navItem.style.pointerEvents = 'none';
-        }
-    });
-
-    // Remove aba CONFIG do nav
+    // Bloqueia abas restritas no nav
     document.querySelectorAll('.nav-item').forEach(item => {
-        if (item.textContent.includes('CONFIG')) {
-            item.style.display = 'none';
+        const onclick = item.getAttribute('onclick') || '';
+        const texto   = item.textContent.trim();
+        const bloqueadas = ["'dashboard'", "'expenses'", "'crm'", "'settings'"];
+        const bloqueadoTexto = ['FINAN.', 'DESPESAS', 'RETORNO', 'CONFIG'];
+
+        if (bloqueadas.some(b => onclick.includes(b)) || bloqueadoTexto.some(t => texto.includes(t))) {
+            item.style.opacity = '0.3';
+            item.style.pointerEvents = 'none';
         }
     });
 
@@ -148,30 +144,101 @@ window.aplicarRestricoesFuncionario = function () {
     // (aplicado via CSS global)
     const style = document.createElement('style');
     style.textContent = `
-        /* Funcionário não pode editar/excluir */
+        /* ── FUNCIONÁRIO: esconde todos botões de editar e excluir ── */
+
+        /* Histórico */
+        .func-mode button[onclick*="loadToEdit"],
+        .func-mode button[onclick*="deleteItem"],
+        .func-mode button[onclick*="delItem"],
         .func-mode .btn-card[onclick*="loadToEdit"],
-        .func-mode .btn-card[onclick*="deleteItem"],
-        .func-mode .btn-card[onclick*="delCatalog"] {
+        .func-mode .btn-card[onclick*="deleteItem"] {
             display: none !important;
         }
-        /* Funcionário não pode editar/excluir despesas */
-        .func-mode #tab-expenses .btn-card[onclick*="delete"],
-        .func-mode #tab-expenses button[onclick*="markExpensePaid"] {
+
+        /* Catálogo/Estoque */
+        .func-mode button[onclick*="delCatalog"],
+        .func-mode button[onclick*="editCatalog"],
+        .func-mode .btn-card[onclick*="delCatalog"],
+        .func-mode .btn-card[onclick*="editCatalog"],
+        .func-mode #tab-stock button[class*="delete"],
+        .func-mode #tab-stock button[class*="edit"] {
             display: none !important;
         }
+
+        /* Agenda */
+        .func-mode button[onclick*="deleteAgenda"],
+        .func-mode button[onclick*="delAgenda"],
+        .func-mode #tab-agenda button[class*="delete"],
+        .func-mode #tab-agenda .btn-lixeira {
+            display: none !important;
+        }
+
+        /* Despesas */
+        .func-mode #tab-expenses { display: none !important; }
+
+        /* Financeiro */
+        .func-mode #tab-dashboard { display: none !important; }
+
+        /* Retorno/CRM */
+        .func-mode #tab-crm { display: none !important; }
+
+        /* Config */
+        .func-mode #tab-settings { display: none !important; }
     `;
     document.head.appendChild(style);
     document.body.classList.add('func-mode');
 
-    // Sobrescreve renderHistory para mostrar só do funcionário
-    const _origRender = window.renderHistory;
+    // ── Filtra dados para o funcionário ──
+    const func = window.getFuncionarioLogado();
+    const hoje = new Date().toLocaleDateString('en-CA');
+
+    // Sobrescreve renderHistory — funcionário vê só os dele
+    const _origRenderHistory = window.renderHistory;
     window.renderHistory = function (filter) {
-        // Funcionário só vê os dele
         const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
-        localStorage.setItem('_func_db_backup', JSON.stringify(db));
-        // já está filtrado pelo login — apenas renderiza normalmente
-        if (_origRender) _origRender(filter);
+        // Filtra: só vendas/orçamentos do próprio funcionário
+        const filtrado = db.filter(x =>
+            (x.type === 'venda' || x.type === 'orcamento') &&
+            x.seller === func.nome
+        );
+        localStorage.setItem('_func_db_filtered', JSON.stringify(filtrado));
+        const original = localStorage.getItem('oficina_db_master');
+        localStorage.setItem('oficina_db_master', JSON.stringify(filtrado));
+        if (_origRenderHistory) _origRenderHistory(filter);
+        localStorage.setItem('oficina_db_master', original);
     };
+
+    // Sobrescreve renderExpensesList — funcionário não vê despesas
+    window.renderExpensesList = function () {
+        const list = document.getElementById('expense-list-mini');
+        if (list) list.innerHTML = `
+            <div style="text-align:center;padding:30px;color:#bdc3c7;">
+                <i class="fas fa-lock" style="font-size:32px;margin-bottom:10px;display:block;color:#e74c3c;"></i>
+                <div style="font-size:13px;font-weight:700;color:#636e72;">Acesso restrito</div>
+                <div style="font-size:11px;margin-top:6px;">Você não tem permissão para ver despesas</div>
+            </div>`;
+    };
+
+    // Adiciona botão de SAIR fixo no header para o funcionário
+    const header = document.querySelector('.brand-header');
+    if (header && !document.getElementById('func-logout-btn')) {
+        const sairBtn = document.createElement('button');
+        sairBtn.id = 'func-logout-btn';
+        sairBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+        sairBtn.style.cssText = 'margin-left:auto;background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.4);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#e74c3c;cursor:pointer;font-family:Poppins,sans-serif;';
+        sairBtn.onclick = () => {
+            if (confirm('Deseja sair do sistema?')) {
+                localStorage.removeItem('authon_is_funcionario');
+                localStorage.removeItem('authon_funcionario_atual');
+                localStorage.removeItem('authon_owner_uid');
+                localStorage.removeItem('authon_owner_email');
+                localStorage.removeItem('oficina_db_master');
+                localStorage.removeItem('catalog_v1');
+                location.reload();
+            }
+        };
+        header.appendChild(sairBtn);
+    }
 
     console.log('[Funcionário] Restrições aplicadas para:', func.nome);
 };
@@ -371,7 +438,7 @@ window.salvarNovoFuncionario = async function () {
             ownerUid:   user.uid,
             ownerEmail: user.email,
             nome,
-            senha:      btoa(senha), // encode base64 básico
+            senha:      senha, // texto puro — comparação feita no login
             ativo:      true,
             criadoEm:   new Date().toLocaleDateString('en-CA'),
             lastAccess: null,

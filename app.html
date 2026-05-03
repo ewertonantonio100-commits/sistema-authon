@@ -50,6 +50,13 @@
     
 </head>
 <body>
+<script>
+// Intercepta botão voltar do celular — evita sair do app
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', function() {
+    history.pushState(null, '', location.href);
+});
+</script>
   <div id="unlock-btn" onclick="toggleEmployeeMode(false)"><i class="fas fa-lock"></i> DESBLOQUEAR ADM</div>
 
 
@@ -1715,18 +1722,28 @@
         };
 
         // --- FUNÇÕES FIREBASE (SALVAR NA NUVEM) ---
+        // Aguarda window.auth estar disponível
+        async function esperarAuth(timeout = 5000) {
+            const inicio = Date.now();
+            while (!window.auth?.currentUser) {
+                if (Date.now() - inicio > timeout) return null;
+                await new Promise(r => setTimeout(r, 200));
+            }
+            return window.auth.currentUser;
+        }
+
         async function saveToCloud(collectionName, data) {
             try {
-                // Garante que uid é sempre incluído
-                const user = window.auth?.currentUser;
+                const user = await esperarAuth();
                 if (!user) { alert("Sessão expirada. Faça login novamente."); return null; }
                 const docRef = await window.addDoc(window.collection(window.db, collectionName), {
                     ...data, uid: user.uid, userEmail: user.email
                 });
                 return docRef.id;
             } catch (e) {
-                console.error("Erro ao salvar na nuvem: ", e);
+                console.error("Erro ao salvar:", e);
                 alert("Erro ao salvar: " + (e.message || e.code));
+                return null;
             }
         }
         

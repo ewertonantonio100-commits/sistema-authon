@@ -4,7 +4,7 @@
 // Para forçar atualização: suba arquivos novos no GitHub
 // ============================================================
 
-const CACHE_VERSION = 'authon-cache-v75';
+const CACHE_VERSION = 'authon-cache-v76';
 
 const urlsToCache = [
   // ── Fontes e ícones externos ──

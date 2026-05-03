@@ -29,23 +29,29 @@ window.getLimiteFuncionarios = function () {
 // Busca funcionários pelo e-mail da oficina — sem precisar de autenticação Firebase
 window.tentarLoginFuncionario = async function (email, senha) {
     try {
-        // Busca funcionários pelo e-mail do dono (campo ownerEmail)
-        const qF  = window.query(
-            window.collection(window.db, 'funcionarios'),
-            window.where('ownerEmail', '==', email),
-            window.where('ativo', '!=', false)
-        );
-        const qFs = await window.getDocs(qF);
+        // Busca TODOS os funcionários e filtra no JS (evita problemas de índice/permissão)
+        const colRef = window.collection(window.db, 'funcionarios');
+        const qFs    = await window.getDocs(colRef);
 
-        if (qFs.empty) return false;
+        if (qFs.empty) {
+            console.log('[Func] Coleção funcionarios vazia');
+            return false;
+        }
 
         let funcionarioEncontrado = null;
         let cfg = null;
         let docId = null;
 
+        const senhaB64 = btoa(senha);
+
         qFs.forEach(d => {
             const f = d.data();
-            if (f.senha === btoa(senha)) {
+            console.log('[Func]', f.nome, '| owner:', f.ownerEmail, '| email digitado:', email, '| senhaOk:', f.senha === senhaB64);
+            if (
+                f.ownerEmail === email &&
+                f.senha === senhaB64 &&
+                f.ativo !== false
+            ) {
                 funcionarioEncontrado = { ...f, docId: d.id };
             }
         });

@@ -167,6 +167,22 @@ window.doLogin = async function () {
             localStorage.setItem('authon_owner_uid', func.ownerUid);
             localStorage.setItem('authon_owner_email', func.ownerEmail);
 
+            // Carrega catálogo do dono para funcionário poder lançar vendas
+            try {
+                const qCat    = query(collection(db, 'catalogo'), where('uid', '==', func.ownerUid));
+                const snapCat = await getDocs(qCat);
+                const catLocal = [];
+                snapCat.forEach(d => catLocal.push({ ...d.data(), docId: d.id }));
+                localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
+
+                // Operações apenas do funcionário
+                const qOp    = query(collection(db, 'operacoes'), where('uid', '==', func.ownerUid), where('seller', '==', func.nome));
+                const snapOp = await getDocs(qOp);
+                const ops = [];
+                snapOp.forEach(d => ops.push({ ...d.data(), docId: d.id }));
+                localStorage.setItem('oficina_db_master', JSON.stringify(ops));
+            } catch(ex) { console.warn('[Func] dados:', ex.message); }
+
             if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
             document.getElementById('login-screen').style.display = 'none';
             const nav = document.querySelector('.bottom-nav');

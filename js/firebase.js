@@ -124,8 +124,12 @@ async function tentarLoginFuncionario(email, senha) {
             }
         });
 
-        if (!func && loginMsg) {
-            loginMsg.innerText = '❌ Não encontrado. Email:' + email + ' B64:' + senhaB64;
+        if (!func) {
+            // Mostra debug por 5 segundos
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            if (loginMsg) loginMsg.innerText = '❌ Não bateu. B64 digitado:' + senhaB64;
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            return false;
         }
 
         if (!func) return false;

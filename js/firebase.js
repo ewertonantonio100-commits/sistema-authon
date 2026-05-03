@@ -392,6 +392,10 @@ window.mostrarTelaUpgrade = function (trialExpira, planoVencido = false) {
 };
 
 
+// ── EMAIL DO ADMINISTRADOR ──
+const ADMIN_EMAIL = 'admin@authon.com';
+window.ADMIN_EMAIL = ADMIN_EMAIL;
+
 // ── CARREGAMENTO DO SISTEMA ──
 function iniciarSistema() {
     const user = auth.currentUser;
@@ -420,15 +424,15 @@ function iniciarSistema() {
             const hoje = new Date();
 
             // ── ADMIN: mostra botão e define plano ANTES de qualquer verificação ──
-            if (user.email === window.ADMIN_EMAIL) {
+            if (user.email === ADMIN_EMAIL) {
                 const btnAdmin = document.getElementById('btn-super-admin');
-                if (btnAdmin) btnAdmin.style.display = 'block';
+                if (btnAdmin) { btnAdmin.style.display = 'block'; console.log('[Admin] Botão exibido'); }
                 localStorage.setItem('authon_plano', 'premium');
                 localStorage.setItem('authon_status', 'admin');
             }
 
             // Bloqueio
-            if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {
+            if (cfg.status === 'bloqueado' && user.email !== ADMIN_EMAIL) {
                 Toast.error('Acesso suspenso. Entre em contato com o suporte.');
                 setTimeout(() => window.auth.signOut().then(() => location.reload()), 3000);
                 return;
@@ -446,7 +450,7 @@ function iniciarSistema() {
                 }
                 window.showTrialBadge(7 - diasTrial);
             } else if (cfg.status === 'ativo') {
-                if (cfg.planoExpira && new Date(cfg.planoExpira) < hoje && user.email !== window.ADMIN_EMAIL) {
+                if (cfg.planoExpira && new Date(cfg.planoExpira) < hoje && user.email !== ADMIN_EMAIL) {
                     window.verificarAssinaturaMP(user.email, docSnap.id);
                     return;
                 }
@@ -465,7 +469,7 @@ function iniciarSistema() {
             }
 
             // Botão admin
-            if (user.email === window.ADMIN_EMAIL) {
+            if (user.email === ADMIN_EMAIL) {
                 const btnAdmin = document.getElementById('btn-super-admin');
                 if (btnAdmin) btnAdmin.style.display = 'block';
             }

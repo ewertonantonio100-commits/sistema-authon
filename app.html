@@ -1717,12 +1717,16 @@
         // --- FUNÇÕES FIREBASE (SALVAR NA NUVEM) ---
         async function saveToCloud(collectionName, data) {
             try {
-                // Adiciona e espera o Google confirmar
-                const docRef = await window.addDoc(window.collection(window.db, collectionName), data);
+                // Garante que uid é sempre incluído
+                const user = window.auth?.currentUser;
+                if (!user) { alert("Sessão expirada. Faça login novamente."); return null; }
+                const docRef = await window.addDoc(window.collection(window.db, collectionName), {
+                    ...data, uid: user.uid, userEmail: user.email
+                });
                 return docRef.id;
             } catch (e) {
                 console.error("Erro ao salvar na nuvem: ", e);
-                alert("Erro de conexão! Tente novamente.");
+                alert("Erro ao salvar: " + (e.message || e.code));
             }
         }
         

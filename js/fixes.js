@@ -97,8 +97,17 @@ window.confirm = function (msg) {
 document.addEventListener('DOMContentLoaded', function () {
 
     // Aplica restrições se for funcionário logado
-    if (window.isFuncionario?.()) {
-        window.aplicarRestricoesFuncionario?.();
+    if (localStorage.getItem('authon_is_funcionario') === 'true') {
+        // Tenta aplicar imediatamente e também após módulos carregarem
+        const aplicar = () => {
+            if (window.aplicarRestricoesFuncionario) {
+                window.aplicarRestricoesFuncionario();
+            }
+        };
+        aplicar(); // tenta imediato
+        setTimeout(aplicar, 500);  // tenta após 500ms
+        setTimeout(aplicar, 1500); // tenta após 1.5s (módulos carregados)
+        setTimeout(aplicar, 3000); // garante após 3s
     }
 
     // Brand header

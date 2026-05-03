@@ -147,7 +147,11 @@ window.doLogin = async function () {
     if (btn) window.setLoading(btn, true, 'Verificando...');
     msg.innerText = '';
 
-    // ── PASSO 1: Verifica funcionário ANTES do Firebase Auth ──
+    // ── PASSO 1: Limpa sessão anterior de funcionário ──
+    localStorage.removeItem('authon_is_funcionario');
+    localStorage.removeItem('authon_funcionario_atual');
+
+    // ── PASSO 2: Verifica funcionário ANTES do Firebase Auth ──
     try {
         const snap = await getDocs(collection(db, 'funcionarios'));
         let func = null;

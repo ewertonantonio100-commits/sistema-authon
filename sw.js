@@ -4,7 +4,7 @@
 // Para forçar atualização: suba arquivos novos no GitHub
 // ============================================================
 
-const CACHE_VERSION = 'authon-cache-v94';
+const CACHE_VERSION = 'authon-cache-v39';
 
 const urlsToCache = [
   // ── Fontes e ícones externos ──
@@ -35,6 +35,7 @@ const urlsToCache = [
   'js/fixes.js',
 
   // ── Assets ──
+  'app.html',
   'logo-icone-web.png',
 ];
 

@@ -103,34 +103,22 @@ window.deleteFromCloud = async function (collectionName, docId) {
 // ── LOGIN DE FUNCIONÁRIO (definido aqui para garantir disponibilidade) ──
 async function tentarLoginFuncionario(email, senha) {
     try {
-        const senhaB64 = btoa(senha);
-        const colRef   = collection(db, 'funcionarios');
-        const snap     = await getDocs(colRef);
+        const colRef = collection(db, 'funcionarios');
+        const snap   = await getDocs(colRef);
 
-        // Debug: mostra na tela o que está sendo comparado
-        const loginMsg = document.getElementById('login-msg');
-
-        if (snap.empty) {
-            if (loginMsg) loginMsg.innerText = '❌ Nenhum funcionário no banco';
-            return false;
-        }
+        if (snap.empty) return false;
 
         let func = null;
         snap.forEach(d => {
             const f = d.data();
-            if (loginMsg) loginMsg.innerText = '🔍 Testando: ' + f.nome + ' | email=' + (f.ownerEmail === email) + ' | senha=' + (f.senha === senhaB64);
-            if (f.ownerEmail === email && f.senha === senhaB64 && f.ativo !== false) {
-                func = { ...f, docId: d.id };
+            if (f.ownerEmail === email && f.ativo !== false) {
+                // Aceita senha em texto puro OU em btoa
+                const senhaCorreta = f.senha === senha || f.senha === btoa(senha);
+                if (senhaCorreta) func = { ...f, docId: d.id };
             }
         });
 
-        if (!func) {
-            // Mostra debug por 5 segundos
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            if (loginMsg) loginMsg.innerText = '❌ Não bateu. B64 digitado:' + senhaB64;
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            return false;
-        }
+        if (!func) return false;
 
         if (!func) return false;
 

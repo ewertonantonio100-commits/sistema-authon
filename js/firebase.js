@@ -100,6 +100,71 @@ window.deleteFromCloud = async function (collectionName, docId) {
 
 
 // ── AUTH: LOGIN ──
+// ── LOGIN DE FUNCIONÁRIO (definido aqui para garantir disponibilidade) ──
+async function tentarLoginFuncionario(email, senha) {
+    try {
+        const senhaB64 = btoa(senha);
+        const colRef   = collection(db, 'funcionarios');
+        const snap     = await getDocs(colRef);
+
+        if (snap.empty) return false;
+
+        let func = null;
+        snap.forEach(d => {
+            const f = d.data();
+            if (f.ownerEmail === email && f.senha === senhaB64 && f.ativo !== false) {
+                func = { ...f, docId: d.id };
+            }
+        });
+
+        if (!func) return false;
+
+        // Busca config do dono
+        const qC   = query(collection(db, 'configuracoes'), where('uid', '==', func.ownerUid));
+        const snapC = await getDocs(qC);
+        if (snapC.empty) return false;
+
+        const cfg = snapC.docs[0].data();
+
+        // Salva sessão
+        localStorage.setItem('authon_is_funcionario', 'true');
+        localStorage.setItem('authon_funcionario_atual', JSON.stringify(func));
+        localStorage.setItem('authon_cfg_name',    cfg.name    || cfg.nomeOficina || '');
+        localStorage.setItem('authon_plano',        cfg.plano   || 'pro');
+        localStorage.setItem('authon_cfg_pix',      cfg.pix     || '');
+        localStorage.setItem('authon_cfg_phone',    cfg.phone   || '');
+        localStorage.setItem('authon_cfg_team',     cfg.team    || '');
+        localStorage.setItem('authon_cfg_warranty', cfg.warranty|| '');
+        localStorage.setItem('authon_cfg_pin',      cfg.pin     || '');
+
+        // Carrega catálogo
+        const qCat  = query(collection(db, 'catalogo'), where('uid', '==', func.ownerUid));
+        const snapCat = await getDocs(qCat);
+        const catLocal = [];
+        snapCat.forEach(d => catLocal.push({ ...d.data(), docId: d.id }));
+        localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
+
+        // Carrega operações só do funcionário
+        const qOp   = query(collection(db, 'operacoes'), where('uid', '==', func.ownerUid), where('seller', '==', func.nome));
+        const snapOp = await getDocs(qOp);
+        const ops = [];
+        snapOp.forEach(d => ops.push({ ...d.data(), docId: d.id }));
+        localStorage.setItem('oficina_db_master', JSON.stringify(ops));
+
+        // Atualiza lastAccess
+        updateDoc(doc(db, 'funcionarios', func.docId), {
+            lastAccess: new Date().toLocaleDateString('en-CA')
+        }).catch(() => {});
+
+        return true;
+
+    } catch (e) {
+        console.error('[Func] Erro:', e.code, e.message);
+        return false;
+    }
+}
+window.tentarLoginFuncionario = tentarLoginFuncionario;
+
 window.doLogin = async function () {
     const email = document.getElementById('loginEmail').value.trim();
     const pass  = document.getElementById('loginPass').value;

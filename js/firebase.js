@@ -120,8 +120,6 @@ async function tentarLoginFuncionario(email, senha) {
 
         if (!func) return false;
 
-        if (!func) return false;
-
         // Busca config do dono
         const qC   = query(collection(db, 'configuracoes'), where('uid', '==', func.ownerUid));
         const snapC = await getDocs(qC);
@@ -183,8 +181,7 @@ window.doLogin = async function () {
         await signInWithEmailAndPassword(auth, email, pass);
         // onAuthStateChanged cuida do redirecionamento
     } catch (e) {
-        // Tenta login como funcionário antes de mostrar erro
-        msg.innerText = '🔍 Verificando acesso de funcionário...';
+        // Tenta login como funcionário
         try {
             const isFuncLogin = await tentarLoginFuncionario(email, pass);
                 if (isFuncLogin) {

@@ -107,15 +107,26 @@ async function tentarLoginFuncionario(email, senha) {
         const colRef   = collection(db, 'funcionarios');
         const snap     = await getDocs(colRef);
 
-        if (snap.empty) return false;
+        // Debug: mostra na tela o que está sendo comparado
+        const loginMsg = document.getElementById('login-msg');
+
+        if (snap.empty) {
+            if (loginMsg) loginMsg.innerText = '❌ Nenhum funcionário no banco';
+            return false;
+        }
 
         let func = null;
         snap.forEach(d => {
             const f = d.data();
+            if (loginMsg) loginMsg.innerText = '🔍 Testando: ' + f.nome + ' | email=' + (f.ownerEmail === email) + ' | senha=' + (f.senha === senhaB64);
             if (f.ownerEmail === email && f.senha === senhaB64 && f.ativo !== false) {
                 func = { ...f, docId: d.id };
             }
         });
+
+        if (!func && loginMsg) {
+            loginMsg.innerText = '❌ Não encontrado. Email:' + email + ' B64:' + senhaB64;
+        }
 
         if (!func) return false;
 

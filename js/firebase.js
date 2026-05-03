@@ -120,42 +120,12 @@ async function tentarLoginFuncionario(email, senha) {
 
         if (!func) return false;
 
-        // Busca config do dono
-        const qC   = query(collection(db, 'configuracoes'), where('uid', '==', func.ownerUid));
-        const snapC = await getDocs(qC);
-        if (snapC.empty) return false;
-
-        const cfg = snapC.docs[0].data();
-
-        // Salva sessão
+        // Salva sessão do funcionário
+        // Configs do dono serão carregadas depois pelo onAuthStateChanged
         localStorage.setItem('authon_is_funcionario', 'true');
         localStorage.setItem('authon_funcionario_atual', JSON.stringify(func));
-        localStorage.setItem('authon_cfg_name',    cfg.name    || cfg.nomeOficina || '');
-        localStorage.setItem('authon_plano',        cfg.plano   || 'pro');
-        localStorage.setItem('authon_cfg_pix',      cfg.pix     || '');
-        localStorage.setItem('authon_cfg_phone',    cfg.phone   || '');
-        localStorage.setItem('authon_cfg_team',     cfg.team    || '');
-        localStorage.setItem('authon_cfg_warranty', cfg.warranty|| '');
-        localStorage.setItem('authon_cfg_pin',      cfg.pin     || '');
-
-        // Carrega catálogo
-        const qCat  = query(collection(db, 'catalogo'), where('uid', '==', func.ownerUid));
-        const snapCat = await getDocs(qCat);
-        const catLocal = [];
-        snapCat.forEach(d => catLocal.push({ ...d.data(), docId: d.id }));
-        localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
-
-        // Carrega operações só do funcionário
-        const qOp   = query(collection(db, 'operacoes'), where('uid', '==', func.ownerUid), where('seller', '==', func.nome));
-        const snapOp = await getDocs(qOp);
-        const ops = [];
-        snapOp.forEach(d => ops.push({ ...d.data(), docId: d.id }));
-        localStorage.setItem('oficina_db_master', JSON.stringify(ops));
-
-        // Atualiza lastAccess
-        updateDoc(doc(db, 'funcionarios', func.docId), {
-            lastAccess: new Date().toLocaleDateString('en-CA')
-        }).catch(() => {});
+        localStorage.setItem('authon_owner_uid', func.ownerUid);
+        localStorage.setItem('authon_owner_email', func.ownerEmail);
 
         return true;
 
@@ -177,33 +147,46 @@ window.doLogin = async function () {
     if (btn) window.setLoading(btn, true, 'Verificando...');
     msg.innerText = '';
 
+    // ── PASSO 1: Verifica funcionário ANTES do Firebase Auth ──
+    try {
+        const snap = await getDocs(collection(db, 'funcionarios'));
+        let func = null;
+        snap.forEach(d => {
+            const f = d.data();
+            if (f.ownerEmail === email && f.ativo !== false) {
+                if (f.senha === pass || f.senha === btoa(pass)) {
+                    func = { ...f, docId: d.id };
+                }
+            }
+        });
+
+        if (func) {
+            // Login de funcionário bem sucedido
+            localStorage.setItem('authon_is_funcionario', 'true');
+            localStorage.setItem('authon_funcionario_atual', JSON.stringify(func));
+            localStorage.setItem('authon_owner_uid', func.ownerUid);
+            localStorage.setItem('authon_owner_email', func.ownerEmail);
+
+            if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
+            document.getElementById('login-screen').style.display = 'none';
+            const nav = document.querySelector('.bottom-nav');
+            if (nav) nav.style.display = 'flex';
+            setTimeout(() => {
+                window.aplicarRestricoesFuncionario?.();
+                window.showTab?.('new');
+            }, 300);
+            return;
+        }
+    } catch(funcErr) {
+        console.error('[Func]', funcErr.code, funcErr.message);
+        // Se falhar, continua tentando Firebase Auth normalmente
+    }
+
+    // ── PASSO 2: Tenta Firebase Auth normal ──
     try {
         await signInWithEmailAndPassword(auth, email, pass);
         // onAuthStateChanged cuida do redirecionamento
     } catch (e) {
-        // Tenta login como funcionário
-        try {
-            const isFuncLogin = await tentarLoginFuncionario(email, pass);
-                if (isFuncLogin) {
-                    if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
-                    // Esconde tela de login e mostra sistema
-                    const loginScreen = document.getElementById('login-screen');
-                    if (loginScreen) loginScreen.style.display = 'none';
-                    const nav = document.querySelector('.bottom-nav');
-                    if (nav) nav.style.display = 'flex';
-                    setTimeout(() => {
-                        window.aplicarRestricoesFuncionario?.();
-                        window.showTab('new');
-                    }, 300);
-                    return;
-                }
-        } catch (funcErr) {
-            console.error('[Funcionário] Erro:', funcErr.code, funcErr.message);
-            msg.innerText = 'Erro func: ' + (funcErr.message || funcErr.code);
-            if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
-            return;
-        }
-
         const msgs = {
             'auth/invalid-credential': 'E-mail ou senha incorretos.',
             'auth/wrong-password':     'E-mail ou senha incorretos.',

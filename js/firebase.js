@@ -181,9 +181,9 @@ window.doLogin = async function () {
         // onAuthStateChanged cuida do redirecionamento
     } catch (e) {
         // Tenta login como funcionário antes de mostrar erro
-        if (window.tentarLoginFuncionario) {
-            try {
-                const isFuncLogin = await window.tentarLoginFuncionario(email, pass);
+        msg.innerText = '🔍 Verificando acesso de funcionário...';
+        try {
+            const isFuncLogin = await tentarLoginFuncionario(email, pass);
                 if (isFuncLogin) {
                     if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
                     // Esconde tela de login e mostra sistema
@@ -197,9 +197,11 @@ window.doLogin = async function () {
                     }, 300);
                     return;
                 }
-            } catch (funcErr) {
-                console.error('[Funcionário] Erro:', funcErr);
-            }
+        } catch (funcErr) {
+            console.error('[Funcionário] Erro:', funcErr.code, funcErr.message);
+            msg.innerText = 'Erro func: ' + (funcErr.message || funcErr.code);
+            if (btn) window.setLoading(btn, false, 'ACESSAR SISTEMA');
+            return;
         }
 
         const msgs = {

@@ -15,43 +15,871 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
-    <!-- ============================================================
-         MÓDULOS JS — Authon v2.0
-         ============================================================ -->
-    <!-- UI: Toast, Confirm, Onboarding, Suporte, Navegação -->
-    <script defer src="js/ui.js"></script>
-    <!-- Firebase: Auth, Firestore, Controle de Planos -->
-    <script type="module" src="js/firebase.js"></script>
-    <!-- Configurações, Painel Admin, Modo Funcionário -->
-    <script defer src="js/configuracoes.js"></script>
-    <!-- Catálogo e Estoque -->
-    <script defer src="js/catalogo.js"></script>
-    <!-- Dashboard, KPIs, Gráficos -->
-    <script defer src="js/dashboard.js"></script>
-    <!-- Operações, Histórico, PDF, Pagamento, CRM -->
-    <script defer src="js/operacoes.js"></script>
-    <!-- Despesas -->
-    <script defer src="js/despesas.js"></script>
-    <!-- Agenda -->
-    <script defer src="js/agenda.js"></script>
-    <!-- Laudo, Antes & Depois, Assinatura -->
-    <script defer src="js/inspecao.js"></script>
-    <!-- Painel Admin com MRR real -->
-    <script defer src="js/admin.js"></script>
-    <!-- Módulo de Funcionários -->
-    <script defer src="js/funcionarios.js"></script>
-    <!-- Correções de bugs (carregar por último) -->
-    <script defer src="js/fixes.js"></script>
+                <script type="module">
+        // 1. IMPORTAÇÕES ATUALIZADAS (Com 'where' e 'sendPasswordResetEmail')
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+                import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot, query, orderBy, limit, where, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    <!-- CSS do App (extraído para arquivo separado) -->
-    <link rel="stylesheet" href="css/app.css">
+        // 2. SUA CONFIGURAÇÃO
+        const firebaseConfig = {
+          apiKey: "AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18",
+          authDomain: "sistema-authon-f7045.firebaseapp.com",
+          projectId: "sistema-authon-f7045",
+          storageBucket: "sistema-authon-f7045.firebasestorage.app",
+          messagingSenderId: "113445333308",
+          appId: "1:113445333308:web:244a00fa15e5bc63ce9639"
+        };
+
+                // 3. INICIALIZA O SISTEMA
+        const app = initializeApp(firebaseConfig);
+        
+        // --- BANCO DE DADOS OFFLINE ATIVADO ---
+        const db = initializeFirestore(app, {
+            localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+        });
+
+        const auth = getAuth(app);
+        window.auth = auth;
+
+        // --- FUNÇÃO DE LOGIN ---
+        window.doLogin = function() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const msg = document.getElementById('login-msg');
+            
+            msg.innerText = "Verificando...";
+            
+            signInWithEmailAndPassword(auth, email, pass)
+            .then((userCredential) => {
+                console.log("Logado:", userCredential.user.email);
+            })
+            .catch((error) => {
+                console.error("Erro login:", error);
+                if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                    msg.innerText = "Senha ou E-mail incorretos.";
+                } else {
+                    msg.innerText = "Erro: " + error.code;
+                }
+            });
+        }
+        window.forgotPassword = function() {
+    const email = prompt("Digite seu e-mail para recuperar a senha:");
+    if(email) {
+        sendPasswordResetEmail(auth, email)
+        .then(() => alert("E-mail de redefinição enviado! Verifique sua caixa de entrada e spam."))
+        .catch((error) => alert("Erro: " + error.message));
+    }
+}
+
+        
+        // --- GUARDA DE SEGURANÇA (ATUALIZADA) ---
+onAuthStateChanged(auth, async (user) => {
+    const splash = document.getElementById('loading-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const appNav = document.querySelector('.bottom-nav');
+
+    if (user) {
+        // Verifica se voltou do MP com sucesso
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('sucesso') === '1') {
+            // Remove o parâmetro da URL sem recarregar
+            window.history.replaceState({}, '', 'app.html');
+            // Mostra tela de carregamento enquanto verifica
+            mostrarToastSucesso();
+            // Aguarda 3 segundos para o webhook processar, depois verifica
+            await new Promise(r => setTimeout(r, 3000));
+            await verificarAssinaturaAposRetorno(user);
+        }
+
+        iniciarSistema();
+        if(loginScreen) loginScreen.style.display = 'none';
+        if(appNav) appNav.style.display = 'flex';
+        if(splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500);
+        }
+
+    } else {
+        if(loginScreen) loginScreen.style.display = 'flex';
+        if(appNav) appNav.style.display = 'none';
+        if(splash) splash.style.display = 'none';
+    }
+});
+
+// ── TOAST DE SUCESSO APÓS PAGAMENTO ──
+function mostrarToastSucesso() {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        background: #00b894; color: white; padding: 14px 24px; border-radius: 12px;
+        font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px;
+        z-index: 99999; box-shadow: 0 8px 24px rgba(0,184,148,0.4);
+        display: flex; align-items: center; gap: 10px;
+    `;
+    toast.innerHTML = '<i class="fas fa-check-circle"></i> Pagamento confirmado! Ativando sua conta...';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+// ── VERIFICA ASSINATURA APÓS RETORNO DO MP ──
+async function verificarAssinaturaAposRetorno(user) {
+    try {
+        const res = await fetch(
+            'https://verificarassinatura-ndsydp7hna-uc.a.run.app',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid })
+            }
+        );
+        const data = await res.json();
+        if (data.ativa) {
+            console.log('✅ Conta ativada após retorno do MP');
+            if (data.primeiraAtivacao) {
+                await enviarEmailBoasVindas(user.email, data.nome || '');
+            }
+        }
+    } catch(err) {
+        console.error('Erro ao verificar assinatura:', err);
+    }
+}
+
+// ── ENVIO DE E-MAIL DE BOAS-VINDAS VIA CLOUD FUNCTION ──
+async function enviarEmailBoasVindas(email, nome) {
+    try {
+        await fetch('https://us-central1-sistema-authon-f7045.cloudfunctions.net/enviarEmail', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, nome })
+        });
+        console.log('📧 E-mail de boas-vindas solicitado para:', email);
+    } catch(err) {
+        console.error('Erro ao solicitar e-mail:', err);
+    }
+}
+
+
+// ── TELA PENDENTE — PAGAMENTO NÃO CONFIRMADO ──
+function mostrarTelaPendente(plano, periodicidade) {
+    const old = document.getElementById('pendente-overlay');
+    if(old) old.remove();
+
+    const MP_LINKS = {
+        'basic-mensal':   'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=f47ea36711654ac7b021e0f4fb982b98',
+        'pro-mensal':     'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=9db7664f39544635b106c3c8c698bfc9',
+        'premium-mensal': 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=348e0997d98f4dc8abff550913835af5',
+        'basic-anual':    'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=5f932fa5347f4d019b7439bccd9e4fb5',
+        'pro-anual':      'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=ab697bfec3824c0bad8e4ebcb9590f5b',
+        'premium-anual':  'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=b77880bd637a4f229e7ab29fbe55274e',
+    };
+
+    const key = `${plano}-${periodicidade}`;
+    const link = MP_LINKS[key] || 'https://sistemaauthon.com.br';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pendente-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; font-family: 'Poppins', sans-serif;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background:#111d2e; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px 32px; max-width:440px; width:100%; text-align:center;">
+            <div style="font-size:52px; margin-bottom:16px;">⏳</div>
+            <h2 style="font-family:'Oswald',sans-serif; font-size:26px; color:white; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                Finalize seu pagamento
+            </h2>
+            <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:1.7; margin-bottom:28px;">
+                Sua conta foi criada! Para acessar o sistema, finalize a assinatura no Mercado Pago.<br><br>
+                <strong style="color:#00b894;">Você terá 7 dias grátis</strong> após confirmar o cartão.
+            </p>
+            <a href="${link}"
+               style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:#D92525; color:white; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 8px 24px rgba(217,37,37,0.35); margin-bottom:12px;">
+                <i class="fas fa-lock"></i> FINALIZAR PAGAMENTO
+            </a>
+            <p style="font-size:12px; color:rgba(255,255,255,0.3); margin:12px 0;">
+                Já pagou? <a id="btn-verificar-pagamento" style="color:#00b894; cursor:pointer;">Clique aqui para verificar</a>
+            </p>
+            <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
+                style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer; margin-top:8px;">
+                Sair da conta
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // ── Vincula o botão "Já pagou?" via addEventListener (evita problema de escopo de módulo ES6) ──
+    const btnVerificar = document.getElementById('btn-verificar-pagamento');
+    if (btnVerificar) {
+        btnVerificar.addEventListener('click', function() {
+            window.verificarPagamentoManual();
+        });
+    }
+}
+
+async function verificarPagamentoManual() {
+    const user = window.auth ? window.auth.currentUser : auth.currentUser;
+    if(!user) return;
+
+    // Feedback visual no botão
+    const btn = document.getElementById('btn-verificar-pagamento');
+    if(btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+        btn.style.pointerEvents = 'none';
+    }
+
+    await verificarAssinaturaAposRetorno(user);
+    setTimeout(() => window.location.reload(), 1500);
+}
+window.verificarPagamentoManual = verificarPagamentoManual;
+
+// ── TELA DE UPGRADE / TRIAL EXPIRADO ──
+function mostrarTelaUpgrade(trialExpira, planoVencido = false) {
+    // Remove tela existente se houver
+    const old = document.getElementById('upgrade-overlay');
+    if(old) old.remove();
+
+    const titulo = planoVencido
+        ? '⚠️ Seu plano venceu'
+        : '🎉 Seu período de teste encerrou!';
+
+    const subtitulo = planoVencido
+        ? 'Renove agora para continuar usando o Authon e não perder nenhum dado.'
+        : 'Você aproveitou 7 dias grátis. Assine agora para continuar com acesso completo.';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'upgrade-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(160deg, #070f1a 0%, #0d1b2a 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; font-family: 'Poppins', sans-serif;
+    `;
+
+    overlay.innerHTML = `
+        <div style="background:#111d2e; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:40px 32px; max-width:480px; width:100%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+            
+            <div style="font-size:52px; margin-bottom:16px;">🔒</div>
+            
+            <h2 style="font-family:'Oswald',sans-serif; font-size:28px; color:white; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                ${titulo}
+            </h2>
+            
+            <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:1.7; margin-bottom:28px;">
+                ${subtitulo}
+            </p>
+
+            <!-- Planos -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px;">
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
+                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Basic</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$67</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$670/ano</div>
+                </div>
+                <div style="background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.3); border-radius:12px; padding:16px 10px; position:relative; text-align:center;">
+                    <div style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#00b894; color:white; font-size:8px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; letter-spacing:1px;">⭐ POPULAR</div>
+                    <div style="font-size:10px; font-weight:700; color:#00b894; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Pro</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$97</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$970/ano</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px 10px; text-align:center;">
+                    <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Premium</div>
+                    <div style="font-size:22px; font-weight:800; color:white; font-family:'Oswald',sans-serif;">R$147</div>
+                    <div style="font-size:9px; color:rgba(255,255,255,0.3); margin-top:2px;">/mês</div>
+                    <div style="font-size:9px; color:#00b894; margin-top:4px; font-weight:700;">ou R$1.470/ano</div>
+                </div>
+            </div>
+            <p style="font-size:11px; color:#00b894; margin-bottom:20px; font-weight:600;">🎉 No plano anual você ganha 2 meses grátis!</p>
+
+            <!-- Botão principal -->
+            <a href="https://wa.me/5587996523840?text=Olá!%20Quero%20assinar%20o%20Sistema%20Authon" target="_blank"
+               style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:16px; background:#D92525; color:white; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; letter-spacing:0.5px; box-shadow:0 8px 24px rgba(217,37,37,0.35); margin-bottom:12px; transition:all 0.2s;">
+                <i class="fab fa-whatsapp" style="font-size:18px;"></i>
+                ASSINAR AGORA
+            </a>
+
+            <!-- Sair -->
+            <button onclick="window.auth.signOut().then(()=>window.location.href='index.html')"
+                style="background:transparent; border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4); padding:12px; width:100%; border-radius:10px; font-size:13px; font-weight:600; font-family:'Poppins',sans-serif; cursor:pointer;">
+                Sair da conta
+            </button>
+
+            <p style="font-size:11px; color:rgba(255,255,255,0.2); margin-top:16px; line-height:1.6;">
+                Seus dados estão seguros e serão mantidos.<br>
+                Dúvidas? <a href="https://wa.me/5587996523840" target="_blank" style="color:rgba(255,255,255,0.4);">Fale conosco</a>
+            </p>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+}
+
+// ── VERIFICA ASSINATURA NO MERCADO PAGO ──
+// ── VERIFICA ASSINATURA NO MERCADO PAGO ──
+// Usa uid apenas — payer_email pode vir vazio no MP
+async function verificarAssinaturaMP(email, docId) {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const res = await fetch(
+            'https://verificarassinatura-ndsydp7hna-uc.a.run.app',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid })
+            }
+        );
+        const data = await res.json();
+
+        if (data.ativa) {
+            console.log('✅ Assinatura verificada no MP — status atualizado para ativo');
+        } else {
+            mostrarTelaUpgrade(null, true);
+        }
+    } catch(err) {
+        console.error('Erro ao verificar MP:', err);
+    }
+}
+
+// ── FIM TELA UPGRADE ──
+function iniciarSistema() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    console.log("Baixando dados para:", user.email);
+    
+    // 1. DADOS DAS OPERAÇÕES
+    const q = query(collection(db, "operacoes"), where("uid", "==", user.uid), orderBy("id", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const dbLocal = [];
+        snapshot.forEach((doc) => dbLocal.push({ ...doc.data(), docId: doc.id }));
+        localStorage.setItem('oficina_db_master', JSON.stringify(dbLocal));
+        // Atualiza telas
+        if(window.renderHistory) window.renderHistory('all');
+        if(window.renderAgenda) window.renderAgenda();
+        if(window.updateDashboard) window.updateDashboard();
+        if(window.renderExpensesList) window.renderExpensesList();
+    });
+
+        // 2. CONFIGURAÇÕES & TRAVA DE SEGURANÇA
+    const qConfig = query(collection(db, "configuracoes"), where("uid", "==", user.uid));
+    onSnapshot(qConfig, (snapshot) => {
+        snapshot.forEach((docSnap) => {
+            const cfg = docSnap.data();
+
+            // --- A GUILHOTINA: VERIFICA SE ESTÁ BLOQUEADO ---
+            if (cfg.status === 'bloqueado' && user.email !== window.ADMIN_EMAIL) {
+                alert("⚠️ ATENÇÃO\nO acesso da sua oficina foi temporariamente suspenso. Por favor, entre em contato com o suporte financeiro.");
+                window.auth.signOut().then(() => location.reload());
+                return;
+            }
+
+            // --- VERIFICA STATUS DO PLANO ---
+            const hoje = new Date();
+
+            if (cfg.status === 'admin') {
+                // Conta admin — acesso liberado
+            } else if (cfg.status === 'bloqueado') {
+                alert("⚠️ Acesso suspenso. Entre em contato com o suporte.");
+                window.auth.signOut().then(() => location.reload());
+                return;
+            } else if (cfg.status === 'trial') {
+                // Verifica se os 7 dias ainda são válidos
+                const criadoEm = cfg.criadoEm ? new Date(cfg.criadoEm) : null;
+                const diasTrial = criadoEm ? Math.floor((hoje - criadoEm) / (1000 * 60 * 60 * 24)) : 8;
+
+                if (diasTrial >= 7) {
+                    // Trial expirado — verifica na API do MP se já pagou
+                    verificarAssinaturaMP(user.email, docSnap.id);
+                    return;
+                }
+                // Trial válido — mostra dias restantes
+                const diasRestantes = 7 - diasTrial;
+                console.log(`Trial: ${diasRestantes} dias restantes`);
+
+            } else if (cfg.status === 'ativo') {
+                // Plano ativo — verifica se não venceu
+                if (cfg.planoExpira && new Date(cfg.planoExpira) < hoje && user.email !== window.ADMIN_EMAIL) {
+                    // Verifica no MP antes de bloquear
+                    verificarAssinaturaMP(user.email, docSnap.id);
+                    return;
+                }
+            } else if (cfg.status === 'pendente') {
+                // Conta criada mas pagamento não confirmado
+                mostrarTelaPendente(cfg.plano, cfg.periodicidade);
+                return;
+            }
+
+            // --- GRAVA O ÚLTIMO ACESSO E O E-MAIL (Invisível) ---
+            const todayStr = new Date().toLocaleDateString('en-CA');
+            if (cfg.lastAccess !== todayStr || cfg.email !== user.email) {
+                window.updateDoc(window.doc(window.db, "configuracoes", docSnap.id), { 
+                    lastAccess: todayStr,
+                    email: user.email // Garante que o painel admin veja o e-mail
+                }).catch(e => console.log("Silent update:", e));
+            }
+
+            // --- MOSTRA O BOTÃO SECRETO SE FOR O DONO ---
+            if(user.email === window.ADMIN_EMAIL) {
+                const btnAdmin = document.getElementById('btn-super-admin');
+                if(btnAdmin) btnAdmin.style.display = 'block';
+            }
+            
+            // Salva no LocalStorage
+            if(cfg.name)        localStorage.setItem('authon_cfg_name', cfg.name);
+            if(cfg.nomeOficina) localStorage.setItem('authon_cfg_name', cfg.nomeOficina); // cadastro novo
+            if(cfg.plano)       localStorage.setItem('authon_plano', cfg.plano);
+            if(cfg.status)      localStorage.setItem('authon_status', cfg.status);
+            if(cfg.cnpj) localStorage.setItem('authon_cfg_cnpj', cfg.cnpj);
+            if(cfg.addr) localStorage.setItem('authon_cfg_addr', cfg.addr);
+            if(cfg.phone) localStorage.setItem('authon_cfg_phone', cfg.phone);
+            if(cfg.team) localStorage.setItem('authon_cfg_team', cfg.team);
+            if(document.getElementById('cfgTeam')) document.getElementById('cfgTeam').value = cfg.team || '';
+            
+            updateSellerSelect();
+
+            if(cfg.pix) localStorage.setItem('authon_cfg_pix', cfg.pix);
+            if(cfg.warranty) localStorage.setItem('authon_cfg_warranty', cfg.warranty);
+            
+            localStorage.setItem('authon_fee_deb', cfg.feeDeb || '0');
+            localStorage.setItem('authon_fee_c1', cfg.feeC1 || '0');
+            localStorage.setItem('authon_fee_c2', cfg.feeC2 || '0');
+            localStorage.setItem('authon_fee_c3', cfg.feeC3 || '0');
+            localStorage.setItem('authon_fee_c4', cfg.feeC4 || '0');
+            localStorage.setItem('authon_fee_c5', cfg.feeC5 || '0');
+            localStorage.setItem('authon_fee_c6', cfg.feeC6 || '0');
+
+            if(cfg.pin) localStorage.setItem('authon_cfg_pin', cfg.pin);
+            if(cfg.logo) localStorage.setItem('oficina_logo', cfg.logo);
+            
+            if(document.getElementById('cfgName')) {
+                document.getElementById('cfgName').value = cfg.name || '';
+                document.getElementById('cfgCnpj').value = cfg.cnpj || '';
+                document.getElementById('cfgAddr').value = cfg.addr || '';
+                document.getElementById('cfgPhone').value = cfg.phone || '';
+                document.getElementById('cfgPix').value = cfg.pix || '';
+                document.getElementById('cfgWarranty').value = cfg.warranty || '';
+                
+                if(document.getElementById('feeDeb')) {
+                    document.getElementById('feeDeb').value = cfg.feeDeb || '';
+                    document.getElementById('feeC1').value = cfg.feeC1 || '';
+                    document.getElementById('feeC2').value = cfg.feeC2 || '';
+                    document.getElementById('feeC3').value = cfg.feeC3 || '';
+                    document.getElementById('feeC4').value = cfg.feeC4 || '';
+                    document.getElementById('feeC5').value = cfg.feeC5 || '';
+                    document.getElementById('feeC6').value = cfg.feeC6 || '';
+                }
+
+                if(document.getElementById('cfgPin')) document.getElementById('cfgPin').value = cfg.pin || '';
+            }
+            localStorage.setItem('authon_config_doc_id', docSnap.id);
+        });
+    });
+
+
+        // 3. CATÁLOGO NA NUVEM
+    const qCat = query(collection(db, "catalogo"), where("uid", "==", user.uid));
+    onSnapshot(qCat, (snapshot) => {
+        const catLocal = [];
+        snapshot.forEach((doc) => catLocal.push({ ...doc.data(), docId: doc.id }));
+        localStorage.setItem('catalog_v1', JSON.stringify(catLocal));
+        
+        // Atualiza a lista visualmente se estiver na aba
+        if(window.renderCatalogList) window.renderCatalogList();
+        if(window.updateDatalist) window.updateDatalist();
+
+        // --- GATILHO DO ONBOARDING (Catálogo Automático) ---
+        if(snapshot.empty && localStorage.getItem('authon_onboarding_done') !== 'true') {
+            // Se não tem nada no banco, injeta o catálogo base!
+            if(window.injectStarterCatalog) window.injectStarterCatalog(user);
+        } else if (!snapshot.empty) {
+            // Se já tem itens (ele já usava antes em outro PC), apenas tranca a porta
+            localStorage.setItem('authon_onboarding_done', 'true');
+        }
+    });
+}
+
+        // --- FUNÇÃO DE SAIR ---
+        window.logout = function() {
+            if(confirm("Deseja sair e bloquear o sistema?")) {
+                signOut(auth).then(() => {
+                    alert("Você saiu.");
+                    location.reload();
+                });
+            }
+        }
+
+        // --- FUNÇÃO DE REDEFINIR SENHA (NOVA) ---
+        window.resetPassword = function() {
+            const user = auth.currentUser;
+            if(user && confirm("Enviar link de troca de senha para " + user.email + "?")) {
+                sendPasswordResetEmail(auth, user.email)
+                .then(() => {
+                    alert("E-mail enviado! Verifique sua caixa de entrada (e spam) para criar a nova senha.");
+                })
+                .catch((error) => {
+                    alert("Erro: " + error.message);
+                });
+            }
+        }
+
+        // --- SALVAR NA NUVEM COM CARIMBO DE DONO ---
+        window.saveToCloud = async function(collectionName, data) {
+            try {
+                const user = auth.currentUser;
+                if (!user) return alert("Erro: Você não está logado!");
+
+                // ADICIONA O "CARIMBO" DO DONO (UID)
+                const dataWithOwner = { 
+                    ...data, 
+                    uid: user.uid,  
+                    userEmail: user.email 
+                };
+
+                const docRef = await addDoc(collection(db, collectionName), dataWithOwner);
+                return docRef.id;
+            } catch (e) {
+                console.error("Erro ao salvar:", e);
+                alert("Erro de conexão! Tente novamente.");
+            }
+        }
+
+        // AS OUTRAS FUNÇÕES MANTÊM A LÓGICA PADRÃO
+        window.updateInCloud = async function(collectionName, docId, data) {
+             try {
+                const itemRef = doc(db, collectionName, docId);
+                await updateDoc(itemRef, data);
+            } catch (e) { console.error("Erro update:", e); }
+        }
+
+        window.deleteFromCloud = async function(collectionName, docId) {
+            try {
+                if(confirm("Tem certeza que deseja excluir?")) {
+                    await deleteDoc(doc(db, collectionName, docId));
+                    alert("Item excluído!");
+                }
+            } catch (e) { console.error("Erro delete:", e); }
+        }
+
+        // DISPONIBILIZA FERRAMENTAS PARA O RESTO DO CÓDIGO
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.where = where; // Importante expor o where
+        
+        console.log("Sistema SaaS Iniciado!");
+                // --- COLAR ISTO NO FINAL DO SCRIPT (ANTES DE ---
+
+        // 1. GRÁFICO 6 MESES — PREMIUM
+        function renderSixMonthChart() {
+            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+            const ctx = document.getElementById('financeChart');
+            if(!ctx) return;
+            const labels=[],dataInc=[],dataExp=[];
+            const today = new Date();
+            for(let i=5;i>=0;i--) {
+                const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+                labels.push(d.toLocaleString('pt-BR',{month:'short'}).toUpperCase()+'/'+d.getFullYear().toString().substr(2));
+                let mInc=0,mExp=0;
+                db.forEach(x => {
+                    const xd = new Date(x.date+'T12:00:00');
+                    if(xd.getMonth()===d.getMonth()&&xd.getFullYear()===d.getFullYear()) {
+                        if(x.type==='venda'&&x.status==='pago') mInc+=(x.netTotal!==undefined?x.netTotal:x.total);
+                        if(x.type==='expense') mExp+=x.total;
+                    }
+                });
+                dataInc.push(mInc); dataExp.push(mExp);
+            }
+            if(window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx.getContext('2d'), {
+                type:'bar',
+                data:{ labels, datasets:[
+                    { label:'Entradas', data:dataInc, backgroundColor:'rgba(0,184,148,0.85)', borderRadius:8, borderSkipped:false, barPercentage:0.55 },
+                    { label:'Saídas',   data:dataExp, backgroundColor:'rgba(225,112,85,0.85)',  borderRadius:8, borderSkipped:false, barPercentage:0.55 }
+                ]},
+                options:{
+                    responsive:true, maintainAspectRatio:false,
+                    interaction:{ mode:'index', intersect:false },
+                    scales:{
+                        y:{ beginAtZero:true, grid:{ color:'rgba(0,0,0,0.04)', drawBorder:false },
+                            ticks:{ font:{family:'Poppins',size:9}, color:'#95a5a6',
+                                callback: v => v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v }},
+                        x:{ grid:{display:false}, ticks:{font:{family:'Poppins',size:9,weight:'600'},color:'#7f8c8d'} }
+                    },
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{ backgroundColor:'#1e272e', titleFont:{family:'Poppins',size:11,weight:'700'},
+                            bodyFont:{family:'Poppins',size:11}, padding:12, cornerRadius:10,
+                            callbacks:{ label: c => ' R$ '+c.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2}) }}
+                    }
+                }
+            });
+        }
+
+        // 2. BALANÇO ANUAL — PREMIUM
+        function renderAnnualBalance() {
+            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+            const list = document.getElementById('annual-list');
+            const yearSpan = document.getElementById('annual-year');
+            const currentYear = new Date().getFullYear();
+            if(yearSpan) yearSpan.innerText = currentYear;
+            if(!list) return;
+            list.innerHTML = '';
+            const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            let totalYInc=0, totalYExp=0;
+            months.forEach((name,idx) => {
+                let mInc=0, mExp=0;
+                db.forEach(x => {
+                    const xd = new Date(x.date+'T12:00:00');
+                    if(xd.getMonth()===idx&&xd.getFullYear()===currentYear) {
+                        if(x.type==='venda'&&x.status==='pago') mInc+=(x.netTotal!==undefined?x.netTotal:x.total);
+                        if(x.type==='expense') mExp+=x.total;
+                    }
+                });
+                const profit=mInc-mExp;
+                const pc=profit>=0?'#00b894':'#e17055';
+                list.innerHTML+=`<tr>
+                    <td>${name.substring(0,3).toUpperCase()}</td>
+                    <td style="color:#00b894;font-weight:700;">${mInc>0?'R$&nbsp;'+mInc.toLocaleString('pt-BR',{minimumFractionDigits:2}):'<span style="color:#dfe6e9">—</span>'}</td>
+                    <td style="color:#e17055;font-weight:700;">${mExp>0?'R$&nbsp;'+mExp.toLocaleString('pt-BR',{minimumFractionDigits:2}):'<span style="color:#dfe6e9">—</span>'}</td>
+                    <td style="color:${pc};font-weight:800;">R$&nbsp;${profit.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                </tr>`;
+                totalYInc+=mInc; totalYExp+=mExp;
+            });
+            const tp=totalYInc-totalYExp;
+            list.innerHTML+=`<tr>
+                <td style="font-size:10px;letter-spacing:1px;">TOTAL</td>
+                <td style="color:#00b894;">R$&nbsp;${totalYInc.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                <td style="color:#e17055;">R$&nbsp;${totalYExp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+                <td style="color:${tp>=0?'#00b894':'#e17055'};">R$&nbsp;${tp.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+            </tr>`;
+        }
+// --- CORREÇÃO SEGURA DO MENU (Traz o menu de volta) ---
+const bottomNav = document.querySelector('.bottom-nav');
+
+// 1. Força o menu a aparecer assim que carregar
+if(bottomNav) {
+    bottomNav.style.display = 'flex';
+    bottomNav.style.zIndex = '9999'; // Garante que fique na frente
+}
+
+// 2. Só esconde se você clicar num campo de texto (Segurança)
+document.querySelectorAll('input, textarea, select').forEach(element => {
+    element.addEventListener('focus', () => {
+        if(bottomNav) bottomNav.style.display = 'none';
+    });
+    element.addEventListener('blur', () => {
+        setTimeout(() => {
+            if(bottomNav) bottomNav.style.display = 'flex';
+        }, 200);
+    });
+});
+
+
+        // Segurança Extra: Garante que ao focar num campo, o menu suma
+        document.querySelectorAll('input, textarea, select').forEach(element => {
+            element.addEventListener('focus', () => {
+                if(bottomNav) bottomNav.style.display = 'none';
+            });
+            element.addEventListener('blur', () => {
+                // Pequeno delay para evitar "piscar" se mudar de campo
+                setTimeout(() => {
+                    if(document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                        if(bottomNav) bottomNav.style.display = 'flex';
+                    }
+                }, 100);
+            });
+        });
+
+    </script>
 
 
     
+    <style>
+        /*        /* --- ESTILO GERAL (NOVO VISUAL CLEAN) --- */
+        :root { 
+            /* Cores Sólidas (Matte) em vez de Degradê */
+            --primary: #e74c3c; 
+            --primary-grad: #e74c3c; /* Truque: definimos o gradiente como cor sólida */
+            
+            --dark: #1e272e; 
+            --bg: #f5f6fa; /* Fundo um pouco mais claro */
+            --card-bg: #ffffff;
+            --text-main: #2f3640; 
+            --text-light: #718093;
+            
+            /* Cores de Status Sólidas */
+            --green-grad: #00b894; /* Verde Mint moderno */
+            --orange-grad: #fdcb6e; /* Amarelo suave */
+            --blue-grad: #0984e3; /* Azul sólido */
+            
+            /* Sombra muito mais suave (quase invisível) */
+            --shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            --radius: 12px; /* Arredondamento um pouco menor para ficar mais sério */
+        }
+                /* Deixa os textos de exemplo mais transparentes e elegantes */
+        ::placeholder {
+            color: #bdc3c7;
+            opacity: 0.5;
+            font-weight: 400;
+        }
+
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--text-main); padding-bottom: 100px; }
+        h1, h2, h3 { color: var(--dark); margin: 0; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); margin-bottom: 5px; display: block; }
+
+        .brand-header { padding: 25px 20px 10px 20px; text-align: center; }
+        .brand-logo { font-family: 'Oswald', sans-serif; font-size: 26px; color: var(--dark); text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-bottom: 3px solid var(--primary); padding-bottom: 5px; }
+
+        .container { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; margin: 15px; border: 1px solid rgba(0,0,0,0.02); animation: fadeIn 0.4s ease-out; }
+        .header-title { text-align: center; margin-bottom: 20px; }
+        .header-title h1 { text-transform: uppercase; color: var(--primary); font-size: 18px; letter-spacing: 1px; }
+
+        input, select, textarea { width: 100%; padding: 12px 15px; border: 2px solid #dfe6e9; border-radius: 12px; background: #fdfdfd; font-family: 'Poppins', sans-serif; font-size: 15px; color: var(--dark); transition: 0.3s; }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; }
+
+        /* --- BOTÕES --- */
+        /* --- ESTILOS DO CHECKLIST & CARRO --- */
+        .car-part { cursor: pointer; transition: all 0.3s; stroke-width: 1.5px; }
+        .car-part:active { opacity: 0.6; }
+        /* Quando clica e marca avaria, fica vermelho */
+        .car-part.damaged { fill: #e74c3c !important; stroke: #c0392b !important; }
+        
+        /* Estilos específicos para luzes e vidros quando normais */
+        .car-light-front { fill: #f1c40f; stroke: #f39c12; opacity: 0.8; } /* Amarelo */
+        .car-light-rear { fill: #e74c3c; stroke: #c0392b; opacity: 0.8; } /* Vermelho */
+        .car-glass { fill: #bdc3c7; stroke: #95a5a6; opacity: 0.7; } /* Vidro azulado */
+
+        .btn-fuel { flex: 1; padding: 8px 0; border: 1px solid #bdc3c7; background: white; border-radius: 8px; font-size: 11px; font-weight: bold; color: #7f8c8d; cursor: pointer; }
+        .btn-fuel.active { background: #f39c12; color: white; border-color: #f39c12; }
+
+
+        .btn-action { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 15px; color: white; letter-spacing: 0.5px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .btn-action:active { transform: scale(0.98); }
+        .btn-add { background: var(--dark); }
+        .btn-gen { background: var(--primary-grad); box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4); }
+        
+        .btn-whatsapp { background: #25D366; color: white; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 50px; }
+        .btn-download { background: var(--primary); color: white; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 50px; }
+
+        /* --- LISTA DE ITENS --- */
+        .service-row { display: grid; grid-template-columns: 50px 1fr 75px 40px; gap: 8px; align-items: flex-end; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 8px; margin-bottom: 2px; color: #7f8c8d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .service-row input { padding: 0 8px; font-size: 13px; border: 1px solid #dfe6e9; background: #fdfdfd; border-radius: 8px; width: 100%; height: 38px; }
+        .service-row input.qty { text-align: center; font-weight: bold; }
+        .service-row input.val { background: #fff; text-align: right; color: var(--dark); font-weight: 600; border-color: #bdc3c7; }
+        .btn-trash { height: 38px; width: 100%; background: #ffebee; color: #c0392b; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        
+        .stock-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        .stock-ok { background: #dff9fb; color: #2c3e50; }
+        .stock-low { background: #ffcccc; color: #c0392b; font-weight: bold; }
+        .stock-zero { background: #2c3e50; color: white; text-decoration: line-through; }
+        .stock-warning-text { grid-column: span 4; font-size: 10px; color: #c0392b; margin-top: -5px; margin-bottom: 5px; font-weight: bold; display: none; padding-left: 5px;}
+        .input-low-stock { border-color: #c0392b !important; color: #c0392b; }
+
+        .op-type-switch { display: flex; background: #dfe6e9; padding: 5px; border-radius: 14px; margin-bottom: 20px; }
+        .op-btn { flex: 1; padding: 12px; border: none; background: transparent; font-weight: 600; color: #7f8c8d; cursor: pointer; border-radius: 10px; transition: 0.3s; font-size: 13px; }
+        .op-btn.active { color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .op-btn.active.venda { background: var(--green-grad); }
+        .op-btn.active.orcamento { background: var(--orange-grad); }
+        .op-btn.active.agendamento { background: var(--blue-grad); }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .full-width { grid-column: span 2; }
+        
+        .total-box-container { margin-top: 20px; border-top: 2px dashed #dfe6e9; padding-top: 15px; }
+        .discount-row { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .discount-input { width: 80px; text-align: right; padding: 5px; height: 35px; border: 1px solid #bdc3c7; color: #c0392b; font-weight: bold; }
+        .final-total { text-align: right; font-size: 1.8rem; font-weight: 700; color: var(--dark); }
+        
+        .fee-box { background: #fff3e0; border: 1px solid #ffe0b2; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
+        .fee-box label { font-size: 11px; color: #e65100; margin-bottom: 5px; }
+
+        .card-list { display: flex; flex-direction: column; gap: 15px; padding: 0 15px; }
+        .item-card { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--shadow); position: relative; border-left: 6px solid #ccc; transition: transform 0.2s; }
+        .status-badge { position: absolute; top: 15px; right: 15px; font-size: 10px; padding: 4px 10px; border-radius: 20px; color: white; font-weight: 700; text-transform: uppercase; }
+        .st-venda { border-left-color: #27ae60; } .bg-venda { background: #27ae60; }
+        .st-pendente { border-left-color: #f1c40f; } .bg-pendente { background: #f1c40f; color: #2c3e50 !important; }
+        .st-orcamento { border-left-color: #95a5a6; } .bg-orcamento { background: #95a5a6; }
+        .st-agenda { border-left-color: #2980b9; } .bg-agenda { background: #2980b9; }
+        .st-expense { border-left-color: var(--primary); }
+        
+        .card-actions { margin-top: 15px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #f1f2f6; padding-top: 12px; flex-wrap: wrap; }
+        .btn-card { font-size: 11px; padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-pay { background: var(--green-grad); color: white; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
+        .btn-notify { background: #3498db; color: white; }
+
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 16px; box-shadow: var(--shadow); text-align: center; position: relative; overflow: hidden; }
+        .kpi-label { font-size: 11px; color: #7f8c8d; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-value { font-size: 18px; font-weight: 700; color: var(--dark); margin-top: 5px; }
+        .dash-filter { display: flex; gap: 10px; padding: 0 15px 15px 15px; align-items: flex-end; }
+        .dash-filter div { flex: 1; }
+        .dash-filter label { font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+        .dash-filter input { padding: 8px; font-size: 13px; height: 42px; }
+        .btn-filter { background: var(--dark); color: white; border: none; border-radius: 12px; width: 45px; height: 42px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .date-shortcuts { display: flex; gap: 5px; margin-bottom: 10px; padding: 0 15px; }
+        .btn-shortcut { flex: 1; background: #ecf0f1; border: none; border-radius: 8px; padding: 8px; font-size: 11px; color: #7f8c8d; font-weight: 600; cursor: pointer; }
+        .btn-shortcut:active { background: #bdc3c7; }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; padding-bottom: 20px;}
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .bottom-nav { 
+    position: fixed; bottom: 0; left: 0; width: 100%; 
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); 
+    box-shadow: 0 -5px 20px rgba(0,0,0,0.05); display: flex; 
+    overflow-x: auto; padding: 10px 0 15px 0; 
+    z-index: 9999; /* <--- MUDANÇA IMPORTANTE AQUI */
+    border-top-left-radius: 20px; border-top-right-radius: 20px; 
+}
+
+        .nav-item { text-align: center; color: #95a5a6; flex: 0 0 14%; min-width: 60px; cursor: pointer; transition: 0.3s; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .nav-item.active { color: var(--primary); transform: translateY(-3px); }
+        .nav-icon { font-size: 18px; margin-bottom: 4px; }
+        .nav-text { font-size: 8px; font-weight: 600; }
+
+        /* --- PDF --- */
+        #pdf-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 2000; display: none; overflow-y: auto; }
+        #invoice-paper { background: white; width: 210mm; min-height: 280mm; margin: 20px auto; padding: 10mm; border-left: 12px solid var(--primary); display: flex; flex-direction: column; font-family: 'Roboto', sans-serif; }
+        .pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 25px; }
+        .pdf-header-left { flex: 1; text-align: left; display: flex; flex-direction: column; justify-content: center; }
+        .pdf-header-right { flex: 0 0 200px; text-align: right; }
+        .pdf-client-box { background: #f9f9f9; padding: 15px; border-left: 5px solid #2c3e50; margin-bottom: 25px; font-size: 14px; line-height: 1.6; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .pdf-table th { background: var(--primary); color: white; padding: 12px 10px; text-align: left; font-size: 14px; text-transform: uppercase; }
+        .pdf-table th:last-child { text-align: right; }
+        .pdf-table td { border-bottom: 1px solid #eee; padding: 15px 10px; font-size: 15px; color: #333; }
+        .pdf-table td:last-child { text-align: right; font-weight: bold; }
+        .pdf-totals-block { text-align: right; padding: 15px; background: #fcfcfc; border: 1px solid #eee; border-radius: 5px; margin-bottom: 30px; }
+        
+        #modal-config { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 3000; align-items: center; justify-content: center; }
+        .modal-box { background: white; width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .catalog-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f0f0f0; align-items: center; background: white; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+    </style>
 </head>
 <body>
 <script>
-// Intercepta botão voltar do celular — evita sair do app
 history.pushState(null, '', location.href);
 window.addEventListener('popstate', function() {
     history.pushState(null, '', location.href);
@@ -219,6 +1047,12 @@ window.addEventListener('popstate', function() {
                     </button>
                 </div>
 
+                <!-- Busca -->
+                <input type="text" id="expenseSearch"
+                    placeholder="🔍 Buscar despesa..."
+                    onkeyup="renderExpensesList()"
+                    class="exp-search-input">
+
                 <!-- Filtro de Período -->
                 <div class="hist-period-row">
                     <button class="hist-period-btn active" onclick="expPeriod(this,'month')">Este Mês</button>
@@ -238,16 +1072,6 @@ window.addEventListener('popstate', function() {
                 </div>
             </div>
 
-            <!-- Busca — fora do header escuro, fundo branco -->
-            <div style="background:white;padding:12px 15px;border-bottom:1px solid #f0f0f0;">
-                <input type="text" id="expenseSearch"
-                    placeholder="🔍 Buscar despesa..."
-                    onkeyup="renderExpensesList()"
-                    style="width:100%;background:#f5f6fa;border:1.5px solid #ecf0f1;
-                           border-radius:12px;padding:11px 14px;font-family:'Poppins',sans-serif;
-                           font-size:13px;color:#1e272e;box-sizing:border-box;outline:none;">
-            </div>
-
             <!-- Filtros de Status -->
             <div class="hist-status-row">
                 <button class="hist-status-btn active" onclick="expStatus(this,'all')">Todas</button>
@@ -259,18 +1083,7 @@ window.addEventListener('popstate', function() {
             <!-- Formulário (oculto por padrão) -->
             <div id="exp-form-wrapper" style="display:none;">
                 <div class="exp-form-card">
-                    <!-- Cabeçalho com botão X para fechar -->
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                        <h3 class="exp-form-title" style="margin:0;">
-                            <i class="fas fa-wallet"></i> Nova Despesa
-                        </h3>
-                        <button onclick="toggleExpForm(true)"
-                            style="width:34px;height:34px;border-radius:10px;border:none;
-                                   background:#fef0ee;color:#e74c3c;font-size:14px;
-                                   cursor:pointer;display:flex;align-items:center;justify-content:center;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
+                    <h3 class="exp-form-title"><i class="fas fa-wallet"></i> Nova Despesa</h3>
                     <div class="form-grid">
 
                         <div><label>Data do Lançamento</label>
@@ -281,10 +1094,6 @@ window.addEventListener('popstate', function() {
                                 <option>Peças/Material</option>
                                 <option>Aluguel/Contas</option>
                                 <option>Salário/Pessoal</option>
-                                <option>Combustível</option>
-                                <option>Ferramentas/Equipamentos</option>
-                                <option>Marketing/Publicidade</option>
-                                <option>Impostos/Taxas</option>
                                 <option>Alimentação</option>
                                 <option>Outros</option>
                             </select>
@@ -294,7 +1103,7 @@ window.addEventListener('popstate', function() {
                             <input type="text" id="expDesc" placeholder="Ex: Conta de Luz, Aluguel..."></div>
 
                         <div class="full-width"><label>Valor (R$)</label>
-                            <input type="number" id="expVal" placeholder="0.00" step="0.01"></div>
+                            <input type="number" id="expVal" placeholder="0.00"></div>
 
                         <!-- Status de pagamento -->
                         <div class="full-width">
@@ -311,19 +1120,17 @@ window.addEventListener('popstate', function() {
 
                         <!-- Data de vencimento (só aparece se pendente) -->
                         <div class="full-width" id="expVencWrapper" style="display:none;">
-                            <label>Data de Vencimento <span style="color:#95a5a6;font-weight:400;">(opcional)</span></label>
-                            <input type="date" id="expVenc">
+                            <label>Data de Vencimento</label>
+                            <input type="date" id="expVenc" placeholder="Vencimento">
                         </div>
 
                         <!-- Observação (opcional) -->
                         <div class="full-width">
-                            <label>Observação <span style="color:#95a5a6;font-weight:400;">(opcional)</span></label>
+                            <label>Observação <span style="color:#95a5a6; font-weight:400;">(opcional)</span></label>
                             <input type="text" id="expObs" placeholder="Ex: Parcela 1/3, NF #1234...">
                         </div>
 
-                        <button id="btn-save-expense" class="btn-action"
-                            style="background:var(--primary);color:white;grid-column:span 2;"
-                            onclick="saveExpense()">
+                        <button class="btn-action" style="background:var(--primary); color:white; grid-column:span 2;" onclick="saveExpense()">
                             <i class="fas fa-wallet"></i> LANÇAR DESPESA
                         </button>
                     </div>
@@ -429,27 +1236,6 @@ window.addEventListener('popstate', function() {
                 <div class="fin-metric-val" id="kpi-meta-pct">Definir</div>
                 <div class="fin-meta-bar-track"><div class="fin-meta-bar-fill" id="kpi-meta-bar"></div></div>
             </div>
-            <!-- NOVOS KPIs -->
-            <div class="fin-metric-card" style="--mc:#00b894;" onclick="showTab('history'); setTimeout(()=>renderHistory('pendente'),100)">
-                <div class="fin-metric-icon"><i class="fas fa-hand-holding-dollar"></i></div>
-                <div class="fin-metric-lbl">A Receber</div>
-                <div class="fin-metric-val" id="kpi-a-receber" style="font-size:13px;">R$ 0</div>
-            </div>
-            <div class="fin-metric-card" style="--mc:#e74c3c;" onclick="showTab('expenses')">
-                <div class="fin-metric-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                <div class="fin-metric-lbl">A Pagar</div>
-                <div class="fin-metric-val" id="kpi-a-pagar" style="font-size:13px;">R$ 0</div>
-            </div>
-            <div class="fin-metric-card" style="--mc:#6c5ce7;">
-                <div class="fin-metric-icon"><i class="fas fa-car"></i></div>
-                <div class="fin-metric-lbl">Carros/Mês</div>
-                <div class="fin-metric-val" id="kpi-carros-mes">0</div>
-            </div>
-            <div class="fin-metric-card" style="--mc:#d63031;">
-                <div class="fin-metric-icon"><i class="fas fa-percent"></i></div>
-                <div class="fin-metric-lbl">Taxas Cartão</div>
-                <div class="fin-metric-val" id="kpi-taxas" style="font-size:13px;">R$ 0</div>
-            </div>
         </div>
 
         <!-- Modal Meta -->
@@ -479,10 +1265,6 @@ window.addEventListener('popstate', function() {
         <!-- Ranking da Equipe -->
         <div class="fin-section-label"><i class="fas fa-trophy"></i> RANKING DA EQUIPE</div>
         <div class="fin-card"><div id="stats-team"></div></div>
-
-        <!-- Ranking de Serviços -->
-        <div class="fin-section-label"><i class="fas fa-star"></i> SERVIÇOS QUE MAIS FATURAM</div>
-        <div class="fin-card"><div id="stats-services"></div></div>
 
         <!-- Formas de Pagamento -->
         <div class="fin-section-label"><i class="fas fa-credit-card"></i> FORMAS DE PAGAMENTO</div>
@@ -640,14 +1422,14 @@ window.addEventListener('popstate', function() {
             </div>
         </div>
 
-        <!-- ── BACKUP & RESTAURAÇÃO ── -->
-        <button class="settings-btn" onclick="toggleSettingsSection('sect-backup'); window.setTimeout(()=>window.checkBackupPlano?.(),100)">
+        <!-- BACKUP -->
+        <button class="settings-btn" onclick="toggleSettingsSection('sect-backup')">
             <span><i class="fas fa-cloud-download-alt"></i> Backup & Restauração</span>
             <i class="fas fa-chevron-down"></i>
         </button>
         <div class="settings-content" id="sect-backup" style="display:none;">
             <p style="font-size:11px;color:#636e72;margin:10px 0 14px;line-height:1.6;">
-                Exporte todos os dados como arquivo JSON. Importe para restaurar em outro aparelho.
+                Exporte todos os dados como arquivo JSON.
             </p>
             <button onclick="window.exportarBackup()"
                 style="width:100%;padding:12px;background:linear-gradient(135deg,#1E3A5F,#2d5a8e);
@@ -663,12 +1445,9 @@ window.addEventListener('popstate', function() {
                 <i class="fas fa-upload"></i> IMPORTAR BACKUP
                 <input type="file" accept=".json" onchange="window.importarBackup(this)" style="display:none;">
             </label>
-            <p style="font-size:10px;color:#bdc3c7;text-align:center;margin-top:8px;">
-                ⚠️ Restaurar substituirá todos os dados atuais
-            </p>
         </div>
 
-        <!-- ── FUNCIONÁRIOS ── -->
+        <!-- FUNCIONÁRIOS -->
         <button class="settings-btn" onclick="toggleSettingsSection('sect-funcionarios'); window.setTimeout(()=>window.renderFuncionariosList?.(),150)">
             <span><i class="fas fa-users"></i> Funcionários</span>
             <i class="fas fa-chevron-down"></i>
@@ -697,44 +1476,24 @@ window.addEventListener('popstate', function() {
     </div>
 </div>
     <div id="tab-crm" class="tab-content">
-
-        <!-- Header -->
-        <div style="background:linear-gradient(145deg,#1e272e 0%,#2d3436 60%,#1a252f 100%);padding:18px 16px 16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <div>
-                    <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;
-                                color:white;letter-spacing:1px;">MÁQUINA DE RETORNO</div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:3px;">
-                        Resgate clientes inativos e gere novas vendas
-                    </div>
-                </div>
-                <div style="width:44px;height:44px;background:rgba(231,76,60,0.2);border-radius:12px;
-                            display:flex;align-items:center;justify-content:center;">
-                    <i class="fas fa-bullhorn" style="color:#e74c3c;font-size:18px;"></i>
-                </div>
+        <div class="container">
+            <div class="header-title" style="margin-bottom: 10px;">
+                <h1>Máquina de Retorno</h1>
+                <p style="font-size:11px; color:#7f8c8d; margin-top:5px; text-transform:none;">Resgate clientes e gere novas vendas!</p>
             </div>
-
-            <!-- Filtro de período -->
-            <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);
-                        border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
-                <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);
-                            text-transform:uppercase;letter-spacing:1px;white-space:nowrap;">
-                    Inativos há mais de
-                </div>
-                <select id="crm-days" onchange="renderCRM()"
-                    style="flex:1;background:transparent;border:none;color:white;
-                           font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;
-                           outline:none;cursor:pointer;">
-                    <option value="30"  style="background:#2d3436;">30 dias (1 mês)</option>
-                    <option value="60"  style="background:#2d3436;">60 dias (2 meses)</option>
-                    <option value="90"  style="background:#2d3436;" selected>90 dias (3 meses)</option>
-                    <option value="120" style="background:#2d3436;">120 dias (4 meses)</option>
-                    <option value="180" style="background:#2d3436;">180 dias (6 meses)</option>
+            
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; border:1px solid #eee; text-align:center; margin-bottom:15px;">
+                <label style="color:var(--primary); font-size:12px;"><i class="fas fa-filter"></i> Mostrar clientes sumidos há mais de:</label>
+                <select id="crm-days" onchange="renderCRM()" style="margin-top:5px; background:white; font-weight:bold; color:var(--dark);">
+                    <option value="60">60 dias (2 meses)</option>
+                    <option value="90" selected>90 dias (3 meses)</option>
+                    <option value="120">120 dias (4 meses)</option>
+                    <option value="180">180 dias (6 meses)</option>
                 </select>
             </div>
         </div>
-
-        <div id="crm-list" style="padding:12px 15px 90px;background:#f5f6fa;"></div>
+        
+        <div id="crm-list" class="card-list" style="padding-bottom: 30px;"></div>
     </div>
 
 
@@ -780,10 +1539,10 @@ window.addEventListener('popstate', function() {
             </div>
             <table class="pdf-table"><thead><tr><th width="70%">DESCRIÇÃO</th><th>VALOR</th></tr></thead><tbody id="pdf-tbody"></tbody></table>
             <div class="pdf-totals-block">
-                <div id="pdf-payment-row">Forma de Pagamento: <strong id="pdf-payment-method"></strong></div>
-                <div id="pdf-pix-row" style="display:none;">Chave Pix: <strong id="pdf-pix-key"></strong></div>
-                <div id="pdf-discount-row" style="display:none;color:#c0392b;">Desconto: - <span id="pdf-discount-val">R$ 0,00</span></div>
-                <div><h2>TOTAL: <span id="pdf-total">R$ 0,00</span></h2></div>
+                <div id="pdf-payment-row" style="margin-bottom:10px; font-size:14px; color:#555;">Forma de Pagamento: <strong id="pdf-payment-method" style="color:#000;"></strong></div>
+                <div id="pdf-pix-row" style="margin-bottom:10px; font-size:14px; color:#555; display:none;">Chave Pix: <strong id="pdf-pix-key" style="color:#2c3e50;"></strong></div>
+                <div id="pdf-discount-row" style="display:none; margin-bottom:5px; font-size:14px; color:#c0392b;">Desconto: - <span id="pdf-discount-val">R$ 0,00</span></div>
+                <div style="border-top:1px solid #ddd; padding-top:10px;"><h2 style="color:var(--primary); margin:0; font-family:'Oswald',sans-serif;">TOTAL: <span id="pdf-total">R$ 0,00</span></h2></div>
             </div>
             <div style="margin-top:auto; padding-top:20px; text-align:center;">
              <div id="pdf-warranty-text" style="font-size:10px; color:#95a5a6; margin-top:15px; text-align:center; padding:10px; border-top:1px dotted #ccc;"></div>
@@ -906,28 +1665,7 @@ window.addEventListener('popstate', function() {
             // --- FIM DO BLOCO ---
 
         // --- SISTEMA SUPER ADMIN (CONTROLE DE CLIENTES) ---
-        window.ADMIN_EMAIL = "admin@authon.com";
-
-        // Garante que o botão admin aparece assim que o DOM estiver pronto
-        function ensureAdminBtn() {
-            const user = window.auth?.currentUser;
-            if (!user) return;
-            if (user.email === window.ADMIN_EMAIL) {
-                const btn = document.getElementById('btn-super-admin');
-                if (btn) {
-                    btn.style.display = 'block';
-                    localStorage.setItem('authon_plano', 'premium');
-                } else {
-                    // Tenta novamente em 500ms se o botão ainda não existir
-                    setTimeout(ensureAdminBtn, 500);
-                }
-            }
-        }
-
-        // Dispara quando Firebase autentica
-        document.addEventListener('authon:dados-carregados', ensureAdminBtn);
-        // Também tenta após 3s como fallback
-        setTimeout(ensureAdminBtn, 3000);
+        window.ADMIN_EMAIL = "admin@authon.com"; // ⚠️ ATENÇÃO: COLOQUE SEU E-MAIL REAL DE ACESSO AQUI!
 
         // --- PAINEL SUPER ADMIN PREMIUM ---
         window._adminData = []; // cache para filtro
@@ -1500,96 +2238,92 @@ window.addEventListener('popstate', function() {
         }
 
 
-        // ── MÁQUINA DE RETORNO (CRM) ──
-        window.renderCRM = function () {
-            const db         = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
-            const list       = document.getElementById('crm-list');
-            const daysFilter = parseInt(document.getElementById('crm-days')?.value) || 90;
-            const compName   = localStorage.getItem('authon_cfg_name') || 'Nossa Oficina';
-            if (!list) return;
+               // --- SISTEMA CRM (MÁQUINA DE RETORNO DE CLIENTES) ---
+        window.renderCRM = function() {
+            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+            const list = document.getElementById('crm-list');
+            const daysFilter = parseInt(document.getElementById('crm-days').value) || 90;
+            const compName = localStorage.getItem('authon_cfg_name') || "Nossa Oficina";
 
+            list.innerHTML = '';
+
+            // 1. Agrupar todas as visitas de cada cliente para descobrir a ÚLTIMA visita
             const clientsMap = {};
-            db.filter(x => x.type === 'venda' || x.type === 'orcamento').forEach(op => {
-                if (!op.client) return;
-                const d = new Date((op.date || '2000-01-01') + 'T12:00:00');
-                if (!clientsMap[op.client]) {
-                    clientsMap[op.client] = { lastDate: d, phone: op.phone || '', vehicle: op.vehicle || 'Veículo', count: 1 };
+            const operations = db.filter(x => x.type === 'venda' || x.type === 'orcamento');
+
+            operations.forEach(op => {
+                if(!op.client || !op.phone) return;
+                
+                // Converte a data para comparar
+                const opDate = new Date(op.date + 'T12:00:00');
+                
+                if(!clientsMap[op.client]) {
+                    clientsMap[op.client] = { lastDate: opDate, phone: op.phone, vehicle: op.vehicle || 'Veículo', count: 1 };
                 } else {
-                    if (d > clientsMap[op.client].lastDate) {
-                        clientsMap[op.client].lastDate = d;
-                        clientsMap[op.client].phone   = op.phone || clientsMap[op.client].phone;
-                        clientsMap[op.client].vehicle = op.vehicle || clientsMap[op.client].vehicle;
-                    }
                     clientsMap[op.client].count++;
+                    // Se essa data for mais recente, atualiza a última visita
+                    if(opDate > clientsMap[op.client].lastDate) {
+                        clientsMap[op.client].lastDate = opDate;
+                        clientsMap[op.client].vehicle = op.vehicle || clientsMap[op.client].vehicle;
+                        clientsMap[op.client].phone = op.phone || clientsMap[op.client].phone;
+                    }
                 }
             });
 
-            const today    = new Date();
-            const inactive = Object.entries(clientsMap)
-                .filter(([, c]) => Math.floor((today - c.lastDate) / 86400000) >= daysFilter)
-                .sort((a, b) => b[1].lastDate - a[1].lastDate);
+            // 2. Descobrir quem sumiu há mais de X dias
+            const today = new Date();
+            const dormantClients = [];
 
-            if (!inactive.length) {
-                list.innerHTML = \`<div style="text-align:center;padding:50px 20px;color:#bdc3c7;background:white;border-radius:16px;">
-                    <i class="fas fa-smile-beam" style="font-size:44px;display:block;margin-bottom:14px;color:#00b894;"></i>
-                    <div style="font-size:15px;font-weight:700;color:#2d3436;">Nenhum cliente inativo!</div>
-                    <div style="font-size:12px;margin-top:6px;">Todos voltaram nos últimos \${daysFilter} dias 🎉</div>
-                </div>\`;
+            for (let clientName in clientsMap) {
+                const c = clientsMap[clientName];
+                const diffTime = Math.abs(today - c.lastDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+
+                if (diffDays >= daysFilter) {
+                    dormantClients.push({ name: clientName, ...c, daysAway: diffDays });
+                }
+            }
+
+            // Ordenar: Quem está sumido há mais tempo aparece primeiro
+            dormantClients.sort((a,b) => b.daysAway - a.daysAway);
+
+            if(dormantClients.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:30px; color:#7f8c8d;"><i class="fas fa-glass-cheers" style="font-size:30px; margin-bottom:10px; color:#f1c40f;"></i><br>Nenhum cliente sumido nesse período!<br>A retenção da sua oficina está excelente!</div>';
                 return;
             }
 
-            list.innerHTML = \`<div style="background:white;border-radius:14px;padding:14px 16px;margin-bottom:12px;
-                box-shadow:0 2px 12px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#95a5a6;">
-                    \${inactive.length} cliente\${inactive.length > 1 ? 's' : ''} para resgatar
-                </div>
-                <div style="font-size:13px;font-weight:800;color:#e74c3c;">
-                    <i class="fas fa-bullhorn" style="margin-right:6px;"></i>Potencial de vendas
-                </div>
-            </div>\`;
+               // 3. Desenhar os "Cartões de Resgate" (COM MENSAGEM NEUTRA E VENDEDORA)
+            dormantClients.forEach(c => {
+                
+                // Mensagem inteligente que foca em CUIDADO e não em serviços específicos
+                const zapMsg = `Olá *${c.name}*, tudo bem? Aqui é da *${compName.toUpperCase()}*! 😃\n\nNotamos que já faz um tempinho desde a última vez que o seu *${c.vehicle}* passou por aqui.\n\nPassando para lembrar que estamos sempre à disposição para cuidar do seu veículo com a qualidade de sempre. Nossa equipe está pronta para te atender e deixar tudo 100%!\n\nVamos agendar um horário ou fazer um orçamento sem compromisso? É só me chamar aqui! 🤝`;
+                
+                const zapLink = `https://wa.me/55${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
+                const dateStr = c.lastDate.toISOString().split('T')[0].split('-').reverse().join('/');
 
-            inactive.forEach(([name, c]) => {
-                const days       = Math.floor((today - c.lastDate) / 86400000);
-                const badgeColor = days >= 180 ? '#e74c3c' : days >= 90 ? '#f39c12' : '#0984e3';
-                const badgeBg    = days >= 180 ? '#fff0f0' : days >= 90 ? '#fff8e8' : '#e8f4fd';
-                const urgencia   = days >= 180 ? '🔴' : days >= 90 ? '🟡' : '🔵';
-                const lastFmt    = c.lastDate.toLocaleDateString('pt-BR');
-                const msg  = \`Olá *\${name}*! 👋\n\nSaudades! Faz um tempo que você não nos visita.\n\nQue tal agendar uma revisão para o seu *\${c.vehicle}*? Temos condições especiais para clientes fiéis! 😊\n\n📍 *\${compName}*\`;
-                const link = \`https://wa.me/55\${c.phone.replace(/\D/g,'')}?text=\${encodeURIComponent(msg)}\`;
-
-                list.innerHTML += \`
-                <div style="background:white;border-radius:16px;padding:18px;margin-bottom:10px;
-                            box-shadow:0 2px 12px rgba(0,0,0,0.05);border-left:4px solid \${badgeColor};">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-                        <div>
-                            <div style="font-size:16px;font-weight:800;color:#1e272e;">\${name}</div>
-                            <div style="font-size:12px;color:#95a5a6;margin-top:3px;">
-                                <i class="fas fa-car" style="margin-right:4px;color:#bdc3c7;"></i>\${c.vehicle}
-                            </div>
-                            <div style="font-size:12px;color:#95a5a6;margin-top:2px;">
-                                <i class="fas fa-mobile-alt" style="margin-right:4px;color:#bdc3c7;"></i>\${c.phone || 'Sem telefone'}
-                            </div>
+                list.innerHTML += `
+                <div class="item-card" style="border-left-color: #e67e22; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="flex:1;">
+                            <strong style="font-size:16px; color:#2c3e50;">${c.name}</strong><br>
+                            <small style="color:#7f8c8d; font-size:12px;">🚗 ${c.vehicle} <br>📱 ${c.phone}</small>
                         </div>
-                        <span style="background:\${badgeBg};color:\${badgeColor};padding:5px 12px;
-                                     border-radius:20px;font-size:11px;font-weight:800;">
-                            \${urgencia} \${days} dias
+                        <span style="background:#fff3e0; color:#e67e22; padding:4px 8px; border-radius:8px; font-size:10px; font-weight:bold; white-space:nowrap; margin-left:10px;">
+                            <i class="fas fa-clock"></i> ${c.daysAway} dias
                         </span>
                     </div>
-                    <div style="display:flex;gap:12px;font-size:11px;color:#95a5a6;
-                                border-top:1px solid #f5f6fa;padding-top:10px;margin-bottom:12px;">
-                        <span><i class="fas fa-clock" style="margin-right:4px;"></i>Última visita: <strong>\${lastFmt}</strong></span>
-                        <span><i class="fas fa-star" style="margin-right:4px;"></i>\${c.count} visita\${c.count > 1 ? 's' : ''}</span>
+                    
+                    <div style="background:#f9f9f9; padding:8px; border-radius:8px; margin-top:10px; font-size:11px; color:#7f8c8d;">
+                        <strong>Última visita:</strong> ${dateStr} <br>
+                        <strong>Fidelidade:</strong> ${c.count} visita(s) no histórico
                     </div>
-                    <button onclick="window.open('\${link}')"
-                        style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);
-                               color:white;border:none;border-radius:12px;font-family:'Poppins',sans-serif;
-                               font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;
-                               justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(37,211,102,0.35);">
-                        <i class="fab fa-whatsapp" style="font-size:16px;"></i> CHAMAR DE VOLTA
+                    
+                    <button class="btn-action" style="background:#25D366; color:white; font-size:12px; font-weight:bold; padding:12px; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);" onclick="window.open('${zapLink}')">
+                        <i class="fab fa-whatsapp" style="font-size:16px;"></i> ENVIAR CONVITE DE RETORNO
                     </button>
-                </div>\`;
+                </div>`;
             });
-        };
+        }
 
  
         
@@ -1722,28 +2456,14 @@ window.addEventListener('popstate', function() {
         };
 
         // --- FUNÇÕES FIREBASE (SALVAR NA NUVEM) ---
-        // Aguarda window.auth estar disponível
-        async function esperarAuth(timeout = 5000) {
-            const inicio = Date.now();
-            while (!window.auth?.currentUser) {
-                if (Date.now() - inicio > timeout) return null;
-                await new Promise(r => setTimeout(r, 200));
-            }
-            return window.auth.currentUser;
-        }
-
         async function saveToCloud(collectionName, data) {
             try {
-                const user = await esperarAuth();
-                if (!user) { alert("Sessão expirada. Faça login novamente."); return null; }
-                const docRef = await window.addDoc(window.collection(window.db, collectionName), {
-                    ...data, uid: user.uid, userEmail: user.email
-                });
+                // Adiciona e espera o Google confirmar
+                const docRef = await window.addDoc(window.collection(window.db, collectionName), data);
                 return docRef.id;
             } catch (e) {
-                console.error("Erro ao salvar:", e);
-                alert("Erro ao salvar: " + (e.message || e.code));
-                return null;
+                console.error("Erro ao salvar na nuvem: ", e);
+                alert("Erro de conexão! Tente novamente.");
             }
         }
         
@@ -2312,9 +3032,142 @@ window.renderAgenda = function() {
     });
 }
 // ── HISTÓRICO: Renderiza com filtro de status + período ──
-// renderHistory movido para js/operacoes.js
+window.renderHistory = function(filter) { 
+    window.currentHistoryFilter = filter;
 
-                        // 1. Abre o Modal                        // 1. Abre o Modal e já faz o primeiro cálculo
+    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]'); 
+    const list = document.getElementById('history-list'); 
+    
+    const term = (document.getElementById('historySearch')?.value || '').toLowerCase();
+    const hStart = document.getElementById('histFilterStart')?.value || '';
+    const hEnd   = document.getElementById('histFilterEnd')?.value   || '';
+
+    list.innerHTML = ''; 
+    const compName = localStorage.getItem('authon_cfg_name') || "SUA OFICINA";
+
+    // Filtro de tipo/status
+    let filtered = db.filter(x => x.type !== 'agendamento' && x.type !== 'expense'); 
+    if(filter === 'venda')     filtered = filtered.filter(x => x.type === 'venda');
+    if(filter === 'orcamento') filtered = filtered.filter(x => x.type === 'orcamento');
+    if(filter === 'pendente')  filtered = filtered.filter(x => x.status === 'pendente');
+    if(filter === 'pago')      filtered = filtered.filter(x => x.status === 'pago');
+
+    // Filtro de período
+    if(hStart) filtered = filtered.filter(x => x.date >= hStart);
+    if(hEnd)   filtered = filtered.filter(x => x.date <= hEnd);
+
+    filtered.sort((a,b) => b.id - a.id);
+    const savedPix = localStorage.getItem('authon_cfg_pix') || ''; 
+
+    // Animação do botão receber
+    if (!document.getElementById('style-soft-pulse')) {
+        document.head.insertAdjacentHTML('beforeend', '<style id="style-soft-pulse">@keyframes softPulse { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } 50% { transform: scale(1.02); box-shadow: 0 6px 15px rgba(39, 174, 96, 0.6); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2); } }</style>');
+    }
+
+    if(filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding:50px 20px; color:#bdc3c7;">
+            <i class="fas fa-folder-open" style="font-size:40px; margin-bottom:12px; display:block;"></i>
+            <div style="font-size:14px; font-weight:600;">Nenhum registro encontrado</div>
+            <div style="font-size:12px; margin-top:5px;">Tente mudar o período ou filtro</div>
+        </div>`;
+        return;
+    }
+
+    filtered.forEach(item => { 
+        const fullText = (item.client + ' ' + item.vehicle + ' ' + (item.plate||'') + ' ' + item.total).toLowerCase();
+        if(term && !fullText.includes(term)) return;
+
+        let badgeClass = ''; let statusText = item.type.toUpperCase(); 
+        let actionBtn = ''; let highlightPayBtn = '';
+        
+        let priceDisplay = `<div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`;
+        if(item.netTotal && item.netTotal < item.total) {
+            priceDisplay = `
+                <div style="font-weight:900; font-size:22px; color:var(--dark);">R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+                <div style="font-size:11px; color:#c0392b; font-weight:700; margin-top:-2px;">Liq: R$ ${item.netTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>
+            `;
+        }
+
+        const escapedName    = item.client  ? item.client.replace(/'/g, "\\'")  : '';
+        const escapedVehicle = item.vehicle ? item.vehicle.replace(/'/g, "\\'") : '';
+        const escapedPlate   = item.plate   ? item.plate.replace(/'/g, "\\'")   : '';
+        
+        const btnAntesDepois = `<button class="btn-card" style="background:#7f8c8d; color:white; flex:1; box-shadow:none;" onclick="openBeforeAfterModal('${escapedName}', '${escapedVehicle}', '${item.phone}', '${escapedPlate}')"><i class="fas fa-camera-retro" style="opacity:0.8;"></i> Antes & Depois</button>`;
+
+        if(item.type === 'venda') {
+            if(item.status === 'pendente') {
+                badgeClass = 'bg-pendente'; statusText = 'PENDENTE';
+                let pixText = savedPix ? `\n\n🔑 Chave Pix: ${savedPix}` : '';
+                const zapMsg = `*${compName}* \n--------------------------------\nOlá *${item.client}*, boas notícias! 😃\n\nO serviço no seu *${item.vehicle || 'veículo'}* foi finalizado com sucesso! ✨\n\n💰 *Total:* R$ ${item.total.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pixText}\n\nJá está liberado para retirada. Fico no aguardo! 🤝`;
+                const zapLink = `https://wa.me/55${item.phone.replace(/\D/g,'')}?text=${encodeURIComponent(zapMsg)}`;
+                actionBtn = `${btnAntesDepois}<button class="btn-card btn-notify" onclick="window.open('${zapLink}')" style="flex:1;"><i class="fab fa-whatsapp"></i> AVISAR</button>`;
+                highlightPayBtn = `
+                <button class="btn-action" style="background:var(--green-grad); display:block; width:80%; max-width:260px; margin: 15px auto 10px auto; font-size:13px; padding:12px; border-radius:12px; animation: softPulse 2.5s infinite;" onclick="window.openPayModal('${item.docId}', ${item.total})">
+                    <i class="fas fa-hand-holding-usd" style="font-size:16px; margin-right:8px;"></i> RECEBER PAGAMENTO
+                </button>`;
+            } else { 
+                badgeClass = 'bg-venda'; statusText = 'PAGO'; 
+                actionBtn = `${btnAntesDepois}`; 
+            }
+        } else { 
+            badgeClass = 'bg-orcamento'; 
+        }
+
+        let itemsHtml = '<ul style="margin:8px 0 8px 18px; padding:0; font-size:12px; color:#555;">';
+        if(item.items && item.items.length > 0) {
+            item.items.forEach(i => {
+                let cleanDesc = i.desc;
+                if(cleanDesc.includes(' - ') && cleanDesc.includes('(')) { 
+                    try { cleanDesc = cleanDesc.split(' - ')[1].split(' (')[0]; } catch(e) {} 
+                }
+                itemsHtml += `<li>${i.qty}x ${cleanDesc}</li>`;
+            });
+        } else { itemsHtml += '<li>(Sem itens descritos)</li>'; }
+        itemsHtml += '</ul>';
+
+        const plateInfo    = item.plate ? ` | <span style="font-weight:bold; background:#eee; padding:2px 5px; border-radius:4px;">${item.plate.toUpperCase()}</span>` : '';
+        const subInfo      = `${item.vehicle || 'Veículo não inf.'}${plateInfo} <br> ${item.phone}`;
+        const dateFormatted = item.date.split('-').reverse().join('/');
+
+        list.innerHTML += `
+        <div class="item-card" style="padding: 20px; border-left: 6px solid #ccc; position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="font-size:16px; margin:0; color:var(--dark); font-weight:800;">${dateFormatted}</h3>
+                <span class="status-badge ${badgeClass}" style="position:static;">${statusText}</span>
+            </div>
+            <div style="margin-bottom:5px;">
+                <div style="font-size:16px; font-weight:600; color:#2c3e50;">${item.client}</div>
+                <div style="font-size:12px; color:#7f8c8d; margin-top:3px; line-height:1.4;">${subInfo}</div>
+            </div>
+            ${itemsHtml}
+            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
+                <div style="flex-shrink:0;">
+                    <span style="font-size:11px; color:#7f8c8d; font-weight:bold; text-transform:uppercase;">Valor Total:</span>
+                    ${priceDisplay}
+                </div>
+            </div>
+            ${highlightPayBtn}
+            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:space-between; margin-top:10px;">
+                <div style="display:flex; gap:5px; flex:1;">${actionBtn}</div>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-card" style="background:var(--dark); color:white; min-width:35px;" onclick="generatePDFFromHistory(${item.id})"><i class="fas fa-file-pdf"></i></button>
+                    <button class="btn-card" style="background:#ecf0f1; color:var(--dark); min-width:35px;" onclick="loadToEdit(${item.id})"><i class="fas fa-pen"></i></button>
+                    <button class="btn-card" style="color:var(--primary); background:#ffebee; min-width:35px;" onclick="deleteItem('${item.docId}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <style>
+                .item-card:has(.bg-venda) { border-left-color: #27ae60 !important; }
+                .item-card:has(.bg-pendente) { border-left-color: #f1c40f !important; }
+                .item-card:has(.bg-orcamento) { border-left-color: #95a5a6 !important; }
+            </style>
+        </div>`; 
+    }); 
+}
+
+
+
+                        // 1. Abre o Modal e já faz o primeiro cálculo
         window.openPayModal = function(docId, totalVal) {
             document.getElementById('modal-pay').style.display = 'flex';
             document.getElementById('modal-pay-value').innerText = "R$ " + totalVal.toLocaleString('pt-BR', {minimumFractionDigits:2});
@@ -3298,7 +4151,339 @@ window.renderExpensesList = function() {
     <p style="color: #95a5a6; font-size: 12px; margin-top: 10px;">Carregando...</p>
 </div>
 
-<!-- Estilos financeiro/histórico/modo-funcionário → css/app.css -->
+<style>
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        /* --- ESTILOS DO MODO VENDEDOR (V2 - BLINDADO) --- */
+    body.employee-mode .tab-content#tab-dashboard,
+    body.employee-mode .tab-content#tab-expenses,
+        body.employee-mode .nav-item[onclick*="crm"] {
+        display: none !important;
+    }
+
+    body.employee-mode .tab-content#tab-settings {
+        display: none !important;
+    }
+
+    /* Esconde botões de navegação proibidos */
+    body.employee-mode .nav-item[onclick*="dashboard"],
+    body.employee-mode .nav-item[onclick*="expenses"],
+    body.employee-mode .nav-item[onclick*="settings"] {
+        display: none !important;
+    }
+
+    /* --- BLOQUEIOS DE AÇÃO --- */
+    
+    /* Esconde o Lápis de Editar no Catálogo e no Histórico */
+    body.employee-mode .fa-edit {
+        display: none !important;
+    }
+    
+        /* Esconde o Botão que chama a função de Editar */
+    /* ALTERAÇÃO: Removemos o bloqueio do botão de editar venda (loadToEdit) */
+    /* Mantemos escondido APENAS o lápis do estoque */
+    body.employee-mode i[onclick*="editCatalogItem"] {
+        display: none !important;
+    }
+
+
+    /* Esconde Botões de Excluir (Lixeira) APENAS no Histórico e Catálogo */
+    /* Nota: Mantemos a lixeira da tela de venda para ele poder corrigir erros de digitação */
+    body.employee-mode .card-actions button[onclick*="deleteItem"],
+    body.employee-mode i[onclick*="delCatalog"] {
+        display: none !important;
+    }
+
+    /* Botão Flutuante para Desbloquear */
+    #unlock-btn {
+        display: none;
+        position: fixed;
+        top: 15px; right: 15px;
+        background: #c0392b; color: white;
+        padding: 8px 15px; border-radius: 20px;
+        font-size: 11px; font-weight: bold;
+        z-index: 99999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+    body.employee-mode #unlock-btn { display: block; }
+    
+    /* --- ESTILO DOS MENUS DE CONFIGURAÇÃO --- */
+.settings-btn {
+    width: 100%;
+    padding: 18px;
+    background: white;
+    border: none;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.settings-btn:first-child { border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.settings-btn:last-child { border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; border-bottom: none; }
+.settings-btn:active { background-color: #f5f5f5; }
+.settings-btn i { color: var(--primary); width: 25px; }
+.settings-btn .fa-chevron-down { color: #bdc3c7; font-size: 12px; width: auto; }
+
+/* Área oculta que se abre */
+.settings-content {
+    display: none; /* Começa escondido */
+    padding: 20px;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+           ABA DESPESAS — VISUAL PREMIUM
+           ============================================================ */
+        .exp-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px;
+            position: relative; overflow: hidden;
+        }
+        .exp-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .exp-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 3px; }
+        .exp-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .exp-new-btn {
+            background: #e74c3c; color: white; border: none;
+            padding: 10px 16px; border-radius: 10px;
+            font-size: 12px; font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer; display: flex; align-items: center; gap: 7px;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .exp-new-btn:active { transform: scale(0.97); }
+        .exp-search-input {
+            width: 100%; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            color: #1e272e; padding: 11px 14px; font-size: 13px;
+            font-family: 'Poppins', sans-serif; margin-bottom: 14px;
+        }
+        .exp-search-input::placeholder { color: rgba(255,255,255,0.35); }
+        .exp-form-card {
+            margin: 16px 15px;
+            background: white; border-radius: 18px;
+            padding: 20px 16px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+            border-top: 4px solid #e74c3c;
+            animation: slideDown 0.25s ease;
+        }
+        .exp-form-title { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .exp-form-title i { color: #e74c3c; }
+        .exp-status-toggle { display: flex; gap: 10px; margin-top: 6px; }
+        .exp-toggle-btn {
+            flex: 1; padding: 10px; border-radius: 10px;
+            border: 2px solid #f0f0f0; background: #f8f9fa;
+            color: #95a5a6; font-size: 12px; font-weight: 700;
+            font-family: 'Poppins', sans-serif; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        #expTogglePago.active     { background: #e8faf4; border-color: #00b894; color: #00b894; }
+        #expTogglePendente.active { background: #fff8e8; border-color: #f39c12; color: #f39c12; }
+
+        /* ============================================================
+           HISTÓRICO — HEADER PREMIUM
+           ============================================================ */
+        .hist-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+        .hist-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .hist-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 3px; }
+        .hist-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .hist-header-icon { width: 44px; height: 44px; background: rgba(9,132,227,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0984e3; font-size: 18px; }
+
+        /* Campo de busca dentro do header */
+        .hist-search-input {
+            width: 100%; background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+            color: #1e272e; padding: 11px 14px; font-size: 13px;
+            font-family: 'Poppins', sans-serif; margin-bottom: 14px;
+        }
+        .hist-search-input::placeholder { color: rgba(255,255,255,0.35); }
+
+        /* Botões de período */
+        .hist-period-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .hist-period-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; }
+        .hist-period-btn.active { background: #e74c3c; border-color: #e74c3c; color: white; }
+
+        /* Linha de datas */
+        .hist-date-row { display: flex; align-items: center; gap: 8px; }
+        .hist-date-box { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; }
+        .hist-date-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 2px; }
+        .hist-date-input { background: transparent; border: none; color: white; font-size: 12px; font-family: 'Poppins', sans-serif; width: 100%; padding: 0; height: auto; }
+        .hist-date-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); width: 14px; }
+        .hist-date-sep { color: rgba(255,255,255,0.3); font-size: 16px; }
+
+        /* Botões de status (Todos / Pendentes / Pagos / Orçamentos) */
+        .hist-status-row { display: flex; gap: 8px; padding: 14px 15px; overflow-x: auto; background: white; border-bottom: 1px solid #f0f0f0; }
+        .hist-status-btn { padding: 8px 16px; border-radius: 20px; border: 2px solid transparent; font-size: 11px; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; white-space: nowrap; transition: all 0.2s; background: #f5f6fa; color: #95a5a6; }
+        .hist-status-btn.active       { background: var(--dark);    color: white; border-color: var(--dark); }
+        .hist-status-btn.pend.active  { background: #f39c12;        color: white; border-color: #f39c12; }
+        .hist-status-btn.pago.active  { background: #00b894;        color: white; border-color: #00b894; }
+        .hist-status-btn.orc.active   { background: #7f8c8d;        color: white; border-color: #7f8c8d; }
+
+        /* ============================================================
+           FINANCEIRO — GRÁFICO E SEÇÕES PREMIUM
+           ============================================================ */
+
+        /* Seção label já definida em .fin-section-label acima */
+
+        /* Cards genéricos do financeiro (ranking, pagamento, despesa) */
+        .fin-card {
+            margin: 0 15px;
+            background: white;
+            border-radius: 18px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+
+        /* Barras de progresso premium */
+        .fin-bar-row { margin-bottom: 16px; }
+        .fin-bar-row:last-child { margin-bottom: 0; }
+        .fin-bar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .fin-bar-name { font-size: 12px; font-weight: 600; color: #2d3436; }
+        .fin-bar-val  { font-size: 12px; font-weight: 700; }
+        .fin-bar-track { height: 8px; background: #f0f4f8; border-radius: 20px; overflow: hidden; }
+        .fin-bar-fill  { height: 100%; border-radius: 20px; transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+        .fin-bar-pct   { font-size: 10px; color: #95a5a6; margin-top: 3px; text-align: right; }
+
+        /* Tabela anual premium */
+        .fin-annual-card { margin: 0 15px; background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-annual-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .fin-annual-table thead tr { background: #1e272e; }
+        .fin-annual-table th { padding: 12px 10px; color: rgba(255,255,255,0.6); font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; text-align: right; }
+        .fin-annual-table th:first-child { text-align: left; }
+        .fin-annual-table td { padding: 11px 10px; border-bottom: 1px solid #f5f6fa; text-align: right; font-size: 11px; }
+        .fin-annual-table td:first-child { text-align: left; font-weight: 700; color: var(--dark); font-size: 12px; }
+        .fin-annual-table tbody tr:last-child td { border-bottom: none; background: #f8f9fa; font-weight: 800; font-size: 12px; }
+        .fin-annual-table tbody tr:hover td { background: #fafbfc; }
+
+        /* Botão exportar */
+        .fin-export-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            background: linear-gradient(135deg, #1d6f42 0%, #27ae60 100%);
+            color: white; font-family: 'Poppins', sans-serif;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            gap: 10px; box-shadow: 0 6px 20px rgba(39,174,96,0.3);
+            transition: transform 0.2s;
+        }
+        .fin-export-btn:active { transform: scale(0.98); }
+
+        /* ── Variáveis das métricas secundárias ── */
+        :root {
+            --mc-purple: #8e44ad; --mc-orange: #e67e22; --mc-gray: #7f8c8d;
+            --mc-green: #00b894;  --mc-blue: #0984e3;   --mc-red: #e74c3c;
+        }
+
+        /* ── Header financeiro ── */
+        .fin-header {
+            background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
+            padding: 22px 20px 18px; position: relative; overflow: hidden;
+        }
+        
+        .fin-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .fin-header-label { font-size: 9px; font-weight: 700; letter-spacing: 2.5px; color: rgba(255,255,255,0.45); text-transform: uppercase; margin-bottom: 3px; }
+        .fin-header-title { font-family: 'Oswald', sans-serif; font-size: 24px; color: white; letter-spacing: 1px; }
+        .fin-header-title span { color: #e74c3c; }
+        .fin-header-icon { width: 44px; height: 44px; background: rgba(231,76,60,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #e74c3c; font-size: 18px; }
+        .fin-period-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .fin-period-btn { flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.2s; }
+        .fin-period-btn.active { background: #e74c3c; border-color: #e74c3c; color: white; }
+        .fin-date-row { display: flex; align-items: center; gap: 8px; }
+        .fin-date-box { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; }
+        .fin-date-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 2px; }
+        .fin-date-input { background: transparent; border: none; color: white; font-size: 12px; font-family: 'Poppins', sans-serif; width: 100%; padding: 0; height: auto; }
+        .fin-date-input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(0.5); width: 14px; }
+        .fin-date-sep { color: rgba(255,255,255,0.3); font-size: 16px; }
+        .fin-search-btn { width: 44px; height: 44px; border-radius: 10px; border: none; background: #e74c3c; color: white; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .fin-main-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 15px 0; }
+        .fin-kpi-card { background: white; border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-kpi-icon-wrap { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .fin-kpi-income .fin-kpi-icon-wrap { background: #e8faf4; color: #00b894; }
+        .fin-kpi-expense .fin-kpi-icon-wrap { background: #fef0ee; color: #e17055; }
+        .fin-kpi-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; margin-bottom: 4px; }
+        .fin-kpi-val { font-size: 15px; font-weight: 800; color: var(--dark); line-height: 1; }
+        .fin-kpi-income .fin-kpi-val { color: #00b894; }
+        .fin-kpi-expense .fin-kpi-val { color: #e17055; }
+        .fin-profit-card { margin: 12px 15px 0; background: linear-gradient(135deg, #1e272e 0%, #2d3436 100%); border-radius: 20px; padding: 24px 22px; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(30,39,46,0.35); }
+        .fin-profit-bg-circles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .fin-profit-circle { position: absolute; border-radius: 50%; }
+        .fin-profit-circle.c1 { width: 120px; height: 120px; top: -40px; right: -30px; background: rgba(231,76,60,0.15); }
+        .fin-profit-circle.c2 { width: 70px; height: 70px; bottom: -20px; left: 20px; background: rgba(0,184,148,0.1); }
+        .fin-profit-content { position: relative; z-index: 1; }
+        .fin-profit-lbl { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 8px; }
+        .fin-profit-val { font-family: 'Oswald', sans-serif; font-size: 38px; font-weight: 700; color: white; letter-spacing: -0.5px; line-height: 1; }
+        .fin-profit-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; }
+        .fin-section-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #95a5a6; padding: 20px 18px 8px; display: flex; align-items: center; gap: 7px; }
+        .fin-section-label i { color: #bdc3c7; font-size: 12px; }
+        .fin-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
+        .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
+        .fin-metric-card:active { transform: scale(0.97); }
+        .fin-metric-icon { font-size: 20px; color: var(--mc); margin-bottom: 6px; }
+        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #95a5a6; margin-bottom: 4px; }
+        .fin-metric-val { font-size: 17px; font-weight: 800; color: var(--mc); line-height: 1; }
+        .fin-meta-bar-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #f0f0f0; }
+        .fin-meta-bar-fill { height: 100%; width: 0%; background: var(--mc); transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
+        .fin-chart-card { margin: 0 15px; background: white; border-radius: 18px; padding: 18px 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .fin-chart-legend { display: flex; align-items: center; font-size: 11px; color: #95a5a6; font-weight: 600; margin-bottom: 14px; }
+        .fin-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+
+        @media screen {
+            #thermal-receipt { display: none !important; }
+        }
+        @media print {
+            body > *:not(#thermal-receipt) { display: none !important; }
+            #pdf-overlay { display: none !important; }
+            
+            /* A MÁGICA: Define o tamanho do papel como 58mm de largura e altura "automática" (para cortar certinho no fim) */
+            @page { 
+                margin: 0; 
+                size: 58mm auto; 
+            }
+            
+            body { 
+                margin: 0; 
+                padding: 0; 
+                background: white; 
+                width: 58mm;
+            }
+            
+            #thermal-receipt { 
+                display: block !important; 
+                width: 58mm !important; 
+                margin: 0; 
+                padding: 2mm 0; 
+                font-family: 'Courier New', Courier, monospace; 
+                font-size: 11px; 
+                color: #000;
+                line-height: 1.2;
+                overflow: hidden;
+            }
+            
+            /* Ajustes finos para caber nos 58mm sem quebrar palavras */
+            .t-line { border-top: 1px dashed #000; margin: 4px 0; }
+            .t-flex { display: flex; justify-content: space-between; align-items: flex-start; }
+            .t-center { text-align: center; }
+            .t-bold { font-weight: bold; }
+            
+            /* Força a quebra de linha em nomes longos */
+            #therm-items span { word-break: break-word; }
+        }
+
+
+</style>
 
         <div id="signatureModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;">
         <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">

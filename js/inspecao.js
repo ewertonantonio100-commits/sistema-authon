@@ -292,4 +292,3 @@ window.confirmSignature = function () {
 };
 
 console.log('🔍 Inspeção carregada');
-

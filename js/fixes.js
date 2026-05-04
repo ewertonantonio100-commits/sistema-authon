@@ -415,3 +415,239 @@ document.addEventListener('DOMContentLoaded', function () {
 
     console.log('✅ fixes.js v4');
 });
+
+
+// ── Utilitários migrados do app.html inline ──
+
+    // --- GERADOR DE APP (FUNCIONA EM QUALQUER CELULAR) ---
+    // Este código cria o manifesto via programação para evitar erro de quebra de linha
+    window.addEventListener('load', function() {
+        const manifesto = {
+            "name": "Sistema Authon",
+            "short_name": "Authon",
+            "start_url": "app.html",
+            "display": "standalone",
+            "orientation": "portrait",
+            "background_color": "#2c3e50",
+            "theme_color": "#2c3e50",
+            "icons": [
+                {
+                    "src": "https://i.postimg.cc/BbNhz9j4/Screenshot-20260129-111746-Google.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://i.postimg.cc/BbNhz9j4/Screenshot-20260129-111746-Google.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+
+        const stringManifesto = JSON.stringify(manifesto);
+        const blob = new Blob([stringManifesto], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        document.getElementById('manifesto-seguro').setAttribute('href', url);
+        console.log("App pronto para instalar!");
+    });
+    
+    window.updateSellerSelect = function() {
+    const teamStr = localStorage.getItem('authon_cfg_team') || '';
+    const select = document.getElementById('sellerName');
+    if(!select) return;
+    
+    select.innerHTML = '<option value="">-- Selecione quem atendeu --</option>';
+    
+    if(teamStr) {
+        const team = teamStr.split(','); // Quebra a lista na vírgula
+        team.forEach(member => {
+            const name = member.trim(); // Remove espaços
+            if(name) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            }
+        });
+    }
+}
+
+    // --- LÓGICA DO MODO VENDEDOR (SEGURANÇA) ---
+window.toggleEmployeeMode = function(activate) {
+    if(activate) {
+        // ATIVAR BLOQUEIO
+        const pin = document.getElementById('cfgPin').value;
+        if(!pin) return alert("Crie um PIN antes de ativar o modo vendedor!");
+        
+        if(confirm("Confirmar bloqueio? Apenas com o PIN " + pin + " você poderá acessar o financeiro.")) {
+            localStorage.setItem('authon_mode_locked', 'true');
+            applySecurityMode();
+            alert("Sistema Bloqueado para Vendas!");
+            // Vai para a tela de vendas
+            clickNewTab(document.querySelector('.nav-item')); 
+        }
+    } else {
+        // DESATIVAR (PEDIR PIN)
+        const savedPin = localStorage.getItem('authon_cfg_pin');
+        const inputPin = prompt("Digite o PIN do Administrador para desbloquear:");
+        
+        if(inputPin === savedPin) {
+            localStorage.setItem('authon_mode_locked', 'false');
+            applySecurityMode();
+            alert("Sistema Desbloqueado! Bem-vindo Chefe.");
+        } else {
+            alert("PIN Incorreto!");
+        }
+    }
+}
+
+function applySecurityMode() {
+    const isLocked = localStorage.getItem('authon_mode_locked') === 'true';
+    if(isLocked) {
+        document.body.classList.add('employee-mode');
+    } else {
+        document.body.classList.remove('employee-mode');
+    }
+}
+
+
+
+// Executa ao carregar a página para manter bloqueado se der F5
+document.addEventListener("DOMContentLoaded", applySecurityMode);
+
+// --- MÁSCARAS AUTOMÁTICAS (TELEFONE E CPF/CNPJ) ---
+function maskPhone(value) {
+    value = value.replace(/\D/g, ""); // Remove tudo que não é número
+    value = value.replace(/^(\d{2})(\d)/g, "($1) $2"); // Coloca parênteses no DDD
+    value = value.replace(/(\d)(\d{4})$/, "$1-$2"); // Coloca o hífen no lugar certo
+    return value.substring(0, 15); // Limita ao tamanho máximo de um celular
+}
+
+function maskCpfCnpj(value) {
+    value = value.replace(/\D/g, ""); // Remove tudo que não é número
+    if (value.length <= 11) { // Formata como CPF
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else { // Formata como CNPJ
+        value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        value = value.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    return value.substring(0, 18); // Limita ao tamanho máximo de um CNPJ
+}
+
+// Vincula as máscaras aos campos quando a página carrega
+document.addEventListener("DOMContentLoaded", function() {
+    // Aplica nos campos de telefone
+    const phoneIds = ['phone', 'cfgPhone'];
+    phoneIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', (e) => e.target.value = maskPhone(e.target.value));
+    });
+
+    // Aplica nos campos de documento
+    const docIds = ['clientCpf', 'cfgCnpj'];
+    docIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', (e) => e.target.value = maskCpfCnpj(e.target.value));
+    });
+});
+
+    // --- ATIVADOR DO SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(registration) {
+          console.log('ServiceWorker registrado com sucesso:', registration.scope);
+        }, function(err) {
+          console.log('Falha ao registrar o ServiceWorker:', err);
+        });
+      });
+    }
+        // --- SISTEMA DE IA (LEITOR DE PLACAS - VERSÃO COM FILTRO MÁGICO E DELAY) ---
+        window.processPlateImage = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const plateInput = document.getElementById('plate');
+            const icon = document.getElementById('camera-btn-icon');
+            
+            if(icon) {
+                icon.className = 'fas fa-circle-notch fa-spin';
+                icon.style.color = '#f1c40f'; 
+            }
+            
+            try {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                await new Promise(resolve => img.onload = resolve);
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const MAX_WIDTH = 800;
+                let width = img.width;
+                let height = img.height;
+                if (width > MAX_WIDTH) {
+                    height = Math.round(height * MAX_WIDTH / width);
+                    width = MAX_WIDTH;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                
+                ctx.filter = 'contrast(1.5) grayscale(1)';
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const resizedImage = canvas.toDataURL('image/jpeg', 0.8);
+
+                const result = await Tesseract.recognize(resizedImage, 'por');
+
+                const text = result.data.text.replace(/[^A-Za-z0-9-]/g, '').toUpperCase();
+                const match = text.match(/[A-Z]{3}-?[0-9][A-Z0-9][0-9]{2}/);
+
+                if (match) {
+                    let placa = match[0].replace('-', ''); 
+                    const placaFormatada = placa.substring(0,3) + '-' + placa.substring(3);
+                    
+                    // 1. FORÇA O PREENCHIMENTO VISUAL ANTES DE TUDO
+                    plateInput.value = placaFormatada;
+                    plateInput.dispatchEvent(new Event('input')); // Avisa o HTML que o valor mudou
+                    
+                    const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+                    const lastRecord = db.find(item => item.plate && item.plate.replace(/[^A-Z0-9]/ig, '').toUpperCase() === placa);
+                    
+                    // 2. DELAY MÁGICO: Espera quase meio segundo para o celular desenhar a tela antes do popup
+                    setTimeout(() => {
+                        if (lastRecord) {
+                            document.getElementById('clientName').value = lastRecord.client || '';
+                            document.getElementById('phone').value = lastRecord.phone || '';
+                            document.getElementById('vehicle').value = lastRecord.vehicle || '';
+                            document.getElementById('color').value = lastRecord.color || '';
+                            if(lastRecord.cpf) document.getElementById('clientCpf').value = lastRecord.cpf;
+                            
+                            alert(`✅ DADOS PREENCHIDOS!\n\nPlaca: ${placaFormatada}\nCliente: ${lastRecord.client}\nVeículo: ${lastRecord.vehicle}`);
+                        } else {
+                            // Mensagem nova melhorada!
+                            alert(`✅ Placa Lida: ${placaFormatada}\n\nCliente novo! Se a leitura falhou em alguma letra, basta corrigir manualmente no campo.`);
+                        }
+                    }, 400);
+
+                } else {
+                    alert("❌ Não foi possível ler a placa na foto. Tente focar melhor ou digite manualmente.");
+                }
+
+            } catch(e) {
+                console.error(e);
+                alert("❌ Erro no sistema da câmera.");
+            }
+            
+            if(icon) {
+                icon.className = 'fas fa-camera';
+                icon.style.color = 'white'; 
+            }
+            event.target.value = '';
+        }
+
+
+

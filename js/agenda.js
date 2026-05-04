@@ -108,4 +108,3 @@ window.renderAgenda = function () {
 };
 
 console.log('📅 Agenda carregada');
-

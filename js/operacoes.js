@@ -696,13 +696,6 @@ window.renderCRM = function () {
     if (!list) return;
     list.innerHTML   = '';
 
-    // Debug visual na tela
-    list.innerHTML = `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;
-        padding:14px 16px;margin-bottom:10px;font-family:'Poppins',sans-serif;font-size:12px;color:#856404;">
-        🔍 Debug: ${db.length} registros no banco | Filtro: ${daysFilter} dias<br>
-        Vendas/Orçamentos: ${db.filter(x=>x.type==='venda'||x.type==='orcamento').length}
-    </div>`;
-
     const clientsMap = {};
     db.filter(x => x.type === 'venda' || x.type === 'orcamento').forEach(op => {
         if (!op.client) return;

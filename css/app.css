@@ -377,21 +377,22 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 
 /* ── HEADER DA TELA ── */
 #tab-new .container {
-    background: transparent !important;
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%) !important;
     box-shadow: none !important;
-    padding: 0 !important;
+    border-radius: 0 0 24px 24px !important;
     margin: 0 !important;
+    padding: 0 !important;
 }
 
 #tab-new .header-title {
-    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
-    padding: 18px 20px 24px;
+    background: transparent;
+    padding: 18px 20px 20px;
     margin-bottom: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
-    border-radius: 0 0 24px 24px;
+    border-radius: 0 !important;
 }
 
 #tab-new .header-title h1 {
@@ -2308,4 +2309,4 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
         .fin-metric-card:active { transform: scale(0.97); }
         .fin-metric-icon { font-size: 20px; color: var(--mc); margin-bottom: 6px; }
-        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #95a5a6; margi
+        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; 

@@ -385,12 +385,13 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 
 #tab-new .header-title {
     background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
-    padding: 18px 20px 20px;
+    padding: 18px 20px 24px;
     margin-bottom: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
+    border-radius: 0 0 24px 24px;
 }
 
 #tab-new .header-title h1 {
@@ -431,7 +432,7 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 #tab-new .op-type-switch {
     display: flex !important;
     gap: 0 !important;
-    margin: 0 0 0 0 !important;
+    margin: 8px 0 0 0 !important;
     background: #f0f2f5;
     border-bottom: 1px solid #e0e0e0;
     padding: 10px 15px;
@@ -2307,54 +2308,4 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
         .fin-metric-card:active { transform: scale(0.97); }
         .fin-metric-icon { font-size: 20px; color: var(--mc); margin-bottom: 6px; }
-        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #95a5a6; margin-bottom: 4px; }
-        .fin-metric-val { font-size: 17px; font-weight: 800; color: var(--mc); line-height: 1; }
-        .fin-meta-bar-track { position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #f0f0f0; }
-        .fin-meta-bar-fill { height: 100%; width: 0%; background: var(--mc); transition: width 0.9s cubic-bezier(0.4,0,0.2,1); }
-        .fin-chart-card { margin: 0 15px; background: white; border-radius: 18px; padding: 18px 16px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-        .fin-chart-legend { display: flex; align-items: center; font-size: 11px; color: #95a5a6; font-weight: 600; margin-bottom: 14px; }
-        .fin-legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
-
-        @media screen {
-            #thermal-receipt { display: none !important; }
-        }
-        @media print {
-            body > *:not(#thermal-receipt) { display: none !important; }
-            #pdf-overlay { display: none !important; }
-            
-            /* A MÁGICA: Define o tamanho do papel como 58mm de largura e altura "automática" (para cortar certinho no fim) */
-            @page { 
-                margin: 0; 
-                size: 58mm auto; 
-            }
-            
-            body { 
-                margin: 0; 
-                padding: 0; 
-                background: white; 
-                width: 58mm;
-            }
-            
-            #thermal-receipt { 
-                display: block !important; 
-                width: 58mm !important; 
-                margin: 0; 
-                padding: 2mm 0; 
-                font-family: 'Courier New', Courier, monospace; 
-                font-size: 11px; 
-                color: #000;
-                line-height: 1.2;
-                overflow: hidden;
-            }
-            
-            /* Ajustes finos para caber nos 58mm sem quebrar palavras */
-            .t-line { border-top: 1px dashed #000; margin: 4px 0; }
-            .t-flex { display: flex; justify-content: space-between; align-items: flex-start; }
-            .t-center { text-align: center; }
-            .t-bold { font-weight: bold; }
-            
-            /* Força a quebra de linha em nomes longos */
-            #therm-items span { word-break: break-word; }
-        }
-
-
+        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #95a5a6; margi

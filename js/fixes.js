@@ -226,6 +226,31 @@ window.confirm = function (msg) {
             left: 230px !important;
             bottom: 20px !important;
         }
+
+        /* Botões proporcionais no desktop — não esticados */
+        body.desktop-mode .btn-action {
+            width: auto !important;
+            display: inline-flex !important;
+            min-width: 180px !important;
+            max-width: 320px !important;
+        }
+        /* Exceções: botões que devem continuar largura total */
+        body.desktop-mode .btn-gen,
+        body.desktop-mode [onclick="saveOperation()"],
+        body.desktop-mode .exp-new-btn,
+        body.desktop-mode #tab-new .btn-action,
+        body.desktop-mode #tab-expenses .btn-action,
+        body.desktop-mode #tab-history .btn-action {
+            width: 100% !important;
+            display: flex !important;
+            max-width: none !important;
+        }
+        /* Container dos botões centralizado */
+        body.desktop-mode .container > .btn-action,
+        body.desktop-mode .fin-card .btn-action {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
     `;
     document.head.appendChild(s);
 })();
@@ -329,33 +354,54 @@ document.addEventListener('DOMContentLoaded', function () {
         const dash = document.getElementById('tab-dashboard');
         if (!dash || dash.querySelector('.fin-desktop-grid')) return;
 
-        const chartCard = dash.querySelector('.fin-chart-card');
-        const finCards  = dash.querySelectorAll('.fin-card');
+        const chartCard  = dash.querySelector('.fin-chart-card');
+        const finCards   = dash.querySelectorAll('.fin-card');
         const chartLabel = chartCard ? chartCard.previousElementSibling : null;
 
         if (!chartCard || finCards.length < 2) return;
 
-        // Coluna esquerda: label + gráfico
+        // finCards: [0]=Ranking, [1]=Formas de Pagamento, [2]=Categorias
+        const rankingCard  = finCards[0];
+        const paymentCard  = finCards[1];
+        const expenseCard  = finCards[2];
+
+        const getLabelOf = (card) => {
+            const prev = card ? card.previousElementSibling : null;
+            return (prev && prev.classList.contains('fin-section-label')) ? prev : null;
+        };
+
+        // Coluna esquerda: Gráfico + Formas de Pagamento
         const left = document.createElement('div');
         left.className = 'fin-desktop-left';
-        left.style.cssText = 'flex:1.4; min-width:0;';
-        if (chartLabel) left.appendChild(chartLabel);
-        left.appendChild(chartCard);
+        left.style.cssText = 'flex:1.4; min-width:0; display:flex; flex-direction:column; gap:16px;';
 
-        // Coluna direita: ranking + pagamentos + categorias
+        const chartWrap = document.createElement('div');
+        if (chartLabel) chartWrap.appendChild(chartLabel);
+        chartWrap.appendChild(chartCard);
+        left.appendChild(chartWrap);
+
+        const payWrap = document.createElement('div');
+        const payLabel = getLabelOf(paymentCard);
+        if (payLabel) payWrap.appendChild(payLabel);
+        payWrap.appendChild(paymentCard);
+        left.appendChild(payWrap);
+
+        // Coluna direita: Ranking + Categorias
         const right = document.createElement('div');
         right.className = 'fin-desktop-right';
         right.style.cssText = 'flex:1; min-width:0; display:flex; flex-direction:column; gap:16px;';
 
-        // Move os 3 fin-cards e seus labels para a direita
-        [finCards[0], finCards[1], finCards[2]].forEach(card => {
-            if (!card) return;
-            const lbl = card.previousElementSibling;
-            const wrap = document.createElement('div');
-            if (lbl && lbl.classList.contains('fin-section-label')) wrap.appendChild(lbl);
-            wrap.appendChild(card);
-            right.appendChild(wrap);
-        });
+        const rankWrap = document.createElement('div');
+        const rankLabel = getLabelOf(rankingCard);
+        if (rankLabel) rankWrap.appendChild(rankLabel);
+        rankWrap.appendChild(rankingCard);
+        right.appendChild(rankWrap);
+
+        const expWrap = document.createElement('div');
+        const expLabel = getLabelOf(expenseCard);
+        if (expLabel) expWrap.appendChild(expLabel);
+        expWrap.appendChild(expenseCard);
+        right.appendChild(expWrap);
 
         // Wrapper grid
         const grid = document.createElement('div');

@@ -131,8 +131,8 @@ window.confirm = function (msg) {
                 letter-spacing: 2px;
                 color: white;
                 background: linear-gradient(135deg, #c0392b, #e74c3c);
-                padding: 22px 16px;
-                margin-bottom: 12px;
+                padding: 14px 16px;
+                margin-bottom: 4px;
                 width: 100%;
                 border-bottom: 1px solid rgba(255,255,255,0.08);
                 box-sizing: border-box;
@@ -143,7 +143,7 @@ window.confirm = function (msg) {
                 justify-content: flex-start !important;
                 align-items: center !important;
                 gap: 13px !important;
-                padding: 14px 22px !important;
+                padding: 11px 22px !important;
                 min-width: unset !important;
                 width: 100% !important;
                 font-size: 11px !important;

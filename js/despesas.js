@@ -101,6 +101,13 @@ window.setExpFilter = function (btn, status) {
 };
 
 // ── PERÍODO RÁPIDO ──
+window.expStatus = function (btn, status) {
+    window._expFilterStatus = status;
+    document.querySelectorAll('.hist-status-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    window.renderExpensesList?.();
+};
+
 window.expPeriod = function (btn, range) {
     document.querySelectorAll('.exp-period-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');

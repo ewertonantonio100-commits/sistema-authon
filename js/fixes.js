@@ -101,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => window.aplicarRestricoesFuncionario?.(), 800);
     }
 
+    // Aba NOVO é a padrão — adiciona classe de fusão inicial
+    document.body.classList.add('tab-new-active');
+
     // Brand header
     const bh = document.querySelector('.brand-header');
     if (bh) bh.innerHTML = `
@@ -149,6 +152,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (target) { target.classList.add('active'); target.style.animation = 'tabFadeIn 0.25s ease'; }
         if (el) el.classList.add('active');
         else { const q = document.querySelector(".nav-item[onclick*=\"'" + tab + "'\"]"); if (q) q.classList.add('active'); }
+        // Funde brand-header com header escuro da aba NOVO
+        document.body.classList.toggle('tab-new-active', tab === 'new');
         if (tab === 'dashboard') { window.updateDashboard?.(true); window.renderSixMonthChart?.(); window.renderAnnualBalance?.(); }
         if (tab === 'history')   window.renderHistory?.(window.currentHistoryFilter || 'all');
         if (tab === 'expenses')  window.renderExpensesList?.();

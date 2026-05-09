@@ -190,38 +190,15 @@ window.confirm = function (msg) {
             gap: 14px !important;
         }
 
-        /* Financeiro: gráfico e cards lado a lado */
-        body.desktop-mode #tab-dashboard .fin-chart-card,
-        body.desktop-mode #tab-dashboard .fin-card {
-            display: inline-block;
+        /* Financeiro desktop: gráfico + cards lado a lado via wrapper grid */
+        body.desktop-mode .fin-chart-card {
+            margin: 0 !important;
         }
-
-        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(2),
-        body.desktop-mode #tab-dashboard > .fin-chart-card,
-        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(3),
-        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(1) {
-            width: 58% !important;
-            vertical-align: top;
-            box-sizing: border-box;
+        body.desktop-mode .fin-card {
+            margin: 0 !important;
         }
-
-        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(4),
-        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(2),
-        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(5),
-        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(3) {
-            width: 40% !important;
-            vertical-align: top;
-            box-sizing: border-box;
-            margin-left: 2% !important;
-        }
-
-        /* Balanço anual ocupa tudo */
         body.desktop-mode .fin-annual-card {
-            width: 100% !important;
             overflow-x: auto !important;
-        }
-        body.desktop-mode .fin-annual-table {
-            min-width: 100% !important;
         }
 
         /* Unlock btn */
@@ -325,6 +302,65 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tab === 'crm')       window.renderCRM?.();
     };
     window.clickNewTab = function (el) { window.resetForm?.(); window.setOpType?.('venda'); window.showTab('new', el); };
+
+    // ── DESKTOP: layout 2 colunas no financeiro ──
+    function applyDesktopFinLayout() {
+        if (!document.body.classList.contains('desktop-mode')) return;
+        const dash = document.getElementById('tab-dashboard');
+        if (!dash || dash.querySelector('.fin-desktop-grid')) return;
+
+        const chartCard = dash.querySelector('.fin-chart-card');
+        const finCards  = dash.querySelectorAll('.fin-card');
+        const chartLabel = chartCard ? chartCard.previousElementSibling : null;
+
+        if (!chartCard || finCards.length < 2) return;
+
+        // Coluna esquerda: label + gráfico
+        const left = document.createElement('div');
+        left.className = 'fin-desktop-left';
+        left.style.cssText = 'flex:1.4; min-width:0;';
+        if (chartLabel) left.appendChild(chartLabel);
+        left.appendChild(chartCard);
+
+        // Coluna direita: ranking + pagamentos + categorias
+        const right = document.createElement('div');
+        right.className = 'fin-desktop-right';
+        right.style.cssText = 'flex:1; min-width:0; display:flex; flex-direction:column; gap:16px;';
+
+        // Move os 3 fin-cards e seus labels para a direita
+        [finCards[0], finCards[1], finCards[2]].forEach(card => {
+            if (!card) return;
+            const lbl = card.previousElementSibling;
+            const wrap = document.createElement('div');
+            if (lbl && lbl.classList.contains('fin-section-label')) wrap.appendChild(lbl);
+            wrap.appendChild(card);
+            right.appendChild(wrap);
+        });
+
+        // Wrapper grid
+        const grid = document.createElement('div');
+        grid.className = 'fin-desktop-grid';
+        grid.style.cssText = 'display:flex; gap:20px; align-items:flex-start; margin-top:16px;';
+        grid.appendChild(left);
+        grid.appendChild(right);
+
+        // Insere após as métricas
+        const metrics = dash.querySelector('.fin-metrics-grid');
+        if (metrics && metrics.parentNode === dash) {
+            metrics.insertAdjacentElement('afterend', grid);
+        } else {
+            dash.appendChild(grid);
+        }
+    }
+
+    // Aplica ao mostrar aba financeiro
+    const origShowTab = window.showTab;
+    window.showTab = function(tab, el) {
+        origShowTab(tab, el);
+        if (tab === 'dashboard') setTimeout(applyDesktopFinLayout, 100);
+    };
+    // Aplica se já estiver no dashboard
+    setTimeout(applyDesktopFinLayout, 600);
 
     // expPeriod — só 1 botão ativo por vez
     window.expPeriod = function (btn, range) {

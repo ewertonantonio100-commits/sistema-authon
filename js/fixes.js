@@ -200,6 +200,15 @@ window.confirm = function (msg) {
         body.desktop-mode .fin-annual-card {
             overflow-x: auto !important;
         }
+        /* Gráfico mais alto no desktop para equilibrar coluna direita */
+        body.desktop-mode .fin-desktop-left canvas,
+        body.desktop-mode .fin-desktop-left [style*="height:220px"],
+        body.desktop-mode .fin-desktop-left [style*="height: 220px"] {
+            height: 420px !important;
+        }
+        body.desktop-mode .fin-desktop-left .fin-chart-card {
+            min-height: 460px !important;
+        }
 
         /* Unlock btn */
         body.desktop-mode #unlock-btn {
@@ -359,8 +368,17 @@ document.addEventListener('DOMContentLoaded', function () {
         origShowTab(tab, el);
         if (tab === 'dashboard') setTimeout(applyDesktopFinLayout, 100);
     };
-    // Aplica se já estiver no dashboard
-    setTimeout(applyDesktopFinLayout, 600);
+    // Aplica se já estiver no dashboard e redimensiona gráfico
+    setTimeout(() => {
+        applyDesktopFinLayout();
+        if (document.body.classList.contains('desktop-mode')) {
+            setTimeout(() => {
+                if (window.Chart && Chart.instances) {
+                    Object.values(Chart.instances).forEach(c => c.resize());
+                }
+            }, 300);
+        }
+    }, 600);
 
     // expPeriod — só 1 botão ativo por vez
     window.expPeriod = function (btn, range) {

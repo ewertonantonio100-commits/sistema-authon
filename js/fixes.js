@@ -168,19 +168,60 @@ window.confirm = function (msg) {
         /* Conteúdo principal */
         body.desktop-mode .tab-content {
             margin-left: 220px !important;
-            padding: 0 !important;
-            padding-bottom: 40px !important;
+            padding: 0 24px 60px 24px !important;
             min-height: 100vh !important;
             width: calc(100% - 220px) !important;
             max-width: none !important;
             box-sizing: border-box !important;
         }
 
+        /* Header das abas: compensa o padding lateral */
+        body.desktop-mode .fin-header,
+        body.desktop-mode .hist-header,
+        body.desktop-mode .exp-header {
+            margin: 0 -24px !important;
+            border-radius: 0 !important;
+        }
+
         /* KPIs em 5 colunas */
         body.desktop-mode .fin-metrics-grid {
             grid-template-columns: repeat(5, 1fr) !important;
-            padding: 0 20px !important;
-            gap: 12px !important;
+            padding: 0 !important;
+            gap: 14px !important;
+        }
+
+        /* Financeiro: gráfico e cards lado a lado */
+        body.desktop-mode #tab-dashboard .fin-chart-card,
+        body.desktop-mode #tab-dashboard .fin-card {
+            display: inline-block;
+        }
+
+        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(2),
+        body.desktop-mode #tab-dashboard > .fin-chart-card,
+        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(3),
+        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(1) {
+            width: 58% !important;
+            vertical-align: top;
+            box-sizing: border-box;
+        }
+
+        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(4),
+        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(2),
+        body.desktop-mode #tab-dashboard > .fin-section-label:nth-of-type(5),
+        body.desktop-mode #tab-dashboard > .fin-card:nth-of-type(3) {
+            width: 40% !important;
+            vertical-align: top;
+            box-sizing: border-box;
+            margin-left: 2% !important;
+        }
+
+        /* Balanço anual ocupa tudo */
+        body.desktop-mode .fin-annual-card {
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
+        body.desktop-mode .fin-annual-table {
+            min-width: 100% !important;
         }
 
         /* Unlock btn */

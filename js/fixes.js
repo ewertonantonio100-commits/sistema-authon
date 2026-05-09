@@ -91,7 +91,12 @@ window.confirm = function (msg) {
         }
 
         /* ── DESKTOP SIDEBAR LAYOUT ── */
-        @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+        /* Nav visível no desktop (classe adicionada via JS) */
+        body.desktop-mode .bottom-nav.nav-visible {
+            display: flex !important;
+        }
+
+        body.desktop-mode {
 
             body { background: #eef0f4; }
 
@@ -218,12 +223,39 @@ window.confirm = function (msg) {
     document.head.appendChild(s);
 })();
 
-// ── 3. DOM Ready ──
+// ── 3. DETECÇÃO DESKTOP ──
+(function detectDesktop() {
+    // Usa largura real da janela — funciona em modo "site para computador" do Chrome mobile
+    function checkDesktop() {
+        const w = window.innerWidth || document.documentElement.clientWidth;
+        if (w >= 960) {
+            document.body.classList.add('desktop-mode');
+        } else {
+            document.body.classList.remove('desktop-mode');
+        }
+    }
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+})();
+
+// ── 4. DOM Ready ──
 document.addEventListener('DOMContentLoaded', function () {
 
     // Aplica restrições se for funcionário logado
     if (localStorage.getItem('authon_is_funcionario') === 'true') {
         setTimeout(() => window.aplicarRestricoesFuncionario?.(), 800);
+    }
+
+    // Garante sidebar no desktop após firebase.js setar display:flex
+    const navEl = document.querySelector('.bottom-nav');
+    if (navEl) {
+        new MutationObserver(() => {
+            if (document.body.classList.contains('desktop-mode') && navEl.style.display === 'flex') {
+                // Remove inline style — deixa o CSS da classe desktop-mode assumir
+                navEl.style.removeProperty('display');
+                navEl.classList.add('nav-visible');
+            }
+        }).observe(navEl, { attributes: true, attributeFilter: ['style'] });
     }
 
     // Brand header

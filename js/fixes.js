@@ -199,15 +199,26 @@ window.confirm = function (msg) {
         }
         body.desktop-mode .fin-annual-card {
             overflow-x: auto !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        body.desktop-mode .fin-annual-table {
+            width: 100% !important;
+            table-layout: fixed !important;
+        }
+        body.desktop-mode .fin-annual-table th,
+        body.desktop-mode .fin-annual-table td {
+            padding: 8px 12px !important;
+            word-break: break-word !important;
         }
         /* Gráfico mais alto no desktop para equilibrar coluna direita */
         body.desktop-mode .fin-desktop-left canvas,
         body.desktop-mode .fin-desktop-left [style*="height:220px"],
         body.desktop-mode .fin-desktop-left [style*="height: 220px"] {
-            height: 420px !important;
+            height: 320px !important;
         }
         body.desktop-mode .fin-desktop-left .fin-chart-card {
-            min-height: 460px !important;
+            min-height: 360px !important;
         }
 
         /* Unlock btn */

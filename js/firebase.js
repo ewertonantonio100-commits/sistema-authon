@@ -521,7 +521,19 @@ onAuthStateChanged(auth, async (user) => {
         iniciarSistema();
 
         if (loginScreen) loginScreen.style.display = 'none';
-        if (appNav)      appNav.style.display = 'flex';
+        if (appNav) {
+            const isDesktop = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches;
+            appNav.style.display = 'flex';
+            if (isDesktop) {
+                appNav.style.flexDirection = 'column';
+                appNav.style.position = 'fixed';
+                appNav.style.top = '0';
+                appNav.style.left = '0';
+                appNav.style.width = '220px';
+                appNav.style.height = '100vh';
+                appNav.style.borderTop = 'none';
+            }
+        }
         if (splash) {
             splash.style.opacity = '0';
             setTimeout(() => { splash.style.display = 'none'; }, 500);

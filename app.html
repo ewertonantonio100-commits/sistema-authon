@@ -197,12 +197,6 @@ window.addEventListener('popstate', function() {
                     </button>
                 </div>
 
-                <!-- Busca -->
-                <input type="text" id="expenseSearch"
-                    placeholder="🔍 Buscar despesa..."
-                    onkeyup="renderExpensesList()"
-                    class="exp-search-input">
-
                 <!-- Filtro de Período -->
                 <div class="hist-period-row">
                     <button class="hist-period-btn active" onclick="expPeriod(this,'month')">Este Mês</button>
@@ -220,6 +214,12 @@ window.addEventListener('popstate', function() {
                         <input type="date" id="expFilterEnd" class="hist-date-input" onchange="renderExpensesList()">
                     </div>
                 </div>
+
+                <!-- Busca -->
+                <input type="text" id="expenseSearch"
+                    placeholder="🔍 Buscar despesa..."
+                    onkeyup="renderExpensesList()"
+                    class="exp-search-input">
             </div>
 
             <!-- Filtros de Status -->

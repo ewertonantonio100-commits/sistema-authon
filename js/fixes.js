@@ -93,14 +93,10 @@ window.confirm = function (msg) {
         /* ── DESKTOP SIDEBAR LAYOUT ── */
         @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
 
-            body {
-                display: block;
-                background: #eef0f4;
-            }
+            body { background: #eef0f4; }
 
-            /* ── SIDEBAR ── */
+            /* Sidebar — o display:flex vem do firebase.js via JS */
             .bottom-nav {
-                display: flex !important;
                 flex-direction: column !important;
                 position: fixed !important;
                 top: 0 !important; left: 0 !important;
@@ -116,12 +112,12 @@ window.confirm = function (msg) {
                 z-index: 999 !important;
                 justify-content: flex-start !important;
                 align-items: stretch !important;
+                bottom: unset !important;
             }
 
-            /* Logo no topo da sidebar */
             .bottom-nav::before {
                 content: '⚡  SISTEMA AUTHON';
-                display: flex !important;
+                display: flex;
                 align-items: center;
                 justify-content: center;
                 font-family: 'Oswald', sans-serif;
@@ -137,7 +133,6 @@ window.confirm = function (msg) {
                 box-sizing: border-box;
             }
 
-            /* Itens do menu */
             .nav-item {
                 flex-direction: row !important;
                 justify-content: flex-start !important;
@@ -152,9 +147,7 @@ window.confirm = function (msg) {
                 border-radius: 0 !important;
                 letter-spacing: 0.8px !important;
                 border-left: 3px solid transparent !important;
-                border-bottom: none !important;
                 transition: all 0.2s !important;
-                text-align: left !important;
             }
             .nav-item:hover {
                 background: rgba(255,255,255,0.07) !important;
@@ -175,196 +168,50 @@ window.confirm = function (msg) {
             }
             .nav-item.active i { transform: none !important; }
 
-            /* Esconde brand-header — logo na sidebar */
             .brand-header { display: none !important; }
 
-            /* ── CONTEÚDO PRINCIPAL ── */
+            /* Conteúdo desloca para direita da sidebar */
             .tab-content {
                 margin-left: 220px !important;
                 padding-bottom: 40px !important;
                 min-height: 100vh !important;
-                max-width: none !important;
                 width: calc(100% - 220px) !important;
+                max-width: none !important;
+                box-sizing: border-box !important;
             }
 
-            /* ── FINANCEIRO: layout 2 colunas ── */
-            #tab-dashboard {
-                display: none;
-            }
-            #tab-dashboard.active {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                grid-template-rows: auto !important;
-                gap: 0 !important;
-                align-items: start !important;
-            }
-
-            /* Cabeçalho financeiro: largura total */
-            #tab-dashboard .fin-header {
-                grid-column: 1 / -1 !important;
-            }
-
-            /* KPIs: largura total */
-            #tab-dashboard .fin-metrics-grid {
-                grid-column: 1 / -1 !important;
+            /* KPIs em 5 colunas */
+            .fin-metrics-grid {
                 grid-template-columns: repeat(5, 1fr) !important;
                 padding: 0 20px !important;
                 gap: 12px !important;
             }
-            #tab-dashboard .fin-metric-card {
-                padding: 16px 12px !important;
-            }
-            #tab-dashboard .fin-metric-val { font-size: 15px !important; }
 
-            /* Label seções */
-            #tab-dashboard .fin-section-label {
-                padding: 20px 20px 8px !important;
-            }
+            /* Financeiro: gráfico + cards lado a lado */
+            .fin-chart-card { margin: 0 10px 0 20px !important; }
+            .fin-card { margin: 0 20px 16px 10px !important; }
 
-            /* Gráfico: coluna esquerda */
-            #tab-dashboard .fin-chart-card {
-                margin: 0 10px 0 20px !important;
-            }
-
-            /* Cards (ranking, pagamento, categorias): coluna direita */
-            #tab-dashboard .fin-card {
-                margin: 0 20px 16px 10px !important;
-            }
-
-            /* Balanço anual e exportar: largura total */
-            #tab-dashboard .fin-annual-card,
-            #tab-dashboard div[style*="padding: 10px 15px"] {
-                grid-column: 1 / -1 !important;
-                margin: 0 20px !important;
-            }
-
-            /* ── NOVA OPERAÇÃO desktop ── */
+            /* Nova operação centralizada */
             #tab-new .container {
-                border-radius: 0 0 0 0 !important;
-                max-width: 800px !important;
-                margin: 0 auto !important;
+                max-width: 820px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
             }
 
-            /* ── HISTÓRICO desktop ── */
-            #tab-history .hist-header {
-                border-radius: 0 !important;
-            }
-            #history-list {
+            /* Listas com padding lateral */
+            #history-list, #agenda-list, #catalog-list {
                 padding: 0 20px !important;
             }
 
-            /* ── DESPESAS desktop ── */
-            #tab-expenses .exp-header {
-                border-radius: 0 !important;
-            }
-
-            /* ── GERAL ── */
             .container {
-                margin: 20px auto !important;
                 max-width: 900px !important;
-                border-radius: 16px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
             }
 
             #unlock-btn {
                 left: 230px !important;
                 bottom: 20px !important;
-            }
-        }
-
-            body {
-                display: flex;
-                flex-direction: row;
-                min-height: 100vh;
-                background: #eef0f4;
-            }
-
-            .bottom-nav {
-                display: flex !important;
-                flex-direction: column !important;
-                position: fixed !important;
-                top: 0 !important; left: 0 !important;
-                width: 200px !important;
-                height: 100vh !important;
-                background: linear-gradient(180deg, #1e272e 0%, #2d3436 100%) !important;
-                border-top: none !important;
-                border-right: 1px solid rgba(255,255,255,0.07) !important;
-                box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
-                padding: 0 0 20px 0 !important;
-                overflow-y: auto !important;
-                overflow-x: hidden !important;
-                z-index: 999 !important;
-                justify-content: flex-start !important;
-            }
-
-            .bottom-nav::before {
-                content: 'SISTEMA AUTHON';
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: 'Oswald', sans-serif;
-                font-size: 15px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                color: white;
-                background: linear-gradient(135deg, #e74c3c, #c0392b);
-                padding: 22px 16px;
-                margin-bottom: 8px;
-                width: 100%;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }
-
-            .nav-item {
-                flex-direction: row !important;
-                justify-content: flex-start !important;
-                gap: 12px !important;
-                padding: 13px 20px !important;
-                min-width: unset !important;
-                width: 100% !important;
-                font-size: 11px !important;
-                font-weight: 700 !important;
-                color: rgba(255,255,255,0.5) !important;
-                border-radius: 0 !important;
-                letter-spacing: 0.8px !important;
-                border-left: 3px solid transparent !important;
-                transition: all 0.2s !important;
-            }
-            .nav-item:hover {
-                background: rgba(255,255,255,0.06) !important;
-                color: rgba(255,255,255,0.85) !important;
-            }
-            .nav-item.active {
-                color: white !important;
-                background: rgba(231,76,60,0.15) !important;
-                border-left: 3px solid #e74c3c !important;
-            }
-            .nav-item i {
-                font-size: 16px !important;
-                width: 20px;
-                text-align: center;
-                transform: none !important;
-            }
-            .nav-item.active i { transform: none !important; }
-
-            .brand-header { display: none !important; }
-
-            .tab-content {
-                margin-left: 200px !important;
-                padding-bottom: 40px !important;
-                min-height: 100vh;
-                max-width: 900px;
-            }
-
-            #unlock-btn {
-                left: 210px !important;
-                bottom: 20px !important;
-            }
-
-            #tab-new .container {
-                border-radius: 0 0 16px 16px !important;
-            }
-
-            .exp-header, .hist-header {
-                border-radius: 0 !important;
             }
         }
     `;
@@ -418,24 +265,6 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => w.scrollIntoView({behavior:'smooth',block:'start'}), 100);
         }
     };
-
-    // ── DESKTOP: intercepta display do bottom-nav ──
-    const isDesktop = () => window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches;
-
-    const origNavDisplay = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'display') ||
-                           Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style');
-
-    // Observa quando firebase.js seta appNav.style.display = 'flex'
-    const navEl = document.querySelector('.bottom-nav');
-    if (navEl) {
-        const observer = new MutationObserver(() => {
-            if (isDesktop() && navEl.style.display === 'flex') {
-                navEl.style.setProperty('display', 'flex', 'important');
-                navEl.style.flexDirection = 'column';
-            }
-        });
-        observer.observe(navEl, { attributes: true, attributeFilter: ['style'] });
-    }
 
     // showTab
     window.showTab = function (tab, el) {

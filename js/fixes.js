@@ -91,133 +91,102 @@ window.confirm = function (msg) {
         }
 
         /* ── DESKTOP SIDEBAR LAYOUT ── */
-        /* Nav visível no desktop (classe adicionada via JS) */
-        body.desktop-mode .bottom-nav.nav-visible {
-            display: flex !important;
+        /* ── DESKTOP SIDEBAR (ativa quando body tem classe desktop-mode) ── */
+
+        /* Nav visível */
+        body.desktop-mode .bottom-nav.nav-visible { display: flex !important; }
+
+        /* Sidebar */
+        body.desktop-mode .bottom-nav {
+            flex-direction: column !important;
+            position: fixed !important;
+            top: 0 !important; left: 0 !important; bottom: auto !important;
+            width: 220px !important;
+            height: 100vh !important;
+            background: linear-gradient(180deg, #1a2330 0%, #2d3436 100%) !important;
+            border-top: none !important;
+            border-right: 1px solid rgba(255,255,255,0.06) !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.25) !important;
+            padding: 0 0 20px 0 !important;
+            overflow-y: auto !important; overflow-x: hidden !important;
+            z-index: 9999 !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
         }
 
-        body.desktop-mode {
+        /* Logo */
+        body.desktop-mode .bottom-nav::before {
+            content: 'SISTEMA AUTHON';
+            display: block !important;
+            font-family: 'Oswald', sans-serif;
+            font-size: 13px; font-weight: 700; letter-spacing: 2px;
+            color: white; text-align: center;
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+            padding: 18px 16px;
+            width: 100%;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            box-sizing: border-box;
+        }
 
-            body { background: #eef0f4; }
+        /* Itens */
+        body.desktop-mode .nav-item {
+            flex: none !important;
+            flex-direction: row !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 12px 20px !important;
+            min-width: unset !important;
+            width: 100% !important;
+            font-size: 11px !important; font-weight: 700 !important;
+            color: rgba(255,255,255,0.45) !important;
+            border-radius: 0 !important;
+            letter-spacing: 0.8px !important;
+            border-left: 3px solid transparent !important;
+            transition: all 0.2s !important;
+        }
+        body.desktop-mode .nav-item:hover {
+            background: rgba(255,255,255,0.07) !important;
+            color: rgba(255,255,255,0.88) !important;
+            border-left-color: rgba(231,76,60,0.5) !important;
+        }
+        body.desktop-mode .nav-item.active {
+            color: white !important;
+            background: rgba(231,76,60,0.18) !important;
+            border-left: 3px solid #e74c3c !important;
+        }
+        body.desktop-mode .nav-item i {
+            font-size: 15px !important; width: 18px !important;
+            text-align: center !important; transform: none !important;
+            flex-shrink: 0 !important;
+        }
+        body.desktop-mode .nav-item.active i { transform: none !important; }
 
-            /* Sidebar — o display:flex vem do firebase.js via JS */
-            .bottom-nav {
-                flex-direction: column !important;
-                position: fixed !important;
-                top: 0 !important; left: 0 !important;
-                width: 220px !important;
-                height: 100vh !important;
-                background: linear-gradient(180deg, #1a2330 0%, #2d3436 100%) !important;
-                border-top: none !important;
-                border-right: 1px solid rgba(255,255,255,0.06) !important;
-                box-shadow: 4px 0 30px rgba(0,0,0,0.2) !important;
-                padding: 0 0 20px 0 !important;
-                overflow-y: auto !important;
-                overflow-x: hidden !important;
-                z-index: 999 !important;
-                justify-content: flex-start !important;
-                align-items: stretch !important;
-                bottom: unset !important;
-            }
+        /* Esconde brand-header */
+        body.desktop-mode .brand-header { display: none !important; }
 
-            .bottom-nav::before {
-                content: '⚡  SISTEMA AUTHON';
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: 'Oswald', sans-serif;
-                font-size: 13px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                color: white;
-                background: linear-gradient(135deg, #c0392b, #e74c3c);
-                padding: 14px 16px;
-                margin-bottom: 4px;
-                width: 100%;
-                border-bottom: 1px solid rgba(255,255,255,0.08);
-                box-sizing: border-box;
-            }
+        /* Conteúdo principal */
+        body.desktop-mode .tab-content {
+            margin-left: 220px !important;
+            padding: 0 !important;
+            padding-bottom: 40px !important;
+            min-height: 100vh !important;
+            width: calc(100% - 220px) !important;
+            max-width: none !important;
+            box-sizing: border-box !important;
+        }
 
-            .nav-item {
-                flex-direction: row !important;
-                justify-content: flex-start !important;
-                align-items: center !important;
-                gap: 13px !important;
-                padding: 11px 22px !important;
-                min-width: unset !important;
-                width: 100% !important;
-                font-size: 11px !important;
-                font-weight: 700 !important;
-                color: rgba(255,255,255,0.45) !important;
-                border-radius: 0 !important;
-                letter-spacing: 0.8px !important;
-                border-left: 3px solid transparent !important;
-                transition: all 0.2s !important;
-            }
-            .nav-item:hover {
-                background: rgba(255,255,255,0.07) !important;
-                color: rgba(255,255,255,0.9) !important;
-                border-left-color: rgba(231,76,60,0.5) !important;
-            }
-            .nav-item.active {
-                color: white !important;
-                background: rgba(231,76,60,0.18) !important;
-                border-left: 3px solid #e74c3c !important;
-            }
-            .nav-item i {
-                font-size: 15px !important;
-                width: 18px !important;
-                text-align: center !important;
-                transform: none !important;
-                flex-shrink: 0;
-            }
-            .nav-item.active i { transform: none !important; }
+        /* KPIs em 5 colunas */
+        body.desktop-mode .fin-metrics-grid {
+            grid-template-columns: repeat(5, 1fr) !important;
+            padding: 0 20px !important;
+            gap: 12px !important;
+        }
 
-            .brand-header { display: none !important; }
-
-            /* Conteúdo desloca para direita da sidebar */
-            .tab-content {
-                margin-left: 220px !important;
-                padding-bottom: 40px !important;
-                min-height: 100vh !important;
-                width: calc(100% - 220px) !important;
-                max-width: none !important;
-                box-sizing: border-box !important;
-            }
-
-            /* KPIs em 5 colunas */
-            .fin-metrics-grid {
-                grid-template-columns: repeat(5, 1fr) !important;
-                padding: 0 20px !important;
-                gap: 12px !important;
-            }
-
-            /* Financeiro: gráfico + cards lado a lado */
-            .fin-chart-card { margin: 0 10px 0 20px !important; }
-            .fin-card { margin: 0 20px 16px 10px !important; }
-
-            /* Nova operação centralizada */
-            #tab-new .container {
-                max-width: 820px !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-            }
-
-            /* Listas com padding lateral */
-            #history-list, #agenda-list, #catalog-list {
-                padding: 0 20px !important;
-            }
-
-            .container {
-                max-width: 900px !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
-            }
-
-            #unlock-btn {
-                left: 230px !important;
-                bottom: 20px !important;
-            }
+        /* Unlock btn */
+        body.desktop-mode #unlock-btn {
+            left: 230px !important;
+            bottom: 20px !important;
         }
     `;
     document.head.appendChild(s);

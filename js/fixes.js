@@ -91,7 +91,7 @@ window.confirm = function (msg) {
         }
 
         /* ── DESKTOP SIDEBAR LAYOUT ── */
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
 
             body {
                 display: flex;

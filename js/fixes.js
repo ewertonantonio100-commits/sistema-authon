@@ -94,6 +94,184 @@ window.confirm = function (msg) {
         @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
 
             body {
+                display: block;
+                background: #eef0f4;
+            }
+
+            /* ── SIDEBAR ── */
+            .bottom-nav {
+                display: flex !important;
+                flex-direction: column !important;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 220px !important;
+                height: 100vh !important;
+                background: linear-gradient(180deg, #1a2330 0%, #2d3436 100%) !important;
+                border-top: none !important;
+                border-right: 1px solid rgba(255,255,255,0.06) !important;
+                box-shadow: 4px 0 30px rgba(0,0,0,0.2) !important;
+                padding: 0 0 20px 0 !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                z-index: 999 !important;
+                justify-content: flex-start !important;
+                align-items: stretch !important;
+            }
+
+            /* Logo no topo da sidebar */
+            .bottom-nav::before {
+                content: '⚡  SISTEMA AUTHON';
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Oswald', sans-serif;
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 2px;
+                color: white;
+                background: linear-gradient(135deg, #c0392b, #e74c3c);
+                padding: 22px 16px;
+                margin-bottom: 12px;
+                width: 100%;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                box-sizing: border-box;
+            }
+
+            /* Itens do menu */
+            .nav-item {
+                flex-direction: row !important;
+                justify-content: flex-start !important;
+                align-items: center !important;
+                gap: 13px !important;
+                padding: 14px 22px !important;
+                min-width: unset !important;
+                width: 100% !important;
+                font-size: 11px !important;
+                font-weight: 700 !important;
+                color: rgba(255,255,255,0.45) !important;
+                border-radius: 0 !important;
+                letter-spacing: 0.8px !important;
+                border-left: 3px solid transparent !important;
+                border-bottom: none !important;
+                transition: all 0.2s !important;
+                text-align: left !important;
+            }
+            .nav-item:hover {
+                background: rgba(255,255,255,0.07) !important;
+                color: rgba(255,255,255,0.9) !important;
+                border-left-color: rgba(231,76,60,0.5) !important;
+            }
+            .nav-item.active {
+                color: white !important;
+                background: rgba(231,76,60,0.18) !important;
+                border-left: 3px solid #e74c3c !important;
+            }
+            .nav-item i {
+                font-size: 15px !important;
+                width: 18px !important;
+                text-align: center !important;
+                transform: none !important;
+                flex-shrink: 0;
+            }
+            .nav-item.active i { transform: none !important; }
+
+            /* Esconde brand-header — logo na sidebar */
+            .brand-header { display: none !important; }
+
+            /* ── CONTEÚDO PRINCIPAL ── */
+            .tab-content {
+                margin-left: 220px !important;
+                padding-bottom: 40px !important;
+                min-height: 100vh !important;
+                max-width: none !important;
+                width: calc(100% - 220px) !important;
+            }
+
+            /* ── FINANCEIRO: layout 2 colunas ── */
+            #tab-dashboard {
+                display: none;
+            }
+            #tab-dashboard.active {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                grid-template-rows: auto !important;
+                gap: 0 !important;
+                align-items: start !important;
+            }
+
+            /* Cabeçalho financeiro: largura total */
+            #tab-dashboard .fin-header {
+                grid-column: 1 / -1 !important;
+            }
+
+            /* KPIs: largura total */
+            #tab-dashboard .fin-metrics-grid {
+                grid-column: 1 / -1 !important;
+                grid-template-columns: repeat(5, 1fr) !important;
+                padding: 0 20px !important;
+                gap: 12px !important;
+            }
+            #tab-dashboard .fin-metric-card {
+                padding: 16px 12px !important;
+            }
+            #tab-dashboard .fin-metric-val { font-size: 15px !important; }
+
+            /* Label seções */
+            #tab-dashboard .fin-section-label {
+                padding: 20px 20px 8px !important;
+            }
+
+            /* Gráfico: coluna esquerda */
+            #tab-dashboard .fin-chart-card {
+                margin: 0 10px 0 20px !important;
+            }
+
+            /* Cards (ranking, pagamento, categorias): coluna direita */
+            #tab-dashboard .fin-card {
+                margin: 0 20px 16px 10px !important;
+            }
+
+            /* Balanço anual e exportar: largura total */
+            #tab-dashboard .fin-annual-card,
+            #tab-dashboard div[style*="padding: 10px 15px"] {
+                grid-column: 1 / -1 !important;
+                margin: 0 20px !important;
+            }
+
+            /* ── NOVA OPERAÇÃO desktop ── */
+            #tab-new .container {
+                border-radius: 0 0 0 0 !important;
+                max-width: 800px !important;
+                margin: 0 auto !important;
+            }
+
+            /* ── HISTÓRICO desktop ── */
+            #tab-history .hist-header {
+                border-radius: 0 !important;
+            }
+            #history-list {
+                padding: 0 20px !important;
+            }
+
+            /* ── DESPESAS desktop ── */
+            #tab-expenses .exp-header {
+                border-radius: 0 !important;
+            }
+
+            /* ── GERAL ── */
+            .container {
+                margin: 20px auto !important;
+                max-width: 900px !important;
+                border-radius: 16px !important;
+            }
+
+            #unlock-btn {
+                left: 230px !important;
+                bottom: 20px !important;
+            }
+        }
+
+            body {
                 display: flex;
                 flex-direction: row;
                 min-height: 100vh;
@@ -240,6 +418,24 @@ document.addEventListener('DOMContentLoaded', function () {
             setTimeout(() => w.scrollIntoView({behavior:'smooth',block:'start'}), 100);
         }
     };
+
+    // ── DESKTOP: intercepta display do bottom-nav ──
+    const isDesktop = () => window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches;
+
+    const origNavDisplay = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'display') ||
+                           Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style');
+
+    // Observa quando firebase.js seta appNav.style.display = 'flex'
+    const navEl = document.querySelector('.bottom-nav');
+    if (navEl) {
+        const observer = new MutationObserver(() => {
+            if (isDesktop() && navEl.style.display === 'flex') {
+                navEl.style.setProperty('display', 'flex', 'important');
+                navEl.style.flexDirection = 'column';
+            }
+        });
+        observer.observe(navEl, { attributes: true, attributeFilter: ['style'] });
+    }
 
     // showTab
     window.showTab = function (tab, el) {

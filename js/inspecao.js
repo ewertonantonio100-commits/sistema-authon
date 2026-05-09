@@ -219,6 +219,10 @@ window.sendBeforeAfterWhatsApp = async function () {
     }
 
     Toast.info(`Baixando ${totalPhotos} foto(s). O WhatsApp abrirá logo em seguida.`, 4000);
+
+    // Abre o WhatsApp imediatamente (ainda dentro do evento de clique do usuário)
+    const zapWin = window.open(`https://wa.me/55${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`);
+
     let delay = 0;
     todasAsFotos.forEach((file, i) => {
         setTimeout(() => {
@@ -234,7 +238,6 @@ window.sendBeforeAfterWhatsApp = async function () {
     });
 
     setTimeout(() => {
-        window.open(`https://wa.me/55${phone.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`);
         window.closeBeforeAfterModal();
     }, delay + 500);
 };

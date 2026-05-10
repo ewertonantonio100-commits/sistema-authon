@@ -206,8 +206,13 @@ window.verificarAssinaturaMP = async function (email, docId) {
                 status: 'ativo',
                 planoExpira: data.expira || ''
             });
+            location.reload();
         } else {
-            window.mostrarTelaUpgrade(null, true);
+            // Grava pendente no Firestore — bloqueia definitivamente
+            await updateDoc(doc(db, 'configuracoes', docId), {
+                status: 'pendente'
+            });
+            window.mostrarTelaPendente(null, null);
         }
     } catch (err) {
         console.error('Erro ao verificar MP:', err);

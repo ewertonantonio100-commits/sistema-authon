@@ -452,10 +452,24 @@
         const email = document.getElementById('l-email').value.trim();
         const senha = document.getElementById('l-senha').value;
         if (!email || !senha) { showToast('Preencha e-mail e senha.', 'error'); return; }
+
+        const btn = document.querySelector('#area-login .btn-login');
+        if (btn) { btn.disabled = true; btn.textContent = 'Entrando...'; }
+
         try {
             await auth.signInWithEmailAndPassword(email, senha);
         } catch(e) {
-            showToast('E-mail ou senha incorretos.', 'error');
+            console.error('Login error:', e.code, e.message);
+            if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                showToast('Senha incorreta.', 'error');
+            } else if (e.code === 'auth/user-not-found') {
+                showToast('E-mail não encontrado.', 'error');
+            } else if (e.code === 'auth/too-many-requests') {
+                showToast('Muitas tentativas. Aguarde alguns minutos.', 'error');
+            } else {
+                showToast('Erro: ' + e.message, 'error');
+            }
+            if (btn) { btn.disabled = false; btn.textContent = 'ENTRAR'; }
         }
     }
 

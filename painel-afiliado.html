@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Afiliado | Sistema Authon</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --navy:     #0d1b2a;
+            --navy-mid: #1B2D42;
+            --red:      #D92525;
+            --green:    #00b894;
+            --gold:     #f0a500;
+            --light:    #f4f6f8;
+            --text:     #1a2332;
+            --muted:    #6b7a8d;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--light);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Barlow Condensed', sans-serif;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        /* LOGIN */
+        .login-screen {
+            min-height: 100vh;
+            background: linear-gradient(160deg, var(--navy) 0%, #0a1520 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 40px;
+            width: 100%; max-width: 400px; text-align: center;
+        }
+        .login-logo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 24px; font-weight: 800; color: white;
+            letter-spacing: 2px; margin-bottom: 8px;
+        }
+        .login-logo span { color: var(--red); }
+        .login-sub { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 32px; }
+        .login-box h2 { color: white; font-size: 28px; margin-bottom: 24px; }
+        .inp {
+            width: 100%; padding: 12px 16px; margin-bottom: 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: white; font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .inp::placeholder { color: rgba(255,255,255,0.3); }
+        .inp:focus { outline: none; border-color: var(--red); }
+        .btn-login {
+            width: 100%; padding: 14px; background: var(--red);
+            color: white; border: none; border-radius: 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 18px; font-weight: 700; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.2s; margin-top: 4px;
+        }
+        .btn-login:hover { background: #a81c1c; }
+        .login-footer { color: rgba(255,255,255,0.3); font-size: 12px; margin-top: 20px; }
+        .login-footer a { color: rgba(255,255,255,0.5); }
+        .toggle-form { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 16px; cursor: pointer; }
+        .toggle-form span { color: var(--red); text-decoration: underline; }
+
+        /* PAINEL */
+        .painel { display: none; min-height: 100vh; }
+
+        /* HEADER */
+        .painel-header {
+            background: var(--navy);
+            padding: 0 5%; height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .painel-logo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px; font-weight: 800; color: white;
+            letter-spacing: 2px; display: flex; align-items: center; gap: 10px;
+        }
+        .painel-logo span { color: var(--red); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .header-nome { color: rgba(255,255,255,0.6); font-size: 13px; }
+        .btn-sair {
+            padding: 7px 16px; border-radius: 8px; font-size: 12px;
+            font-weight: 700; cursor: pointer; border: 1px solid rgba(255,255,255,0.15);
+            background: transparent; color: rgba(255,255,255,0.5);
+            font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+        }
+        .btn-sair:hover { color: white; border-color: white; }
+
+        /* PENDENTE */
+        .pendente-banner {
+            background: rgba(240,165,0,0.12); border: 1px solid rgba(240,165,0,0.3);
+            border-radius: 16px; padding: 24px; margin: 24px 5%;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .pendente-banner i { font-size: 32px; color: var(--gold); flex-shrink: 0; }
+        .pendente-banner h3 { font-size: 20px; color: var(--gold); margin-bottom: 4px; }
+        .pendente-banner p { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+        /* CONTEÚDO */
+        .painel-body { padding: 24px 5%; max-width: 1000px; }
+
+        /* KPIs */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+        .kpi-card {
+            background: white; border-radius: 16px;
+            padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 8px; }
+        .kpi-value { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800; color: var(--text); }
+        .kpi-value.green { color: var(--green); }
+        .kpi-value.red { color: var(--red); }
+        .kpi-value.gold { color: var(--gold); }
+        .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* LINK */
+        .link-card {
+            background: white; border-radius: 16px;
+            padding: 24px; margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .link-card h3 { font-size: 18px; color: var(--text); margin-bottom: 6px; }
+        .link-card p { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+        .link-box {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--light); border-radius: 10px;
+            padding: 12px 16px; border: 1px solid #e0e5ec;
+        }
+        .link-url { flex: 1; font-size: 13px; color: var(--text); font-weight: 500; word-break: break-all; }
+        .btn-copy {
+            padding: 8px 16px; background: var(--navy); color: white;
+            border: none; border-radius: 8px; font-size: 12px; font-weight: 700;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-copy:hover { background: var(--red); }
+
+        /* COMISSÃO */
+        .comm-card-painel {
+            background: linear-gradient(135deg, var(--navy) 0%, #1a2d3f 100%);
+            border-radius: 16px; padding: 24px; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 16px;
+        }
+        .comm-info h3 { color: rgba(255,255,255,0.5); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .comm-pct-atual {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 52px; font-weight: 900; color: white; line-height: 1;
+        }
+        .comm-pct-atual span { color: var(--red); }
+        .comm-pix {
+            background: rgba(0,184,148,0.12); border: 1px solid rgba(0,184,148,0.3);
+            border-radius: 12px; padding: 16px 20px; text-align: center;
+        }
+        .comm-pix-label { color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .comm-pix-key { color: var(--green); font-weight: 700; font-size: 15px; }
+        .comm-pix-sub { color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 4px; }
+
+        /* INDICADOS */
+        .section-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px; color: var(--text);
+            margin-bottom: 16px; text-transform: uppercase;
+        }
+        .indicados-list { display: flex; flex-direction: column; gap: 10px; }
+        .indicado-card {
+            background: white; border-radius: 12px;
+            padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 10px;
+        }
+        .indicado-info { flex: 1; }
+        .indicado-nome { font-weight: 700; font-size: 15px; color: var(--text); }
+        .indicado-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .indicado-plano {
+            font-size: 11px; font-weight: 700; padding: 3px 10px;
+            border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .plano-basic { background: rgba(149,165,166,0.15); color: #7f8c8d; }
+        .plano-pro { background: rgba(0,184,148,0.12); color: var(--green); }
+        .plano-premium { background: rgba(240,165,0,0.12); color: var(--gold); }
+        .indicado-comm { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: var(--green); }
+
+        .empty-state {
+            text-align: center; padding: 48px 20px; color: var(--muted);
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.3; }
+        .empty-state p { font-size: 14px; }
+
+        /* LOADING */
+        .loading {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: var(--navy); color: white; font-size: 16px;
+            flex-direction: column; gap: 16px;
+        }
+        .loading i { font-size: 32px; color: var(--red); }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1e272e; color: white; padding: 14px 24px;
+            border-radius: 12px; font-size: 14px; font-weight: 600;
+            z-index: 9999; opacity: 0; transition: opacity 0.3s;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--red); }
+
+        @media (max-width: 600px) {
+            .painel-body { padding: 16px; }
+            .comm-card-painel { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+    <i class="fas fa-circle-notch fa-spin"></i>
+    <span>Carregando...</span>
+</div>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen" style="display:none;">
+    <div class="login-box">
+        <div class="login-logo">AUTH<span>ON</span></div>
+        <div class="login-sub">Programa Indique e Ganhe</div>
+
+        <div id="area-login">
+            <h2>Entrar</h2>
+            <input type="email" class="inp" id="l-email" placeholder="Seu e-mail">
+            <input type="password" class="inp" id="l-senha" placeholder="Senha">
+            <button class="btn-login" onclick="fazerLogin()">ENTRAR</button>
+            <div class="toggle-form" onclick="toggleForm()">
+                Não tem conta? <span>Cadastre-se aqui</span>
+            </div>
+        </div>
+
+        <div id="area-cadastro" style="display:none;">
+            <h2>Criar Conta</h2>
+            <input type="email" class="inp" id="c-email" placeholder="E-mail do seu cadastro">
+            <input type="password" class="inp" id="c-senha" placeholder="Criar senha (mín. 6 caracteres)">
+            <input type="password" class="inp" id="c-senha2" placeholder="Confirmar senha">
+            <button class="btn-login" onclick="criarConta()">CRIAR CONTA</button>
+            <div class="toggle-form" onclick="toggleForm()">
+                Já tem conta? <span>Fazer login</span>
+            </div>
+        </div>
+
+        <div class="login-footer">
+            <a href="/afiliados.html">← Voltar para o programa</a>
+        </div>
+    </div>
+</div>
+
+<!-- PAINEL -->
+<div class="painel" id="painel">
+    <div class="painel-header">
+        <div class="painel-logo">AUTH<span>ON</span> &nbsp;·&nbsp; <span style="color:rgba(255,255,255,0.4);font-size:14px;font-weight:400;text-transform:none;">Afiliado</span></div>
+        <div class="header-right">
+            <span class="header-nome" id="header-nome"></span>
+            <button class="btn-sair" onclick="sair()"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </div>
+
+    <!-- Banner pendente -->
+    <div class="pendente-banner" id="banner-pendente" style="display:none;">
+        <i class="fas fa-hourglass-half"></i>
+        <div>
+            <h3>Cadastro em análise</h3>
+            <p>Seu cadastro está sendo analisado. Em até 48 horas você receberá seu link exclusivo via WhatsApp.</p>
+        </div>
+    </div>
+
+    <div class="painel-body" id="painel-body" style="display:none;">
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Indicados ativos</div>
+                <div class="kpi-value green" id="kpi-ativos">0</div>
+                <div class="kpi-sub">clientes pagantes</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Comissão este mês</div>
+                <div class="kpi-value gold" id="kpi-comissao">R$ 0,00</div>
+                <div class="kpi-sub">a receber até dia 10</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Total indicados</div>
+                <div class="kpi-value" id="kpi-total">0</div>
+                <div class="kpi-sub">desde o início</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Sua comissão atual</div>
+                <div class="kpi-value red" id="kpi-pct">10%</div>
+                <div class="kpi-sub">por indicado/mês</div>
+            </div>
+        </div>
+
+        <!-- Comissão + Pix -->
+        <div class="comm-card-painel">
+            <div class="comm-info">
+                <h3>SUA FAIXA DE COMISSÃO</h3>
+                <div class="comm-pct-atual"><span id="comm-pct-big">10</span>%</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:6px;" id="comm-faixa-label">
+                    1 a 5 indicados ativos
+                </div>
+            </div>
+            <div class="comm-pix">
+                <div class="comm-pix-label">Pagamento via Pix</div>
+                <div class="comm-pix-key">87991966949</div>
+                <div class="comm-pix-sub">Pago até dia 10 de cada mês</div>
+            </div>
+        </div>
+
+        <!-- Link de indicação -->
+        <div class="link-card">
+            <h3>Seu link de indicação</h3>
+            <p>Compartilhe este link. Qualquer pessoa que assinar pelo seu link será vinculada a você automaticamente.</p>
+            <div class="link-box">
+                <span class="link-url" id="link-url">—</span>
+                <button class="btn-copy" onclick="copiarLink()"><i class="fas fa-copy"></i> Copiar</button>
+            </div>
+        </div>
+
+        <!-- Lista de indicados -->
+        <div class="section-title">Seus indicados</div>
+        <div class="indicados-list" id="indicados-list">
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>Nenhum indicado ainda. Compartilhe seu link para começar!</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const firebaseConfig = {
+        apiKey:            "AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18",
+        authDomain:        "sistema-authon-f7045.firebaseapp.com",
+        projectId:         "sistema-authon-f7045",
+        storageBucket:     "sistema-authon-f7045.firebasestorage.app",
+        messagingSenderId: "571736826692",
+        appId:             "1:571736826692:web:53a6ac20498e3c5d2d79f1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function toggleForm() {
+        const l = document.getElementById('area-login');
+        const c = document.getElementById('area-cadastro');
+        if (l.style.display === 'none') { l.style.display = 'block'; c.style.display = 'none'; }
+        else { l.style.display = 'none'; c.style.display = 'block'; }
+    }
+
+    // ── AUTH ──
+    auth.onAuthStateChanged(async user => {
+        document.getElementById('loading').style.display = 'none';
+        if (user) {
+            await carregarPainel(user);
+        } else {
+            document.getElementById('login-screen').style.display = 'flex';
+        }
+    });
+
+    async function fazerLogin() {
+        const email = document.getElementById('l-email').value.trim();
+        const senha = document.getElementById('l-senha').value;
+        if (!email || !senha) { showToast('Preencha e-mail e senha.', 'error'); return; }
+        try {
+            await auth.signInWithEmailAndPassword(email, senha);
+        } catch(e) {
+            showToast('E-mail ou senha incorretos.', 'error');
+        }
+    }
+
+    async function criarConta() {
+        const email  = document.getElementById('c-email').value.trim();
+        const senha  = document.getElementById('c-senha').value;
+        const senha2 = document.getElementById('c-senha2').value;
+
+        if (!email || !senha) { showToast('Preencha todos os campos.', 'error'); return; }
+        if (senha !== senha2)  { showToast('As senhas não coincidem.', 'error'); return; }
+        if (senha.length < 6)  { showToast('Senha deve ter ao menos 6 caracteres.', 'error'); return; }
+
+        // Verifica se existe cadastro pendente com este email
+        const snap = await db.collection('afiliados').where('email', '==', email).get();
+        if (snap.empty) {
+            showToast('E-mail não encontrado. Faça o cadastro primeiro em /afiliados.html', 'error');
+            return;
+        }
+
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, senha);
+            // Vincula uid ao documento do afiliado
+            await snap.docs[0].ref.update({ uid: cred.user.uid });
+            showToast('Conta criada com sucesso!');
+        } catch(e) {
+            if (e.code === 'auth/email-already-in-use') {
+                showToast('Este e-mail já tem uma conta. Faça login.', 'error');
+            } else {
+                showToast('Erro ao criar conta: ' + e.message, 'error');
+            }
+        }
+    }
+
+    function sair() {
+        auth.signOut().then(() => location.reload());
+    }
+
+    // ── PAINEL ──
+    async function carregarPainel(user) {
+        // Busca dados do afiliado
+        const snap = await db.collection('afiliados').where('uid', '==', user.uid).get();
+
+        if (snap.empty) {
+            // Tenta por email
+            const snap2 = await db.collection('afiliados').where('email', '==', user.email).get();
+            if (snap2.empty) {
+                showToast('Cadastro não encontrado. Entre em contato.', 'error');
+                auth.signOut();
+                return;
+            }
+        }
+
+        const afDoc = snap.empty
+            ? (await db.collection('afiliados').where('email', '==', user.email).get()).docs[0]
+            : snap.docs[0];
+
+        const af = afDoc.data();
+
+        document.getElementById('header-nome').textContent = af.nome || user.email;
+        document.getElementById('painel').style.display = 'block';
+
+        if (af.status === 'pendente' || !af.codigo) {
+            document.getElementById('banner-pendente').style.display = 'flex';
+            return;
+        }
+
+        // Afiliado ativo
+        document.getElementById('painel-body').style.display = 'block';
+
+        // Link
+        const link = `https://sistemaauthon.com.br?ref=${af.codigo}`;
+        document.getElementById('link-url').textContent = link;
+
+        // Busca indicados
+        const indSnap = await db.collection('indicacoes')
+            .where('codigoAfiliado', '==', af.codigo)
+            .get();
+
+        const indicados = indSnap.docs.map(d => d.data());
+        const ativos = indicados.filter(i => i.status === 'ativo');
+        const totalIndicados = indicados.length;
+
+        // Calcula comissão
+        let pct;
+        const n = ativos.length;
+        if (n <= 5)       pct = 0.10;
+        else if (n <= 10) pct = 0.15;
+        else if (n <= 20) pct = 0.20;
+        else              pct = 0.30;
+
+        const comissaoTotal = ativos.reduce((sum, i) => {
+            const val = i.plano === 'premium' ? 147 : i.plano === 'pro' ? 97 : 67;
+            return sum + val * pct;
+        }, 0);
+
+        const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+        // KPIs
+        document.getElementById('kpi-ativos').textContent   = n;
+        document.getElementById('kpi-comissao').textContent = fmt(comissaoTotal);
+        document.getElementById('kpi-total').textContent    = totalIndicados;
+        document.getElementById('kpi-pct').textContent      = Math.round(pct * 100) + '%';
+        document.getElementById('comm-pct-big').textContent = Math.round(pct * 100);
+
+        // Faixa label
+        const faixas = ['1 a 5 indicados', '6 a 10 indicados', '11 a 20 indicados', '21 ou mais indicados'];
+        const faixaIdx = n <= 5 ? 0 : n <= 10 ? 1 : n <= 20 ? 2 : 3;
+        document.getElementById('comm-faixa-label').textContent = faixas[faixaIdx] + ' ativos';
+
+        // Lista de indicados
+        const lista = document.getElementById('indicados-list');
+        if (ativos.length === 0 && indicados.length === 0) {
+            lista.innerHTML = `<div class="empty-state">
+                <i class="fas fa-users"></i>
+                <p>Nenhum indicado ainda. Compartilhe seu link para começar!</p>
+            </div>`;
+        } else {
+            lista.innerHTML = indicados.map(ind => {
+                const val = ind.plano === 'premium' ? 147 : ind.plano === 'pro' ? 97 : 67;
+                const comm = ind.status === 'ativo' ? fmt(val * pct) : '—';
+                const planoClass = `plano-${ind.plano || 'basic'}`;
+                const statusColor = ind.status === 'ativo' ? 'var(--green)' : 'var(--muted)';
+                const dataStr = ind.criadoEm ? new Date(ind.criadoEm).toLocaleDateString('pt-BR') : '—';
+                return `<div class="indicado-card">
+                    <div class="indicado-info">
+                        <div class="indicado-nome">${ind.nomeCliente || 'Cliente'}</div>
+                        <div class="indicado-meta">Indicado em ${dataStr} · <span style="color:${statusColor};font-weight:700;">${ind.status === 'ativo' ? 'Ativo' : 'Pendente'}</span></div>
+                    </div>
+                    <span class="indicado-plano ${planoClass}">${(ind.plano || 'basic').toUpperCase()}</span>
+                    <div class="indicado-comm">${comm}</div>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    // Copiar link
+    function copiarLink() {
+        const link = document.getElementById('link-url').textContent;
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('Link copiado!');
+        });
+    }
+</script>
+</body>
+</html>

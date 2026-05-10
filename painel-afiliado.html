@@ -262,6 +262,9 @@
             <div class="toggle-form" onclick="toggleForm()">
                 Não tem conta? <span>Cadastre-se aqui</span>
             </div>
+            <div class="toggle-form" onclick="esqueceuSenha()" style="margin-top:8px;">
+                <span>Esqueci minha senha</span>
+            </div>
         </div>
 
         <div id="area-cadastro" style="display:none;">
@@ -439,6 +442,17 @@
             } else {
                 showToast('Erro: ' + e.message, 'error');
             }
+        }
+    }
+
+    async function esqueceuSenha() {
+        const email = document.getElementById('l-email').value.trim();
+        if (!email) { showToast('Digite seu e-mail primeiro.', 'error'); return; }
+        try {
+            await auth.sendPasswordResetEmail(email);
+            showToast('E-mail de redefinição enviado! Verifique sua caixa.');
+        } catch(e) {
+            showToast('Erro: ' + e.message, 'error');
         }
     }
 

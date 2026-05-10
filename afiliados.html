@@ -643,8 +643,16 @@
             document.getElementById('success-area').style.display = 'block';
 
         } catch (e) {
-            console.error(e);
-            showToast('Erro ao enviar. Tente novamente.', 'error');
+            console.error('Erro cadastro afiliado:', e);
+            let msg = 'Erro ao enviar. Tente novamente.';
+            if (e.code === 'permission-denied') {
+                msg = 'Erro de permissão. Contate o suporte.';
+            } else if (e.code === 'unavailable') {
+                msg = 'Sem conexão. Verifique sua internet.';
+            } else if (e.message) {
+                msg = e.message;
+            }
+            showToast(msg, 'error');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-rocket"></i> ENVIAR CADASTRO';
         }

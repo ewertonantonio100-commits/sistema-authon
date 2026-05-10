@@ -206,13 +206,8 @@ window.verificarAssinaturaMP = async function (email, docId) {
                 status: 'ativo',
                 planoExpira: data.expira || ''
             });
-            location.reload();
         } else {
-            // Grava pendente no Firestore — bloqueia definitivamente
-            await updateDoc(doc(db, 'configuracoes', docId), {
-                status: 'pendente'
-            });
-            window.mostrarTelaPendente(null, null);
+            window.mostrarTelaUpgrade(null, true);
         }
     } catch (err) {
         console.error('Erro ao verificar MP:', err);
@@ -473,14 +468,21 @@ function iniciarSistema() {
 
             // Preenche campos de settings
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-            setVal('cfgName', cfg.name);
-            setVal('cfgCnpj', cfg.cnpj);
-            setVal('cfgAddr', cfg.addr);
-            setVal('cfgPhone', cfg.phone);
-            setVal('cfgPix', cfg.pix);
+            setVal('cfgName',     cfg.name);
+            setVal('cfgCnpj',     cfg.cnpj);
+            setVal('cfgAddr',     cfg.addr);
+            setVal('cfgPhone',    cfg.phone);
+            setVal('cfgPix',      cfg.pix);
             setVal('cfgWarranty', cfg.warranty);
-            setVal('cfgPin', cfg.pin);
-            setVal('cfgTeam', cfg.team);
+            setVal('cfgPin',      cfg.pin);
+            setVal('cfgTeam',     cfg.team);
+
+            // Restaura taxas dos cartões
+            const feeInputMap = { feeDeb:'feeDeb', feeC1:'feeC1', feeC2:'feeC2',
+                                  feeC3:'feeC3', feeC4:'feeC4', feeC5:'feeC5', feeC6:'feeC6' };
+            Object.entries(feeInputMap).forEach(([cfgKey, inputId]) => {
+                if (cfg[cfgKey] !== undefined) setVal(inputId, cfg[cfgKey]);
+            });
 
             if (window.updateSellerSelect) window.updateSellerSelect();
         });

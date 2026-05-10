@@ -448,6 +448,20 @@
         }
     });
 
+    // Se após login o onAuthStateChanged demorar, força reload
+    window._loginTimestamp = null;
+    const _origLogin = window.fazerLogin;
+    window.fazerLogin = async function() {
+        window._loginTimestamp = Date.now();
+        await _origLogin();
+        // Se 4s depois ainda estiver na tela de login, recarrega
+        setTimeout(() => {
+            if (document.getElementById('login-screen').style.display !== 'none') {
+                location.reload();
+            }
+        }, 4000);
+    };
+
     async function fazerLogin() {
         const email = document.getElementById('l-email').value.trim();
         const senha = document.getElementById('l-senha').value;

@@ -532,3 +532,172 @@ function initHistoryPeriod() {
             e.value = new Date(today.getFullYear(), today.getMonth()+1, 0).toISOString().split('T')[0];
         }
     }
+
+// ============================================================
+// PAINEL DE AFILIADOS
+// ============================================================
+
+// Troca de abas no admin
+window.adminTab = function(aba) {
+    const clientes  = document.getElementById('admin-area-clientes');
+    const afiliados = document.getElementById('admin-area-afiliados');
+    const btnC = document.getElementById('admin-tab-clientes');
+    const btnA = document.getElementById('admin-tab-afiliados');
+
+    if (aba === 'clientes') {
+        clientes.style.display  = 'block';
+        afiliados.style.display = 'none';
+        btnC.style.cssText = 'flex:1;padding:10px;background:rgba(0,184,148,0.15);border:1px solid rgba(0,184,148,0.4);color:#00b894;border-radius:10px;font-size:12px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;letter-spacing:0.5px;';
+        btnA.style.cssText = 'flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:10px;font-size:12px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;letter-spacing:0.5px;';
+    } else {
+        clientes.style.display  = 'none';
+        afiliados.style.display = 'block';
+        btnC.style.cssText = 'flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:10px;font-size:12px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;letter-spacing:0.5px;';
+        btnA.style.cssText = 'flex:1;padding:10px;background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.4);color:#f0a500;border-radius:10px;font-size:12px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;letter-spacing:0.5px;';
+        window.carregarAfiliados();
+    }
+};
+
+// Gera código único para o afiliado
+function gerarCodigo(nome) {
+    const prefixo = nome.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+    const num = Math.floor(1000 + Math.random() * 9000);
+    return prefixo + num;
+}
+
+// Carrega lista de afiliados do Firestore
+window.carregarAfiliados = async function() {
+    const listEl = document.getElementById('admin-afiliados-list');
+    if (!listEl) return;
+
+    try {
+        const qs = await window.getDocs(window.collection(window.db, 'afiliados'));
+        const afiliados = qs.docs.map(d => ({ ...d.data(), docId: d.id }));
+
+        if (afiliados.length === 0) {
+            listEl.innerHTML = `<div style="text-align:center;padding:48px;color:rgba(255,255,255,0.3);">
+                <i class="fas fa-handshake" style="font-size:36px;margin-bottom:12px;display:block;"></i>
+                Nenhum afiliado cadastrado ainda.
+            </div>`;
+            return;
+        }
+
+        // Separa pendentes e ativos
+        const pendentes = afiliados.filter(a => a.status === 'pendente' || !a.codigo);
+        const ativos    = afiliados.filter(a => a.status === 'ativo' && a.codigo);
+
+        let html = '';
+
+        if (pendentes.length > 0) {
+            html += `<div style="font-size:10px;font-weight:700;color:#f0a500;text-transform:uppercase;letter-spacing:1.5px;padding:8px 0 10px;">
+                ⏳ Aguardando aprovação (${pendentes.length})
+            </div>`;
+            pendentes.forEach(af => {
+                html += `<div style="background:rgba(240,165,0,0.06);border:1px solid rgba(240,165,0,0.2);border-radius:14px;padding:16px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                        <div>
+                            <div style="font-size:15px;font-weight:700;color:white;">${af.nome}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:2px;">${af.email} · ${af.phone}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.4);">${af.cidade} · ${af.canal || '—'}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">Pix: <strong style="color:white;">${af.pix}</strong></div>
+                            ${af.bio ? `<div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:6px;font-style:italic;">"${af.bio}"</div>` : ''}
+                        </div>
+                        <span style="background:rgba(240,165,0,0.15);color:#f0a500;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">PENDENTE</span>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="aprovarAfiliado('${af.docId}','${af.nome}','${af.phone}')"
+                            style="flex:1;padding:10px;background:#00b894;color:white;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;">
+                            <i class="fas fa-check"></i> Aprovar
+                        </button>
+                        <button onclick="rejeitarAfiliado('${af.docId}')"
+                            style="padding:10px 16px;background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);border-radius:10px;font-size:13px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        if (ativos.length > 0) {
+            html += `<div style="font-size:10px;font-weight:700;color:#00b894;text-transform:uppercase;letter-spacing:1.5px;padding:12px 0 10px;">
+                ✅ Afiliados ativos (${ativos.length})
+            </div>`;
+            ativos.forEach(af => {
+                html += `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:15px;font-weight:700;color:white;">${af.nome}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.4);">${af.email} · ${af.phone}</div>
+                            <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">
+                                Código: <strong style="color:#00b894;letter-spacing:1px;">${af.codigo}</strong>
+                                &nbsp;·&nbsp; Pix: <strong style="color:white;">${af.pix}</strong>
+                            </div>
+                            <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:3px;">
+                                Link: sistemaauthon.com.br?ref=${af.codigo}
+                            </div>
+                        </div>
+                        <span style="background:rgba(0,184,148,0.15);color:#00b894;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">ATIVO</span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        listEl.innerHTML = html;
+
+    } catch(e) {
+        console.error(e);
+        listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c;">Erro ao carregar afiliados.</div>`;
+    }
+};
+
+// Aprova afiliado e gera código único
+window.aprovarAfiliado = async function(docId, nome, phone) {
+    if (!confirm(`Aprovar afiliado "${nome}"?`)) return;
+
+    try {
+        // Gera código único
+        let codigo = gerarCodigo(nome);
+
+        // Garante que o código é único no Firestore
+        const existing = await window.getDocs(
+            window.query(window.collection(window.db, 'afiliados'),
+            window.where('codigo', '==', codigo))
+        );
+        if (!existing.empty) codigo += Math.floor(10 + Math.random() * 90);
+
+        await window.updateDoc(window.doc(window.db, 'afiliados', docId), {
+            status: 'ativo',
+            codigo: codigo,
+            aprovadoEm: new Date().toISOString()
+        });
+
+        Toast.success(`✅ ${nome} aprovado! Código: ${codigo}`);
+
+        // Abre WhatsApp para avisar o afiliado
+        const link = `https://sistemaauthon.com.br?ref=${codigo}`;
+        const msg = `Olá ${nome}! 🎉\n\nSeu cadastro no programa *Indique e Ganhe* do Sistema Authon foi *aprovado*!\n\n🔗 *Seu link exclusivo:*\n${link}\n\nComece a compartilhar e ganhe comissões mensais recorrentes. Acesse seu painel em:\nhttps://sistemaauthon.com.br/painel-afiliado.html\n\nQualquer dúvida, estamos aqui! 💪`;
+        const phoneClean = phone.replace(/\D/g, '');
+        setTimeout(() => {
+            window.open(`https://wa.me/55${phoneClean}?text=${encodeURIComponent(msg)}`);
+        }, 500);
+
+        // Recarrega lista
+        await window.carregarAfiliados();
+
+    } catch(e) {
+        console.error(e);
+        Toast.error('Erro ao aprovar afiliado.');
+    }
+};
+
+// Rejeita/remove afiliado
+window.rejeitarAfiliado = async function(docId) {
+    if (!confirm('Rejeitar e remover este cadastro?')) return;
+    try {
+        await window.deleteDoc(window.doc(window.db, 'afiliados', docId));
+        Toast.success('Cadastro removido.');
+        await window.carregarAfiliados();
+    } catch(e) {
+        Toast.error('Erro ao remover.');
+    }
+};

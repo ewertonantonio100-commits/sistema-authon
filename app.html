@@ -619,15 +619,6 @@ window.addEventListener('popstate', function() {
             </label>
         </div>
 
-        <!-- FUNCIONÁRIOS -->
-        <button class="settings-btn" onclick="toggleSettingsSection('sect-funcionarios'); window.setTimeout(()=>window.renderFuncionariosList?.(),150)">
-            <span><i class="fas fa-users"></i> Funcionários</span>
-            <i class="fas fa-chevron-down"></i>
-        </button>
-        <div class="settings-content" id="sect-funcionarios" style="display:none;">
-            <div id="funcionarios-list" style="margin-top:10px;"></div>
-        </div>
-
         <button class="btn-action" style="background:var(--dark); margin-bottom:10px;" onclick="resetPassword()">
             <i class="fas fa-key"></i> REDEFINIR MINHA SENHA
         </button>

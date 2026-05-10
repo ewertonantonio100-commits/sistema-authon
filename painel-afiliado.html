@@ -397,6 +397,48 @@
     }
 
     // ── AUTH ──
+    // Processa reset de senha se chegou com ?mode=resetPassword
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        const oobCode = params.get('oobCode');
+
+        if (mode === 'resetPassword' && oobCode) {
+            document.getElementById('loading').style.display = 'none';
+            // Mostra formulário de nova senha
+            const box = document.createElement('div');
+            box.style.cssText = 'position:fixed;inset:0;background:linear-gradient(160deg,#0d1b2a,#0a1520);display:flex;align-items:center;justify-content:center;padding:20px;z-index:99999;';
+            box.innerHTML = `
+                <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:40px;width:100%;max-width:400px;text-align:center;">
+                    <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:white;letter-spacing:2px;margin-bottom:24px;">AUTH<span style="color:#D92525;">ON</span></div>
+                    <h2 style="font-family:'Barlow Condensed',sans-serif;color:white;font-size:28px;margin-bottom:24px;">NOVA SENHA</h2>
+                    <input type="password" id="nova-senha" placeholder="Nova senha (mín. 6 caracteres)"
+                        style="width:100%;padding:12px 16px;margin-bottom:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+                    <input type="password" id="nova-senha2" placeholder="Confirmar nova senha"
+                        style="width:100%;padding:12px 16px;margin-bottom:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:white;font-size:14px;font-family:'DM Sans',sans-serif;box-sizing:border-box;">
+                    <button onclick="confirmarNovaSenha('${oobCode}')"
+                        style="width:100%;padding:14px;background:#D92525;color:white;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;cursor:pointer;">
+                        SALVAR NOVA SENHA
+                    </button>
+                </div>`;
+            document.body.appendChild(box);
+        }
+    })();
+
+    window.confirmarNovaSenha = async function(oobCode) {
+        const senha  = document.getElementById('nova-senha').value;
+        const senha2 = document.getElementById('nova-senha2').value;
+        if (!senha || senha.length < 6) { showToast('Senha deve ter ao menos 6 caracteres.', 'error'); return; }
+        if (senha !== senha2) { showToast('As senhas não coincidem.', 'error'); return; }
+        try {
+            await auth.confirmPasswordReset(oobCode, senha);
+            showToast('Senha redefinida com sucesso! Faça login.');
+            setTimeout(() => window.location.href = '/painel-afiliado.html', 2000);
+        } catch(e) {
+            showToast('Link expirado. Solicite um novo.', 'error');
+        }
+    };
+
     auth.onAuthStateChanged(async user => {
         document.getElementById('loading').style.display = 'none';
         if (user) {

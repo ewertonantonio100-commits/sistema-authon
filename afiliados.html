@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indique e Ganhe | Sistema Authon</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --navy:     #0d1b2a;
+            --navy-mid: #1B2D42;
+            --red:      #D92525;
+            --red-dark: #a81c1c;
+            --green:    #00b894;
+            --gold:     #f0a500;
+            --light:    #f4f6f8;
+            --text:     #1a2332;
+            --muted:    #6b7a8d;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--light);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Barlow Condensed', sans-serif;
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: 0.5px;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* NAVBAR */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 900;
+            background: rgba(13,27,42,0.97);
+            backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 5%; height: 64px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .logo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 22px; font-weight: 800; color: white;
+            letter-spacing: 2px; text-transform: uppercase;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo span { color: var(--red); }
+        .logo img { height: 30px; width: auto; border-radius: 6px; }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .btn-nav {
+            padding: 8px 18px; border-radius: 8px; font-size: 13px;
+            font-weight: 700; cursor: pointer; border: none;
+            font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+        }
+        .btn-nav-outline {
+            background: transparent; color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-nav-outline:hover { color: white; border-color: white; }
+        .btn-nav-red { background: var(--red); color: white; }
+        .btn-nav-red:hover { background: var(--red-dark); }
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(160deg, var(--navy) 0%, #0a1520 50%, #111827 100%);
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 100px 5% 60px;
+            position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(217,37,37,0.12) 0%, transparent 70%);
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(217,37,37,0.15); border: 1px solid rgba(217,37,37,0.3);
+            color: #ff6b6b; padding: 6px 16px; border-radius: 20px;
+            font-size: 12px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: clamp(42px, 8vw, 88px);
+            color: white; margin-bottom: 16px;
+            line-height: 0.95;
+        }
+        .hero h1 span { color: var(--red); }
+        .hero-sub {
+            font-size: clamp(16px, 2vw, 20px);
+            color: rgba(255,255,255,0.55);
+            max-width: 560px; margin: 0 auto 40px;
+            line-height: 1.6; font-weight: 400;
+        }
+        .hero-content { position: relative; z-index: 1; }
+
+        /* COMISSÕES */
+        .commissions {
+            display: flex; gap: 16px; justify-content: center;
+            flex-wrap: wrap; margin-bottom: 48px;
+        }
+        .comm-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 20px 24px; text-align: center;
+            min-width: 140px; transition: all 0.3s;
+        }
+        .comm-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-4px); }
+        .comm-card.highlight {
+            background: rgba(217,37,37,0.12);
+            border-color: rgba(217,37,37,0.4);
+        }
+        .comm-pct {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 42px; font-weight: 900; color: white;
+            line-height: 1;
+        }
+        .comm-card.highlight .comm-pct { color: var(--red); }
+        .comm-label {
+            font-size: 11px; color: rgba(255,255,255,0.4);
+            font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.5px; margin-top: 6px;
+        }
+        .comm-range {
+            font-size: 13px; color: rgba(255,255,255,0.6);
+            margin-top: 4px; font-weight: 500;
+        }
+
+        .btn-hero {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--red); color: white;
+            padding: 16px 36px; border-radius: 12px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer; border: none;
+            box-shadow: 0 8px 32px rgba(217,37,37,0.4);
+            transition: all 0.3s;
+        }
+        .btn-hero:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(217,37,37,0.5); }
+
+        /* COMO FUNCIONA */
+        .section { padding: 80px 5%; }
+        .section-label {
+            font-size: 11px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--red);
+            margin-bottom: 12px;
+        }
+        .section h2 {
+            font-size: clamp(28px, 4vw, 48px);
+            color: var(--navy); margin-bottom: 48px;
+        }
+        .section.dark {
+            background: var(--navy);
+        }
+        .section.dark h2 { color: white; }
+        .section.dark .section-label { color: #ff6b6b; }
+
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
+        .step {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 32px 24px; position: relative;
+            transition: all 0.3s;
+        }
+        .step:hover { background: rgba(255,255,255,0.07); transform: translateY(-4px); }
+        .step-num {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 64px; font-weight: 900;
+            color: rgba(217,37,37,0.2); line-height: 1;
+            margin-bottom: 12px;
+        }
+        .step-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: rgba(217,37,37,0.15); border: 1px solid rgba(217,37,37,0.3);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--red); font-size: 20px; margin-bottom: 16px;
+        }
+        .step h4 { color: white; font-size: 18px; margin-bottom: 8px; }
+        .step p { color: rgba(255,255,255,0.5); font-size: 13px; line-height: 1.6; }
+
+        /* TABELA DE COMISSÕES */
+        .comm-table-wrap { max-width: 700px; margin: 0 auto; }
+        .comm-table {
+            width: 100%; border-collapse: collapse;
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        .comm-table th {
+            background: var(--navy); color: white;
+            padding: 14px 20px; text-align: left;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 14px; letter-spacing: 1px;
+        }
+        .comm-table td {
+            padding: 14px 20px; border-bottom: 1px solid #f0f0f0;
+            font-size: 14px; font-weight: 500;
+        }
+        .comm-table tr:last-child td { border-bottom: none; }
+        .comm-table tr:hover td { background: #fafafa; }
+        .badge-pct {
+            display: inline-block; background: rgba(217,37,37,0.1);
+            color: var(--red); font-weight: 800; padding: 4px 12px;
+            border-radius: 20px; font-size: 15px;
+        }
+        .badge-pct.gold { background: rgba(240,165,0,0.1); color: var(--gold); }
+
+        /* CALCULADORA */
+        .calc-wrap {
+            max-width: 600px; margin: 0 auto;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 36px;
+        }
+        .calc-wrap label { color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; }
+        .calc-wrap input[type=range] { width: 100%; accent-color: var(--red); margin-bottom: 8px; }
+        .calc-num {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 28px; font-weight: 800; color: white; margin-bottom: 24px;
+        }
+        .calc-result {
+            background: rgba(217,37,37,0.12); border: 1px solid rgba(217,37,37,0.3);
+            border-radius: 16px; padding: 24px; text-align: center;
+        }
+        .calc-result-label { color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 8px; }
+        .calc-result-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 52px; font-weight: 900; color: var(--red); line-height: 1;
+        }
+        .calc-result-sub { color: rgba(255,255,255,0.4); font-size: 12px; margin-top: 6px; }
+
+        /* FORMULÁRIO */
+        .form-wrap {
+            max-width: 580px; margin: 0 auto;
+            background: white; border-radius: 24px;
+            padding: 40px; box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+        }
+        .form-wrap h3 {
+            font-size: 28px; color: var(--navy);
+            margin-bottom: 8px;
+        }
+        .form-wrap p { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--muted); margin-bottom: 6px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px;
+            border: 1px solid #e0e5ec; border-radius: 10px;
+            font-family: 'DM Sans', sans-serif; font-size: 14px;
+            color: var(--text); transition: border 0.2s;
+            background: #fafbfc;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--red);
+            background: white;
+        }
+        .form-group textarea { resize: vertical; min-height: 90px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .btn-submit {
+            width: 100%; padding: 15px;
+            background: var(--red); color: white; border: none;
+            border-radius: 12px; font-family: 'Barlow Condensed', sans-serif;
+            font-size: 20px; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 6px 24px rgba(217,37,37,0.35);
+            transition: all 0.2s; margin-top: 8px;
+        }
+        .btn-submit:hover { background: var(--red-dark); transform: translateY(-2px); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .form-note {
+            text-align: center; font-size: 12px; color: var(--muted);
+            margin-top: 14px; line-height: 1.6;
+        }
+        .success-msg {
+            display: none; text-align: center; padding: 40px 20px;
+        }
+        .success-msg .icon { font-size: 56px; margin-bottom: 16px; }
+        .success-msg h3 { font-size: 28px; color: var(--navy); margin-bottom: 8px; }
+        .success-msg p { color: var(--muted); font-size: 14px; }
+
+        /* FOOTER */
+        footer {
+            background: var(--navy); color: rgba(255,255,255,0.4);
+            text-align: center; padding: 32px 5%;
+            font-size: 13px;
+        }
+        footer a { color: rgba(255,255,255,0.6); }
+        footer a:hover { color: white; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1e272e; color: white; padding: 14px 24px;
+            border-radius: 12px; font-size: 14px; font-weight: 600;
+            z-index: 9999; opacity: 0; transition: opacity 0.3s;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-left: 4px solid var(--green); }
+        .toast.error { border-left: 4px solid var(--red); }
+
+        @media (max-width: 640px) {
+            .commissions { gap: 10px; }
+            .comm-card { min-width: 120px; padding: 16px; }
+            .comm-pct { font-size: 32px; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-wrap { padding: 28px 20px; }
+            .calc-wrap { padding: 24px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">
+        <img src="logo-icone-web.png" alt="Authon">
+        AUTH<span>ON</span>
+    </div>
+    <div class="nav-right">
+        <a href="/" class="btn-nav btn-nav-outline">← Início</a>
+        <a href="/painel-afiliado.html" class="btn-nav btn-nav-red">Meu Painel</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i class="fas fa-handshake"></i>
+            Programa de Afiliados
+        </div>
+        <h1>INDIQUE E<br><span>GANHE</span></h1>
+        <p class="hero-sub">
+            Indique o Sistema Authon e receba comissões mensais recorrentes para sempre que seu indicado continuar ativo.
+        </p>
+
+        <div class="commissions">
+            <div class="comm-card">
+                <div class="comm-pct">10%</div>
+                <div class="comm-range">1 a 5 clientes</div>
+                <div class="comm-label">por mês</div>
+            </div>
+            <div class="comm-card">
+                <div class="comm-pct">15%</div>
+                <div class="comm-range">6 a 10 clientes</div>
+                <div class="comm-label">por mês</div>
+            </div>
+            <div class="comm-card">
+                <div class="comm-pct">20%</div>
+                <div class="comm-range">11 a 20 clientes</div>
+                <div class="comm-label">por mês</div>
+            </div>
+            <div class="comm-card highlight">
+                <div class="comm-pct">30%</div>
+                <div class="comm-range">21+ clientes</div>
+                <div class="comm-label">por mês</div>
+            </div>
+        </div>
+
+        <button class="btn-hero" onclick="document.getElementById('cadastro').scrollIntoView({behavior:'smooth'})">
+            <i class="fas fa-rocket"></i>
+            Quero ser afiliado
+        </button>
+    </div>
+</header>
+
+<!-- COMO FUNCIONA -->
+<section class="section dark">
+    <div style="text-align:center; max-width:900px; margin:0 auto;">
+        <div class="section-label">Simples assim</div>
+        <h2>Como funciona</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">01</div>
+                <div class="step-icon"><i class="fas fa-user-plus"></i></div>
+                <h4>Cadastre-se</h4>
+                <p>Preencha o formulário abaixo. Após aprovação você recebe seu link exclusivo.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">02</div>
+                <div class="step-icon"><i class="fas fa-share-alt"></i></div>
+                <h4>Compartilhe</h4>
+                <p>Divulgue seu link para oficinas e estéticas automotivas da sua região.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">03</div>
+                <div class="step-icon"><i class="fas fa-chart-line"></i></div>
+                <h4>Acompanhe</h4>
+                <p>Veja em tempo real quantos indicados você tem e quanto vai receber.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">04</div>
+                <div class="step-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <h4>Receba</h4>
+                <p>Pagamento via Pix todo mês enquanto seus indicados permanecerem ativos.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TABELA DE COMISSÕES -->
+<section class="section" style="background:white;">
+    <div style="text-align:center; max-width:700px; margin:0 auto;">
+        <div class="section-label">Transparência total</div>
+        <h2 style="color:var(--navy); margin-bottom:32px;">Tabela de comissões</h2>
+        <div class="comm-table-wrap">
+            <table class="comm-table">
+                <thead>
+                    <tr>
+                        <th>Indicados ativos</th>
+                        <th>Comissão</th>
+                        <th>Ex: 10 clientes Basic</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1 a 5 clientes</td>
+                        <td><span class="badge-pct">10%</span></td>
+                        <td>R$ 67,00/mês</td>
+                    </tr>
+                    <tr>
+                        <td>6 a 10 clientes</td>
+                        <td><span class="badge-pct">15%</span></td>
+                        <td>R$ 100,50/mês</td>
+                    </tr>
+                    <tr>
+                        <td>11 a 20 clientes</td>
+                        <td><span class="badge-pct">20%</span></td>
+                        <td>R$ 134,00/mês</td>
+                    </tr>
+                    <tr>
+                        <td>21+ clientes</td>
+                        <td><span class="badge-pct gold">30%</span></td>
+                        <td>R$ 201,00/mês</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="color:var(--muted); font-size:12px; margin-top:12px; text-align:left;">
+                * Comissão calculada sobre o valor pago pelo indicado no mês. Pagamento via Pix até o dia 10 do mês seguinte.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- CALCULADORA -->
+<section class="section dark">
+    <div style="text-align:center; max-width:600px; margin:0 auto;">
+        <div class="section-label">Simule seus ganhos</div>
+        <h2 style="margin-bottom:32px;">Quanto você pode ganhar?</h2>
+        <div class="calc-wrap">
+            <label>Número de indicados ativos: <strong id="calc-n">5</strong></label>
+            <input type="range" min="1" max="50" value="5" id="calc-range" oninput="calcular()">
+
+            <label style="margin-top:8px;">Plano médio dos indicados:</label>
+            <select id="calc-plano" onchange="calcular()" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:white;font-family:'DM Sans',sans-serif;font-size:14px;margin-bottom:24px;">
+                <option value="67">Basic — R$ 67/mês</option>
+                <option value="97" selected>Pro — R$ 97/mês</option>
+                <option value="147">Premium — R$ 147/mês</option>
+            </select>
+
+            <div class="calc-result">
+                <div class="calc-result-label">Sua comissão mensal estimada</div>
+                <div class="calc-result-value" id="calc-result">R$ 48,50</div>
+                <div class="calc-result-sub" id="calc-info">5 indicados · 10% de comissão</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FORMULÁRIO -->
+<section class="section" id="cadastro">
+    <div style="text-align:center; margin-bottom:36px;">
+        <div class="section-label">Comece agora</div>
+        <h2 style="color:var(--navy);">Quero ser afiliado</h2>
+    </div>
+    <div class="form-wrap">
+        <div id="form-area">
+            <h3>Cadastro de Afiliado</h3>
+            <p>Preencha os dados abaixo. Após análise, você receberá seu link exclusivo em até 48 horas.</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nome completo *</label>
+                    <input type="text" id="af-nome" placeholder="Seu nome" required>
+                </div>
+                <div class="form-group">
+                    <label>WhatsApp *</label>
+                    <input type="tel" id="af-phone" placeholder="(87) 99999-9999" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>E-mail *</label>
+                <input type="email" id="af-email" placeholder="seu@email.com" required>
+            </div>
+            <div class="form-group">
+                <label>Cidade / Estado *</label>
+                <input type="text" id="af-cidade" placeholder="Ex: Petrolina / PE" required>
+            </div>
+            <div class="form-group">
+                <label>Como pretende divulgar?</label>
+                <select id="af-canal">
+                    <option value="">Selecione...</option>
+                    <option value="instagram">Instagram / Redes Sociais</option>
+                    <option value="whatsapp">Grupos de WhatsApp</option>
+                    <option value="indicacao">Indicação pessoal</option>
+                    <option value="youtube">YouTube / Blog</option>
+                    <option value="outro">Outro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Chave Pix para receber comissões *</label>
+                <input type="text" id="af-pix" placeholder="CPF, e-mail, telefone ou chave aleatória" required>
+            </div>
+            <div class="form-group">
+                <label>Conte um pouco sobre você (opcional)</label>
+                <textarea id="af-bio" placeholder="Você trabalha no ramo automotivo? Tem audiência no segmento? Conta!"></textarea>
+            </div>
+
+            <button class="btn-submit" id="btn-cadastrar" onclick="cadastrarAfiliado()">
+                <i class="fas fa-rocket"></i> ENVIAR CADASTRO
+            </button>
+            <p class="form-note">
+                Analisamos todos os cadastros em até 48 horas úteis.<br>
+                Você receberá uma resposta no WhatsApp informado.
+            </p>
+        </div>
+
+        <div class="success-msg" id="success-area">
+            <div class="icon">🎉</div>
+            <h3>Cadastro enviado!</h3>
+            <p>Recebemos sua solicitação! Analisaremos e entraremos em contato pelo WhatsApp em até 48 horas úteis.</p>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div style="margin-bottom:8px;">
+        <a href="/">Sistema Authon</a> &nbsp;·&nbsp;
+        <a href="/afiliados.html">Indique e Ganhe</a> &nbsp;·&nbsp;
+        <a href="mailto:contato@sistemaauthon.com.br">Contato</a>
+    </div>
+    <div>© 2026 Sistema Authon. Todos os direitos reservados.</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // Firebase config
+    const firebaseConfig = {
+        apiKey:            "AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18",
+        authDomain:        "sistema-authon-f7045.firebaseapp.com",
+        projectId:         "sistema-authon-f7045",
+        storageBucket:     "sistema-authon-f7045.firebasestorage.app",
+        messagingSenderId: "571736826692",
+        appId:             "1:571736826692:web:53a6ac20498e3c5d2d79f1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Toast
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // Calculadora
+    function calcular() {
+        const n = parseInt(document.getElementById('calc-range').value);
+        const plano = parseFloat(document.getElementById('calc-plano').value);
+        document.getElementById('calc-n').textContent = n;
+
+        let pct;
+        if (n <= 5)       pct = 0.10;
+        else if (n <= 10) pct = 0.15;
+        else if (n <= 20) pct = 0.20;
+        else              pct = 0.30;
+
+        const total = n * plano * pct;
+        document.getElementById('calc-result').textContent =
+            'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        document.getElementById('calc-info').textContent =
+            `${n} indicados · ${Math.round(pct * 100)}% de comissão`;
+    }
+    calcular();
+
+    // Cadastro
+    async function cadastrarAfiliado() {
+        const nome   = document.getElementById('af-nome').value.trim();
+        const phone  = document.getElementById('af-phone').value.trim();
+        const email  = document.getElementById('af-email').value.trim();
+        const cidade = document.getElementById('af-cidade').value.trim();
+        const pix    = document.getElementById('af-pix').value.trim();
+        const canal  = document.getElementById('af-canal').value;
+        const bio    = document.getElementById('af-bio').value.trim();
+
+        if (!nome || !phone || !email || !cidade || !pix) {
+            showToast('Preencha todos os campos obrigatórios.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btn-cadastrar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+
+        try {
+            // Verifica se email já existe
+            const existing = await db.collection('afiliados').where('email', '==', email).get();
+            if (!existing.empty) {
+                showToast('Este e-mail já está cadastrado.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rocket"></i> ENVIAR CADASTRO';
+                return;
+            }
+
+            await db.collection('afiliados').add({
+                nome, phone, email, cidade, pix, canal, bio,
+                status: 'pendente',
+                codigo: null,
+                indicados: 0,
+                criadoEm: new Date().toISOString()
+            });
+
+            document.getElementById('form-area').style.display = 'none';
+            document.getElementById('success-area').style.display = 'block';
+
+        } catch (e) {
+            console.error(e);
+            showToast('Erro ao enviar. Tente novamente.', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rocket"></i> ENVIAR CADASTRO';
+        }
+    }
+</script>
+</body>
+</html>

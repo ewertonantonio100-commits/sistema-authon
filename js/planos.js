@@ -149,10 +149,20 @@
 
         // ── 1. RANKING DA EQUIPE ──
         if (!features.rankingEquipe) {
-            // Esconde o card e label do ranking
+            // Esconde ranking de equipe
             const teamCard = document.getElementById('stats-team');
             if (teamCard) {
                 const card = teamCard.closest('.fin-card');
+                const label = card?.previousElementSibling;
+                if (card)  card.style.display  = 'none';
+                if (label && label.classList.contains('fin-section-label')) {
+                    label.style.display = 'none';
+                }
+            }
+            // Esconde ranking de serviços
+            const svcCard = document.getElementById('stats-services');
+            if (svcCard) {
+                const card = svcCard.closest('.fin-card');
                 const label = card?.previousElementSibling;
                 if (card)  card.style.display  = 'none';
                 if (label && label.classList.contains('fin-section-label')) {

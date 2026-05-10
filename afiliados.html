@@ -6,6 +6,9 @@
     <title>Indique e Ganhe | Sistema Authon</title>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 
@@ -560,49 +563,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // Firestore REST API — sem SDK para evitar conflitos
-    const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/sistema-authon-f7045/databases/(default)/documents';
-    const VISION_KEY    = 'AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18';
-
-    async function firestoreAdd(collection, data) {
-        // Converte objeto JS para formato Firestore
-        const fields = {};
-        Object.entries(data).forEach(([k, v]) => {
-            if (v === null || v === undefined) fields[k] = { nullValue: null };
-            else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
-            else if (typeof v === 'number')  fields[k] = { integerValue: v };
-            else fields[k] = { stringValue: String(v) };
-        });
-        const res = await fetch(`${FIRESTORE_URL}/${collection}?key=${VISION_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fields })
-        });
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.error?.message || `HTTP ${res.status}`);
-        }
-        return res.json();
-    }
-
-    async function firestoreQuery(collection, field, value) {
-        const res = await fetch(`${FIRESTORE_URL}:runQuery?key=${VISION_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                structuredQuery: {
-                    from: [{ collectionId: collection }],
-                    where: { fieldFilter: {
-                        field: { fieldPath: field },
-                        op: 'EQUAL',
-                        value: { stringValue: value }
-                    }}
-                }
-            })
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-    }
+    // Firebase SDK
+    const firebaseConfig = {
+        apiKey:            "AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18",
+        authDomain:        "sistema-authon-f7045.firebaseapp.com",
+        projectId:         "sistema-authon-f7045",
+        storageBucket:     "sistema-authon-f7045.firebasestorage.app",
+        messagingSenderId: "113445333308",
+        appId:             "1:113445333308:web:244a00fa15e5bc63ce9639"
+    };
+    // Usa nome único para evitar conflito com outros apps Firebase na página
+    const afApp = firebase.apps.find(a => a.name === 'afiliados') || 
+                  firebase.initializeApp(firebaseConfig, 'afiliados');
+    const db = afApp.firestore();
 
     // Toast
     function showToast(msg, type = 'success') {
@@ -653,19 +626,18 @@
 
         try {
             // Verifica se email já existe
-            const existing = await firestoreQuery('afiliados', 'email', email);
-            const docs = existing.filter(r => r.document);
-            if (docs.length > 0) {
+            const existing = await db.collection('afiliados').where('email', '==', email).get();
+            if (!existing.empty) {
                 showToast('Este e-mail já está cadastrado.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-rocket"></i> ENVIAR CADASTRO';
                 return;
             }
 
-            await firestoreAdd('afiliados', {
+            await db.collection('afiliados').add({
                 nome, phone, email, cidade, pix, canal, bio,
                 status: 'pendente',
-                codigo: '',
+                codigo: null,
                 indicados: 0,
                 criadoEm: new Date().toISOString()
             });

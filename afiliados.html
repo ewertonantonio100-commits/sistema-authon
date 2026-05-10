@@ -625,15 +625,6 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
 
         try {
-            // Verifica se email já existe
-            const existing = await db.collection('afiliados').where('email', '==', email).get();
-            if (!existing.empty) {
-                showToast('Este e-mail já está cadastrado.', 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-rocket"></i> ENVIAR CADASTRO';
-                return;
-            }
-
             await db.collection('afiliados').add({
                 nome, phone, email, cidade, pix, canal, bio,
                 status: 'pendente',

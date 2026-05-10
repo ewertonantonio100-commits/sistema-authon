@@ -645,8 +645,12 @@ window.carregarAfiliados = async function() {
         listEl.innerHTML = html;
 
     } catch(e) {
-        console.error(e);
-        listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c;">Erro ao carregar afiliados.</div>`;
+        console.error('Erro afiliados:', e);
+        // Se for erro de permissão, mostra mensagem específica
+        const msg = e.code === 'permission-denied'
+            ? 'Permissão negada. Verifique as regras do Firestore para a coleção "afiliados".'
+            : `Erro: ${e.message}`;
+        listEl.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c;font-size:13px;">${msg}</div>`;
     }
 };
 

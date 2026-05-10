@@ -423,23 +423,21 @@
         if (senha !== senha2)  { showToast('As senhas não coincidem.', 'error'); return; }
         if (senha.length < 6)  { showToast('Senha deve ter ao menos 6 caracteres.', 'error'); return; }
 
-        // Verifica se existe cadastro pendente com este email
-        const snap = await db.collection('afiliados').where('email', '==', email).get();
-        if (snap.empty) {
-            showToast('E-mail não encontrado. Faça o cadastro primeiro em /afiliados.html', 'error');
-            return;
-        }
-
         try {
             const cred = await auth.createUserWithEmailAndPassword(email, senha);
-            // Vincula uid ao documento do afiliado
-            await snap.docs[0].ref.update({ uid: cred.user.uid });
+            // Busca documento do afiliado e vincula o uid
+            const snap = await db.collection('afiliados').where('email', '==', email).get();
+            if (!snap.empty) {
+                await snap.docs[0].ref.update({ uid: cred.user.uid });
+            }
             showToast('Conta criada com sucesso!');
         } catch(e) {
             if (e.code === 'auth/email-already-in-use') {
                 showToast('Este e-mail já tem uma conta. Faça login.', 'error');
+            } else if (e.code === 'auth/invalid-email') {
+                showToast('E-mail inválido.', 'error');
             } else {
-                showToast('Erro ao criar conta: ' + e.message, 'error');
+                showToast('Erro: ' + e.message, 'error');
             }
         }
     }

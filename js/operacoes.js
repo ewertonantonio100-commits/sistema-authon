@@ -838,12 +838,25 @@ window.processPlateImage = async function(event) {
     if (icon) { icon.className = 'fas fa-circle-notch fa-spin'; icon.style.color = '#f1c40f'; }
 
     try {
-        // Converte imagem para base64
+        // Redimensiona e converte para base64 (máx 1024px, qualidade 80%)
         const base64 = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const MAX = 1024;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else       { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+                resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
+            };
+            img.onerror = reject;
+            img.src = url;
         });
 
         // Chama Google Vision API com timeout de 15s

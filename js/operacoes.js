@@ -846,24 +846,40 @@ window.processPlateImage = async function(event) {
             reader.readAsDataURL(file);
         });
 
-        // Chama Google Vision API
-        const response = await fetch(
-            `https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requests: [{
-                        image: { content: base64 },
-                        features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
-                    }]
-                })
-            }
-        );
+        // Chama Google Vision API com timeout de 15s
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+
+        let response;
+        try {
+            response = await fetch(
+                `https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,
+                {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requests: [{
+                            image: { content: base64 },
+                            features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+                        }]
+                    })
+                }
+            );
+        } finally {
+            clearTimeout(timeout);
+        }
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('Vision HTTP error:', response.status, errText);
+            throw new Error(`Erro HTTP ${response.status}: ${errText}`);
+        }
 
         const data = await response.json();
+        console.log('Vision response:', JSON.stringify(data).substring(0, 200));
 
-        if (data.error) throw new Error(data.error.message);
+        if (data.error) throw new Error(`Vision API: ${data.error.message} (${data.error.code})`);
 
         // Extrai todo o texto detectado
         const rawText = (data.responses?.[0]?.fullTextAnnotation?.text ||
@@ -907,7 +923,15 @@ window.processPlateImage = async function(event) {
 
     } catch(e) {
         console.error('Vision API error:', e);
-        alert('❌ Erro ao processar a imagem. Verifique sua conexão e tente novamente.');
+        if (e.name === 'AbortError') {
+            alert('❌ Tempo esgotado. Verifique sua conexão e tente novamente.');
+        } else if (e.message.includes('403')) {
+            alert('❌ Chave de API sem permissão para Cloud Vision. Verifique as configurações no Google Cloud.');
+        } else if (e.message.includes('400')) {
+            alert('❌ Imagem inválida ou muito grande. Tente outra foto.');
+        } else {
+            alert(`❌ Erro: ${e.message}`);
+        }
     }
 
     if (icon) { icon.className = 'fas fa-camera'; icon.style.color = 'white'; }

@@ -1177,6 +1177,18 @@
 </script>
 
     <script>
+    // Processa reset de senha do Firebase Auth
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get('mode');
+        const oobCode = params.get('oobCode');
+
+        if (mode === 'resetPassword' && oobCode) {
+            // Redireciona para o painel do afiliado com os parâmetros
+            window.location.href = '/painel-afiliado.html' + window.location.search;
+        }
+    })();
+
     // Captura código de afiliado da URL e salva
     (function() {
         const params = new URLSearchParams(window.location.search);

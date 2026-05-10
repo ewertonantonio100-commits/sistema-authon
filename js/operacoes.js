@@ -823,4 +823,94 @@ window.saveLogo   = function (event) {
 window.backupSystem  = function () { const data={db:localStorage.getItem('oficina_db_master'),cat:localStorage.getItem('catalog_v1'),logo:localStorage.getItem('oficina_logo'),pix:localStorage.getItem('authon_cfg_pix'),war:localStorage.getItem('authon_cfg_warranty')}; const blob=new Blob([JSON.stringify(data)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='backup_authon.json'; a.click(); };
 window.restoreSystem = function (event) { const reader=new FileReader(); reader.onload=e=>{ try{const d=JSON.parse(e.target.result); if(d.db)localStorage.setItem('oficina_db_master',d.db); if(d.cat)localStorage.setItem('catalog_v1',d.cat); if(d.logo)localStorage.setItem('oficina_logo',d.logo); if(d.pix)localStorage.setItem('authon_cfg_pix',d.pix); if(d.war)localStorage.setItem('authon_cfg_warranty',d.war); Toast.success('Sistema restaurado!'); setTimeout(()=>location.reload(),1500); }catch(err){Toast.error('Erro ao ler arquivo.');} }; reader.readAsText(event.target.files[0]); };
 
+
+
+// ── LEITOR DE PLACAS — Google Cloud Vision API ──
+const VISION_KEY = 'AIzaSyBGmuAFUea7Mdbf8T_6phsNV-RfyUoHJ18';
+
+window.processPlateImage = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const plateInput = document.getElementById('plate');
+    const icon = document.getElementById('camera-btn-icon');
+
+    if (icon) { icon.className = 'fas fa-circle-notch fa-spin'; icon.style.color = '#f1c40f'; }
+
+    try {
+        // Converte imagem para base64
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        // Chama Google Vision API
+        const response = await fetch(
+            `https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requests: [{
+                        image: { content: base64 },
+                        features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+                    }]
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.error) throw new Error(data.error.message);
+
+        // Extrai todo o texto detectado
+        const rawText = (data.responses?.[0]?.fullTextAnnotation?.text ||
+                         data.responses?.[0]?.textAnnotations?.[0]?.description || '')
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9]/g, '');
+
+        // Padrão antigo: ABC1234 | Padrão Mercosul: ABC1D23
+        const matchMercosul = rawText.match(/[A-Z]{3}[0-9][A-Z][0-9]{2}/);
+        const matchAntigo   = rawText.match(/[A-Z]{3}[0-9]{4}/);
+        const match = matchMercosul || matchAntigo;
+
+        if (match) {
+            const placa = match[0];
+            const placaFormatada = placa.substring(0,3) + '-' + placa.substring(3);
+
+            plateInput.value = placaFormatada;
+            plateInput.dispatchEvent(new Event('input'));
+
+            const db = JSON.parse(localStorage.getItem('oficina_db_master') || '[]');
+            const lastRecord = db.find(item =>
+                item.plate && item.plate.replace(/[^A-Z0-9]/ig, '').toUpperCase() === placa
+            );
+
+            setTimeout(() => {
+                if (lastRecord) {
+                    document.getElementById('clientName').value = lastRecord.client || '';
+                    document.getElementById('phone').value      = lastRecord.phone   || '';
+                    document.getElementById('vehicle').value    = lastRecord.vehicle || '';
+                    document.getElementById('color').value      = lastRecord.color   || '';
+                    if (lastRecord.cpf) document.getElementById('clientCpf').value = lastRecord.cpf;
+                    alert(`✅ DADOS PREENCHIDOS!\n\nPlaca: ${placaFormatada}\nCliente: ${lastRecord.client}\nVeículo: ${lastRecord.vehicle}`);
+                } else {
+                    alert(`✅ Placa Lida: ${placaFormatada}\n\nCliente novo! Se a leitura falhou em alguma letra, corrija manualmente no campo.`);
+                }
+            }, 300);
+
+        } else {
+            alert('❌ Placa não identificada na foto.\n\nDicas:\n• Enquadre só a placa\n• Boa iluminação\n• Foto nítida e sem reflexo');
+        }
+
+    } catch(e) {
+        console.error('Vision API error:', e);
+        alert('❌ Erro ao processar a imagem. Verifique sua conexão e tente novamente.');
+    }
+
+    if (icon) { icon.className = 'fas fa-camera'; icon.style.color = 'white'; }
+    event.target.value = '';
+};
 console.log('📋 Operações carregado');

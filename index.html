@@ -50,6 +50,14 @@
         }
 
         a { text-decoration: none; color: inherit; }
+
+        .link-afiliados-nav {
+            color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 600;
+            padding: 8px 14px; border-radius: 8px; transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .link-afiliados-nav:hover { color: white; }
+        @media (max-width: 600px) { .link-afiliados-nav { display: none; } }
         img { max-width: 100%; display: block; border-radius: 12px; }
 
         /* ============================================================
@@ -566,7 +574,7 @@
         AUTH<span>ON</span>
     </div>
     <div class="nav-actions">
-        <a href="/afiliados.html" style="color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;transition:color 0.2s;white-space:nowrap;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">
+        <a href="/afiliados.html" class="link-afiliados-nav">
             <i class="fas fa-handshake"></i> Indique e Ganhe
         </a>
         <button class="btn-nav-login" onclick="openModal('login')">

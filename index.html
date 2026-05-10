@@ -1076,7 +1076,23 @@
                 periodicidade: billingCycle,
                 status:        'pendente',
                 criadoEm:      new Date().toISOString(),
+                refAfiliado:   localStorage.getItem('authon_ref') || sessionStorage.getItem('authon_ref') || null,
             });
+
+            // Registra indicação no Firestore se veio de afiliado
+            const refCod = localStorage.getItem('authon_ref') || sessionStorage.getItem('authon_ref');
+            if (refCod) {
+                db.collection('indicacoes').add({
+                    codigoAfiliado: refCod,
+                    nomeCliente:    name,
+                    emailCliente:   email,
+                    plano:          selectedPlan,
+                    status:         'pendente',
+                    criadoEm:       new Date().toISOString()
+                }).catch(() => {});
+                localStorage.removeItem('authon_ref');
+                sessionStorage.removeItem('authon_ref');
+            }
 
             // Redireciona pro MP
             goToCheckout(selectedPlan);
@@ -1148,5 +1164,16 @@
     });
 </script>
 
+    <script>
+    // Captura código de afiliado da URL e salva
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get('ref');
+        if (ref) {
+            localStorage.setItem('authon_ref', ref);
+            sessionStorage.setItem('authon_ref', ref);
+        }
+    })();
+    </script>
 </body>
 </html>

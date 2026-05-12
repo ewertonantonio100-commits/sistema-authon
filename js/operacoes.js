@@ -160,26 +160,29 @@ window.saveOperation = async function () {
         resetForm();
         window.showTab('history');
         Toast.success('Venda salva!');
-        // Scrolla até o card recém criado no histórico
+        // Filtra para Hoje e scrolla para o topo
         setTimeout(() => {
-            const cards = document.querySelectorAll('#history-list .hist-card, #history-list .card');
-            if (cards.length > 0) {
-                cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                cards[0].style.animation = 'cardHighlight 1.5s ease';
-            }
-        }, 600);
+            const btnHoje = document.querySelector('#tab-history .hist-period-btn[onclick*="today"]');
+            if (btnHoje) window.histPeriod?.(btnHoje, 'today');
+            setTimeout(() => {
+                const first = document.querySelector('#history-list .hist-card, #history-list [class*="card"]');
+                if (first) {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    first.style.animation = 'cardHighlight 1.5s ease';
+                }
+            }, 300);
+        }, 400);
     } else if (type === 'agendamento') {
         resetForm();
         window.showTab('agenda');
         Toast.success('Agendamento salvo!');
-        // Scrolla até o card recém criado na agenda
+        // Scrolla para o topo da agenda
         setTimeout(() => {
-            const cards = document.querySelectorAll('#agenda-list .agenda-card, #agenda-list .card');
-            if (cards.length > 0) {
-                cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                cards[0].style.animation = 'cardHighlight 1.5s ease';
-            }
-        }, 600);
+            const agendaList = document.getElementById('agenda-list');
+            if (agendaList) agendaList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const first = document.querySelector('#agenda-list [class*="card"], #agenda-list > div');
+            if (first) first.style.animation = 'cardHighlight 1.5s ease';
+        }, 500);
     } else {
         generatePDF(data);
     }
@@ -267,10 +270,23 @@ window.resetForm = function () {
     const disc = document.getElementById('discount');
     if (disc) disc.value = '';
 
-    // Limpa assinatura e checklist
+    // Limpa assinatura
     if (window.clearSignature) window.clearSignature();
-    window.currentChecklist = { fuel: 'Reserva', damages: {} };
     window.currentSignatureBase64 = null;
+
+    // Limpa checklist completamente
+    window.currentChecklist = { fuel: 'Reserva', damages: {} };
+    window.checklistPhotos = [];
+
+    // Reseta UI do checklist se estiver visível
+    const chkStatus = document.getElementById('checklist-status');
+    if (chkStatus) chkStatus.innerHTML = '';
+    const chkPreview = document.getElementById('checklist-preview');
+    if (chkPreview) chkPreview.style.display = 'none';
+
+    // Reseta botão de inspeção
+    const btnInsp = document.querySelector('[onclick*="openChecklist"], [onclick*="openInspection"]');
+    if (btnInsp) btnInsp.style.background = '';
 
     window.addNewItem();
 };

@@ -287,6 +287,9 @@ window.addEventListener('popstate', function() {
                 </div>
             </div>
 
+            <!-- Alerta de vencidos — sempre visível independente do filtro -->
+            <div id="exp-alert-banner" style="padding:0 15px;"></div>
+
             <!-- Lista de Despesas -->
             <div id="expense-list-mini" class="card-list" style="padding-bottom:20px;"></div>
         </div>
@@ -360,12 +363,12 @@ window.addEventListener('popstate', function() {
                 <div class="fin-metric-lbl">Ticket Médio</div>
                 <div class="fin-metric-val" id="kpi-ticket">R$ 0</div>
             </div>
-            <div class="fin-metric-card" style="--mc:var(--mc-orange);" onclick="showTab('history'); setTimeout(()=>renderHistory('pendente'),100)">
+            <div class="fin-metric-card" style="--mc:var(--mc-orange);cursor:pointer;" onclick="irParaFiltro('history','pendente','all')">
                 <div class="fin-metric-icon"><i class="fas fa-clock"></i></div>
                 <div class="fin-metric-lbl">Pendentes</div>
                 <div class="fin-metric-val" id="kpi-pendentes">0</div>
             </div>
-            <div class="fin-metric-card" style="--mc:var(--mc-gray);" onclick="showTab('history'); setTimeout(()=>renderHistory('orcamento'),100)">
+            <div class="fin-metric-card" style="--mc:var(--mc-gray);cursor:pointer;" onclick="irParaFiltro('history','orcamento','all')">
                 <div class="fin-metric-icon"><i class="fas fa-file-invoice"></i></div>
                 <div class="fin-metric-lbl">Orçamentos</div>
                 <div class="fin-metric-val" id="kpi-orcamentos">0</div>
@@ -375,7 +378,7 @@ window.addEventListener('popstate', function() {
                 <div class="fin-metric-lbl">Conversão</div>
                 <div class="fin-metric-val" id="kpi-conversao">0%</div>
             </div>
-            <div class="fin-metric-card" style="--mc:var(--mc-blue);">
+            <div class="fin-metric-card" style="--mc:var(--mc-blue);cursor:pointer;" onclick="irParaFiltro('history','all','today')">
                 <div class="fin-metric-icon"><i class="fas fa-calendar-day"></i></div>
                 <div class="fin-metric-lbl">Hoje</div>
                 <div class="fin-metric-val" id="kpi-hoje">0</div>
@@ -387,12 +390,12 @@ window.addEventListener('popstate', function() {
                 <div class="fin-meta-bar-track"><div class="fin-meta-bar-fill" id="kpi-meta-bar"></div></div>
             </div>
             <!-- NOVOS KPIs -->
-            <div class="fin-metric-card" style="--mc:#00b894;" onclick="showTab('history'); setTimeout(()=>renderHistory('pendente'),100)">
+            <div class="fin-metric-card" style="--mc:#00b894;cursor:pointer;" onclick="irParaFiltro('history','pendente','all')">
                 <div class="fin-metric-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                 <div class="fin-metric-lbl">A Receber</div>
                 <div class="fin-metric-val" id="kpi-a-receber" style="font-size:13px;">R$ 0</div>
             </div>
-            <div class="fin-metric-card" style="--mc:#e74c3c;" onclick="showTab('expenses')">
+            <div class="fin-metric-card" style="--mc:#e74c3c;cursor:pointer;" onclick="irParaFiltro('expenses','vencida','all')">
                 <div class="fin-metric-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                 <div class="fin-metric-lbl">A Pagar</div>
                 <div class="fin-metric-val" id="kpi-a-pagar" style="font-size:13px;">R$ 0</div>

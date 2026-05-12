@@ -676,11 +676,20 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         const email = window.auth?.currentUser?.email;
 
-        // Admin sempre tem plano premium
-        if (email === window.ADMIN_EMAIL) {
+        // Garante que botão admin está oculto por padrão
+        const btnAdmin = document.getElementById('btn-super-admin');
+        if (btnAdmin) btnAdmin.style.display = 'none';
+
+        // Admin sempre tem plano premium — só mostra para o email exato
+        if (email && window.ADMIN_EMAIL && email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
             localStorage.setItem('authon_plano', 'premium');
-            const btnAdmin = document.getElementById('btn-super-admin');
+            localStorage.setItem('authon_status', 'admin');
             if (btnAdmin) btnAdmin.style.display = 'block';
+        } else {
+            // Garante que não-admins nunca tenham status admin no localStorage
+            if (localStorage.getItem('authon_status') === 'admin') {
+                localStorage.removeItem('authon_status');
+            }
         }
 
         // Se plano não está definido, define como pro por padrão

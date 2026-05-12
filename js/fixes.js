@@ -346,8 +346,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) el.classList.add('active');
         else { const q = document.querySelector(".nav-item[onclick*=\"'" + tab + "'\"]"); if (q) q.classList.add('active'); }
         if (tab === 'dashboard') { window.updateDashboard?.(true); window.renderSixMonthChart?.(); window.renderAnnualBalance?.(); }
-        if (tab === 'history')   window.renderHistory?.(window.currentHistoryFilter || 'all');
-        if (tab === 'expenses')  window.renderExpensesList?.();
+        if (tab === 'history') {
+            // Filtra para hoje por padrão ao abrir histórico
+            const btnHoje = document.querySelector('#tab-history .hist-period-btn[onclick*="today"]');
+            if (btnHoje) window.histPeriod?.(btnHoje, 'today');
+            else window.renderHistory?.(window.currentHistoryFilter || 'all');
+        }
+        if (tab === 'expenses') {
+            // Filtra para hoje por padrão ao abrir despesas
+            const btnHoje = document.querySelector('#tab-expenses .hist-period-btn[onclick*="today"]');
+            if (btnHoje) window.expPeriod?.(btnHoje, 'today');
+            else window.renderExpensesList?.();
+        }
         if (tab === 'settings')  setTimeout(() => window.renderFuncionariosList?.(), 300);
         if (tab === 'catalog')   window.renderCatalogList?.();
         if (tab === 'agenda')    window.renderAgenda?.();

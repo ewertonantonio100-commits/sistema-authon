@@ -159,11 +159,27 @@ window.saveOperation = async function () {
     if (type === 'venda') {
         resetForm();
         window.showTab('history');
-        Toast.success('Venda salva! Redirecionando para o histórico.');
+        Toast.success('Venda salva!');
+        // Scrolla até o card recém criado no histórico
+        setTimeout(() => {
+            const cards = document.querySelectorAll('#history-list .hist-card, #history-list .card');
+            if (cards.length > 0) {
+                cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cards[0].style.animation = 'cardHighlight 1.5s ease';
+            }
+        }, 600);
     } else if (type === 'agendamento') {
-        Toast.success('Agendamento salvo com sucesso!');
         resetForm();
         window.showTab('agenda');
+        Toast.success('Agendamento salvo!');
+        // Scrolla até o card recém criado na agenda
+        setTimeout(() => {
+            const cards = document.querySelectorAll('#agenda-list .agenda-card, #agenda-list .card');
+            if (cards.length > 0) {
+                cards[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cards[0].style.animation = 'cardHighlight 1.5s ease';
+            }
+        }, 600);
     } else {
         generatePDF(data);
     }
@@ -225,12 +241,37 @@ window.resetForm = function () {
     ['editId','firebaseDocId','clientName','clientCpf','vehicle','plate','color','phone','currentKm'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
+
+    // Reseta data para hoje
+    const dateEl = document.getElementById('date');
+    if (dateEl) dateEl.value = new Date().toLocaleDateString('en-CA');
+
+    // Reseta hora
+    const timeEl = document.getElementById('time');
+    if (timeEl) timeEl.value = '';
+
+    // Reseta vendedor para padrão
+    const sellerEl = document.getElementById('sellerName');
+    if (sellerEl) sellerEl.value = '';
+
+    // Reseta tipo para venda
+    window.setOpType?.('venda');
+
+    // Limpa lista de serviços
     const sl = document.getElementById('services-list');
     if (sl) sl.innerHTML = '';
+
     const dt = document.getElementById('display-total');
     if (dt) dt.innerText = '0,00';
+
     const disc = document.getElementById('discount');
     if (disc) disc.value = '';
+
+    // Limpa assinatura e checklist
+    if (window.clearSignature) window.clearSignature();
+    window.currentChecklist = { fuel: 'Reserva', damages: {} };
+    window.currentSignatureBase64 = null;
+
     window.addNewItem();
 };
 

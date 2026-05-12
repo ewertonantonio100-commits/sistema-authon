@@ -211,11 +211,15 @@ window.renderExpensesList = function () {
             <div style="font-size:14px;font-weight:600;">Nenhuma despesa encontrada</div>
             <div style="font-size:12px;margin-top:5px;">Tente mudar o período ou filtro</div>
         </div>`;
-        return;
+        return; // alerta já foi renderizado no banner fixo acima
     }
 
-    // Alertas sempre no topo, antes do resumo
-    let html = alertHtml;
+    // Renderiza alerta no banner fixo (independente do filtro de período)
+    const fixedBanner = document.getElementById('exp-alert-banner');
+    if (fixedBanner) fixedBanner.innerHTML = alertHtml;
+
+    // Lista começa sem o alerta (ele fica fixo acima)
+    let html = '';
 
     // Card de resumo do período
     html += `<div style="margin:12px 15px;background:white;border-radius:14px;padding:14px 16px;

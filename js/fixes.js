@@ -83,6 +83,13 @@ window.confirm = function (msg) {
             align-items:center !important; justify-content:center !important; }
         #modal-config[data-open="true"] { display:flex !important; }
 
+        /* Animação de destaque ao salvar novo card */
+        @keyframes cardHighlight {
+            0%   { box-shadow: 0 0 0 3px rgba(0,184,148,0); transform: scale(1); }
+            30%  { box-shadow: 0 0 0 4px rgba(0,184,148,0.6); transform: scale(1.01); }
+            100% { box-shadow: 0 0 0 0px rgba(0,184,148,0); transform: scale(1); }
+        }
+
         /* Separador de data no histórico */
         .hist-date-separator {
             font-family:'Poppins',sans-serif; font-size:10px; font-weight:800;

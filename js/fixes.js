@@ -347,16 +347,21 @@ document.addEventListener('DOMContentLoaded', function () {
         else { const q = document.querySelector(".nav-item[onclick*=\"'" + tab + "'\"]"); if (q) q.classList.add('active'); }
         if (tab === 'dashboard') { window.updateDashboard?.(true); window.renderSixMonthChart?.(); window.renderAnnualBalance?.(); }
         if (tab === 'history') {
-            // Filtra para hoje por padrão ao abrir histórico
-            const btnHoje = document.querySelector('#tab-history .hist-period-btn[onclick*="today"]');
-            if (btnHoje) window.histPeriod?.(btnHoje, 'today');
-            else window.renderHistory?.(window.currentHistoryFilter || 'all');
+            // Só aplica filtro Hoje se vier do menu de navegação (não de irParaFiltro)
+            if (!window._skipHistoryFilter) {
+                const btnHoje = document.querySelector('#tab-history .hist-period-btn[onclick*="today"]');
+                if (btnHoje) window.histPeriod?.(btnHoje, 'today');
+                else window.renderHistory?.(window.currentHistoryFilter || 'all');
+            }
+            window._skipHistoryFilter = false;
         }
         if (tab === 'expenses') {
-            // Filtra para hoje por padrão ao abrir despesas
-            const btnHoje = document.querySelector('#tab-expenses .hist-period-btn[onclick*="today"]');
-            if (btnHoje) window.expPeriod?.(btnHoje, 'today');
-            else window.renderExpensesList?.();
+            if (!window._skipExpensesFilter) {
+                const btnHoje = document.querySelector('#tab-expenses .hist-period-btn[onclick*="today"]');
+                if (btnHoje) window.expPeriod?.(btnHoje, 'today');
+                else window.renderExpensesList?.();
+            }
+            window._skipExpensesFilter = false;
         }
         if (tab === 'settings')  setTimeout(() => window.renderFuncionariosList?.(), 300);
         if (tab === 'catalog')   window.renderCatalogList?.();
@@ -498,7 +503,11 @@ document.addEventListener('DOMContentLoaded', function () {
             else window.renderExpensesList?.();
         }
 
-        // Troca a aba depois dos filtros já aplicados
+        // Sinaliza para o showTab não sobrescrever o filtro que acabamos de aplicar
+        if (aba === 'history')  window._skipHistoryFilter  = true;
+        if (aba === 'expenses') window._skipExpensesFilter = true;
+
+        // Troca a aba
         window.showTab(aba);
     };
 

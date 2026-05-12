@@ -477,36 +477,29 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     // Navega para aba com filtro específico (usado pelos cards de métricas)
     window.irParaFiltro = function(aba, statusFiltro, periodoFiltro) {
+        // Aplica filtros ANTES de trocar a aba — sem delay visível
+        if (aba === 'history') {
+            const btnPeriodo = periodoFiltro === 'today'
+                ? document.querySelector('#tab-history .hist-period-btn[onclick*="today"]')
+                : document.querySelector('#tab-history .hist-period-btn[onclick*="all"]');
+            if (btnPeriodo) window.histPeriod?.(btnPeriodo, periodoFiltro === 'today' ? 'today' : 'all');
+
+            const btnStatus = statusFiltro !== 'all'
+                ? document.querySelector(`#tab-history .hist-status-btn[onclick*="${statusFiltro}"]`)
+                : document.querySelector('#tab-history .hist-status-btn[onclick*="all"]');
+            if (btnStatus) window.histStatus?.(btnStatus, statusFiltro);
+
+        } else if (aba === 'expenses') {
+            const btnTudo = document.querySelector('#tab-expenses .hist-period-btn[onclick*="all"]');
+            if (btnTudo) window.expPeriod?.(btnTudo, 'all');
+
+            const btnStatus = document.querySelector(`#tab-expenses [onclick*="${statusFiltro}"], #tab-expenses [data-filter="${statusFiltro}"]`);
+            if (btnStatus) btnStatus.click();
+            else window.renderExpensesList?.();
+        }
+
+        // Troca a aba depois dos filtros já aplicados
         window.showTab(aba);
-
-        setTimeout(() => {
-            if (aba === 'history') {
-                // Define período
-                const btnPeriodo = periodoFiltro === 'today'
-                    ? document.querySelector('#tab-history .hist-period-btn[onclick*="today"]')
-                    : document.querySelector('#tab-history .hist-period-btn[onclick*="all"]');
-                if (btnPeriodo) window.histPeriod?.(btnPeriodo, periodoFiltro === 'today' ? 'today' : 'all');
-
-                // Define status
-                setTimeout(() => {
-                    const btnStatus = statusFiltro !== 'all'
-                        ? document.querySelector(`#tab-history .hist-status-btn[onclick*="${statusFiltro}"]`)
-                        : document.querySelector('#tab-history .hist-status-btn[onclick*="all"]');
-                    if (btnStatus) window.histStatus?.(btnStatus, statusFiltro);
-                }, 150);
-
-            } else if (aba === 'expenses') {
-                // Despesas: mostra tudo (sem filtro de data) e filtra por status
-                const btnTudo = document.querySelector('#tab-expenses .hist-period-btn[onclick*="all"]');
-                if (btnTudo) window.expPeriod?.(btnTudo, 'all');
-
-                setTimeout(() => {
-                    const btnStatus = document.querySelector(`#tab-expenses [onclick*="${statusFiltro}"], #tab-expenses [data-filter="${statusFiltro}"]`);
-                    if (btnStatus) btnStatus.click();
-                    else window.renderExpensesList?.();
-                }, 150);
-            }
-        }, 300);
     };
 
     window.histStatus = function (btn, filter) {

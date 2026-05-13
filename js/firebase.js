@@ -401,12 +401,18 @@ function iniciarSistema() {
             const cfg = docSnap.data();
             const hoje = new Date();
 
-            // ── ADMIN: mostra botão e define plano ANTES de qualquer verificação ──
+            // ── ADMIN: mostra botão APENAS para o email exato do admin ──
+            const btnAdmin1 = document.getElementById('btn-super-admin');
+            if (btnAdmin1) btnAdmin1.classList.remove('visible-admin'); // garante oculto por padrão
             if (user.email === ADMIN_EMAIL) {
-                const btnAdmin = document.getElementById('btn-super-admin');
-                if (btnAdmin) { btnAdmin.style.display = 'block'; console.log('[Admin] Botão exibido'); }
+                if (btnAdmin1) btnAdmin1.classList.add('visible-admin');
                 localStorage.setItem('authon_plano', 'premium');
                 localStorage.setItem('authon_status', 'admin');
+            } else {
+                // Remove status admin do localStorage para não-admins
+                if (localStorage.getItem('authon_status') === 'admin') {
+                    localStorage.removeItem('authon_status');
+                }
             }
 
             // Bloqueio
@@ -446,16 +452,17 @@ function iniciarSistema() {
                 }).catch(() => {});
             }
 
-            // Botão admin
-            if (user.email === ADMIN_EMAIL) {
-                const btnAdmin = document.getElementById('btn-super-admin');
-                if (btnAdmin) btnAdmin.style.display = 'block';
+            // Botão admin — só para email exato
+            const btnAdmin2 = document.getElementById('btn-super-admin');
+            if (btnAdmin2) {
+                user.email === ADMIN_EMAIL ? btnAdmin2.classList.add('visible-admin') : btnAdmin2.classList.remove('visible-admin');
             }
 
             // Salva localmente
             const fields = ['name','nomeOficina','plano','status','cnpj','addr','phone','team','pix','warranty','pin','logo'];
             const lsKeys = { name:'authon_cfg_name', nomeOficina:'authon_cfg_name', plano:'authon_plano',
-                             status:'authon_status', cnpj:'authon_cfg_cnpj', addr:'authon_cfg_addr',
+                             // status NÃO é mapeado para evitar que o campo do Firestore sobrescreva authon_status
+                             // status:'authon_status', cnpj:'authon_cfg_cnpj', addr:'authon_cfg_addr',
                              phone:'authon_cfg_phone', team:'authon_cfg_team', pix:'authon_cfg_pix',
                              warranty:'authon_cfg_warranty', pin:'authon_cfg_pin', logo:'oficina_logo' };
             fields.forEach(f => { if (cfg[f]) localStorage.setItem(lsKeys[f], cfg[f]); });
@@ -468,21 +475,14 @@ function iniciarSistema() {
 
             // Preenche campos de settings
             const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-            setVal('cfgName',     cfg.name);
-            setVal('cfgCnpj',     cfg.cnpj);
-            setVal('cfgAddr',     cfg.addr);
-            setVal('cfgPhone',    cfg.phone);
-            setVal('cfgPix',      cfg.pix);
+            setVal('cfgName', cfg.name);
+            setVal('cfgCnpj', cfg.cnpj);
+            setVal('cfgAddr', cfg.addr);
+            setVal('cfgPhone', cfg.phone);
+            setVal('cfgPix', cfg.pix);
             setVal('cfgWarranty', cfg.warranty);
-            setVal('cfgPin',      cfg.pin);
-            setVal('cfgTeam',     cfg.team);
-
-            // Restaura taxas dos cartões
-            const feeInputMap = { feeDeb:'feeDeb', feeC1:'feeC1', feeC2:'feeC2',
-                                  feeC3:'feeC3', feeC4:'feeC4', feeC5:'feeC5', feeC6:'feeC6' };
-            Object.entries(feeInputMap).forEach(([cfgKey, inputId]) => {
-                if (cfg[cfgKey] !== undefined) setVal(inputId, cfg[cfgKey]);
-            });
+            setVal('cfgPin', cfg.pin);
+            setVal('cfgTeam', cfg.team);
 
             if (window.updateSellerSelect) window.updateSellerSelect();
         });

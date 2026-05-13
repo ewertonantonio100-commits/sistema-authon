@@ -731,13 +731,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Garante que botão admin está oculto por padrão
         const btnAdmin = document.getElementById('btn-super-admin');
-        if (btnAdmin) btnAdmin.style.display = 'none';
+        if (btnAdmin) btnAdmin.classList.remove('visible-admin');
 
         // Admin sempre tem plano premium — só mostra para o email exato
         if (email && window.ADMIN_EMAIL && email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
             localStorage.setItem('authon_plano', 'premium');
             localStorage.setItem('authon_status', 'admin');
-            if (btnAdmin) btnAdmin.style.display = 'block';
+            if (btnAdmin) btnAdmin.classList.add('visible-admin');
         } else {
             // Garante que não-admins nunca tenham status admin no localStorage
             if (localStorage.getItem('authon_status') === 'admin') {

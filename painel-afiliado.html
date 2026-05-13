@@ -616,10 +616,40 @@
                 const planoClass = `plano-${ind.plano || 'basic'}`;
                 const statusColor = ind.status === 'ativo' ? 'var(--green)' : 'var(--muted)';
                 const dataStr = ind.criadoEm ? new Date(ind.criadoEm).toLocaleDateString('pt-BR') : '—';
+                // Calcula data de expiração (12 meses após criadoEm)
+                let expiracao = '—';
+                let expiraStyle = '';
+                let expiraLabel = '';
+                if (ind.criadoEm) {
+                    const dtInicio = new Date(ind.criadoEm);
+                    const dtExpira = new Date(dtInicio);
+                    dtExpira.setMonth(dtExpira.getMonth() + 12);
+                    expiracao = dtExpira.toLocaleDateString('pt-BR');
+                    const hoje = new Date();
+                    const diasRestantes = Math.ceil((dtExpira - hoje) / (1000 * 60 * 60 * 24));
+                    if (diasRestantes < 0) {
+                        expiraStyle = 'color:#e74c3c;';
+                        expiraLabel = 'Expirado';
+                    } else if (diasRestantes <= 30) {
+                        expiraStyle = 'color:#f0a500;';
+                        expiraLabel = `${diasRestantes}d restantes`;
+                    } else {
+                        expiraStyle = 'color:#00b894;';
+                        expiraLabel = `${diasRestantes}d restantes`;
+                    }
+                }
+
                 return `<div class="indicado-card">
                     <div class="indicado-info">
                         <div class="indicado-nome">${ind.nomeCliente || 'Cliente'}</div>
-                        <div class="indicado-meta">Indicado em ${dataStr} · <span style="color:${statusColor};font-weight:700;">${ind.status === 'ativo' ? 'Ativo' : 'Pendente'}</span></div>
+                        <div class="indicado-meta">
+                            Indicado em ${dataStr} · <span style="color:${statusColor};font-weight:700;">${ind.status === 'ativo' ? 'Ativo' : 'Pendente'}</span>
+                        </div>
+                        <div style="font-size:11px;margin-top:3px;">
+                            <i class="fas fa-clock" style="${expiraStyle}font-size:10px;"></i>
+                            <span style="${expiraStyle}">Comissão até: <strong>${expiracao}</strong></span>
+                            ${expiraLabel ? `<span style="margin-left:6px;background:rgba(0,0,0,0.06);padding:1px 7px;border-radius:10px;${expiraStyle}">${expiraLabel}</span>` : ''}
+                        </div>
                     </div>
                     <span class="indicado-plano ${planoClass}">${(ind.plano || 'basic').toUpperCase()}</span>
                     <div class="indicado-comm">${comm}</div>

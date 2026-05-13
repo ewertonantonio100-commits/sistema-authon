@@ -455,6 +455,16 @@
             <p style="color:var(--muted); font-size:12px; margin-top:12px; text-align:left;">
                 * Comissão calculada sobre o valor pago pelo indicado no mês. Pagamento via Pix até o dia 10 do mês seguinte.
             </p>
+            <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:14px 16px;margin-top:16px;display:flex;gap:12px;align-items:flex-start;">
+                <i class="fas fa-clock" style="color:#f0a500;font-size:18px;margin-top:2px;flex-shrink:0;"></i>
+                <div>
+                    <div style="font-weight:700;font-size:13px;color:#e65100;margin-bottom:4px;">⏱️ Prazo de comissionamento: 12 meses por cliente</div>
+                    <div style="font-size:12px;color:#795548;line-height:1.6;">
+                        A comissão de cada cliente indicado é válida por <strong>12 meses</strong> a partir da data da primeira assinatura paga. 
+                        Após esse período, a comissão daquele cliente cessa automaticamente, independente de ele continuar ativo na plataforma.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
@@ -533,6 +543,16 @@
                 <textarea id="af-bio" placeholder="Você trabalha no ramo automotivo? Tem audiência no segmento? Conta!"></textarea>
             </div>
 
+            <!-- Checkbox de aceite dos termos -->
+            <div style="background:#f8f9fa;border:1px solid #e0e5ec;border-radius:12px;padding:16px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;">
+                <input type="checkbox" id="aceite-termos" style="margin-top:3px;width:18px;height:18px;accent-color:var(--red);flex-shrink:0;cursor:pointer;">
+                <label for="aceite-termos" style="font-size:13px;color:var(--muted);line-height:1.6;cursor:pointer;">
+                    Li e concordo com o <a href="#" onclick="abrirTermos(); return false;" 
+                    style="color:var(--red);font-weight:700;text-decoration:underline;">Termo de Parceria do Programa Indique e Ganhe</a>, 
+                    incluindo a mecânica de comissões e o prazo de <strong>12 meses por cliente indicado</strong>.
+                </label>
+            </div>
+
             <button class="btn-submit" id="btn-cadastrar" onclick="cadastrarAfiliado()">
                 <i class="fas fa-rocket"></i> ENVIAR CADASTRO
             </button>
@@ -540,6 +560,48 @@
                 Analisamos todos os cadastros em até 48 horas úteis.<br>
                 Você receberá uma resposta no WhatsApp informado.
             </p>
+
+            <!-- Modal dos Termos -->
+            <div id="modal-termos" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);padding:20px;overflow-y:auto;">
+                <div style="background:white;border-radius:20px;max-width:680px;margin:40px auto;padding:40px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                        <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:28px;color:var(--navy);text-transform:uppercase;">Termo de Parceria</h2>
+                        <button onclick="fecharTermos()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--muted);">✕</button>
+                    </div>
+
+                    <div style="font-size:13px;color:var(--text);line-height:1.8;">
+
+                        <p style="font-weight:700;color:var(--red);margin-bottom:16px;">⚡ SISTEMA AUTHON — Programa Indique e Ganhe</p>
+
+                        <p style="font-weight:700;margin:16px 0 6px;">1. DAS COMISSÕES</p>
+                        <p>As comissões são calculadas sobre o valor mensal pago pelo cliente indicado, conforme as faixas:</p>
+                        <ul style="margin:8px 0 8px 20px;">
+                            <li>1 a 5 clientes ativos: <strong>10%/mês</strong></li>
+                            <li>6 a 10 clientes ativos: <strong>15%/mês</strong></li>
+                            <li>11 a 20 clientes ativos: <strong>20%/mês</strong></li>
+                            <li>21+ clientes ativos: <strong>30%/mês</strong></li>
+                        </ul>
+
+                        <p style="font-weight:700;margin:16px 0 6px;">2. DO PRAZO DE COMISSIONAMENTO</p>
+                        <p>A comissão de cada cliente indicado é válida por <strong>12 (doze) meses</strong> a partir da data da primeira assinatura paga. Após esse período, a comissão referente àquele cliente cessa automaticamente, mesmo que ele continue ativo na plataforma.</p>
+
+                        <p style="font-weight:700;margin:16px 0 6px;">3. DO PAGAMENTO</p>
+                        <p>Pagamentos via Pix até o dia 10 de cada mês, referentes ao mês anterior. Valor mínimo para pagamento: R$ 20,00.</p>
+
+                        <p style="font-weight:700;margin:16px 0 6px;">4. DAS OBRIGAÇÕES</p>
+                        <p>O afiliado se compromete a divulgar o Sistema Authon de forma ética, sem informações falsas ou práticas de spam.</p>
+
+                        <p style="font-weight:700;margin:16px 0 6px;">5. DO ENCERRAMENTO</p>
+                        <p>O Sistema Authon pode encerrar a parceria em caso de descumprimento dos termos, sem prejuízo do pagamento de comissões já geradas.</p>
+
+                        <p style="margin-top:20px;font-size:12px;color:var(--muted);">Para acessar o termo completo em Word, entre em contato: contato@sistemaauthon.com.br</p>
+                    </div>
+
+                    <button onclick="aceitarTermos()" style="width:100%;margin-top:24px;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;cursor:pointer;">
+                        ✅ LI E ACEITO OS TERMOS
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="success-msg" id="success-area">
@@ -576,6 +638,24 @@
     const afApp = firebase.apps.find(a => a.name === 'afiliados') || 
                   firebase.initializeApp(firebaseConfig, 'afiliados');
     const db = afApp.firestore();
+
+    // Modal de Termos
+    function abrirTermos() {
+        document.getElementById('modal-termos').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    function fecharTermos() {
+        document.getElementById('modal-termos').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    function aceitarTermos() {
+        document.getElementById('aceite-termos').checked = true;
+        fecharTermos();
+        showToast('Termos aceitos!');
+    }
+    document.getElementById('modal-termos')?.addEventListener('click', e => {
+        if (e.target === document.getElementById('modal-termos')) fecharTermos();
+    });
 
     // Toast
     function showToast(msg, type = 'success') {
@@ -617,6 +697,14 @@
 
         if (!nome || !phone || !email || !cidade || !pix) {
             showToast('Preencha todos os campos obrigatórios.', 'error');
+            return;
+        }
+
+        const aceite = document.getElementById('aceite-termos');
+        if (!aceite?.checked) {
+            showToast('Você precisa aceitar os termos para continuar.', 'error');
+            aceite?.closest('div')?.style && (aceite.closest('div').style.borderColor = '#e74c3c');
+            setTimeout(() => aceite?.closest('div')?.style && (aceite.closest('div').style.borderColor = '#e0e5ec'), 2000);
             return;
         }
 

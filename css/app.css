@@ -377,22 +377,20 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 
 /* ── HEADER DA TELA ── */
 #tab-new .container {
-    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%) !important;
+    background: transparent !important;
     box-shadow: none !important;
-    border-radius: 0 0 24px 24px !important;
-    margin: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
 }
 
 #tab-new .header-title {
-    background: transparent;
+    background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
     padding: 18px 20px 20px;
     margin-bottom: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
-    border-radius: 0 !important;
 }
 
 #tab-new .header-title h1 {
@@ -433,7 +431,7 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 #tab-new .op-type-switch {
     display: flex !important;
     gap: 0 !important;
-    margin: 8px 0 0 0 !important;
+    margin: 0 0 0 0 !important;
     background: #f0f2f5;
     border-bottom: 1px solid #e0e0e0;
     padding: 10px 15px;
@@ -1831,11 +1829,17 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
     box-shadow: 0 4px 14px rgba(231,76,60,0.35) !important;
 }
 
-/* Painel admin — dourado */
+/* Painel admin — oculto por padrão, só aparece via JS para admin */
 #btn-super-admin {
+    display: none !important;
     margin: 12px 15px 0 !important;
     width: calc(100% - 30px) !important;
     border-radius: 14px !important;
+}
+
+/* Quando JS adiciona a classe visible-admin, mostra */
+#btn-super-admin.visible-admin {
+    display: flex !important;
 }
 
 /* ── BADGE SINCRONIZADO ── */
@@ -2308,5 +2312,4 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         .fin-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
         .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
         .fin-metric-card:active { transform: scale(0.97); }
-        .fin-metric-icon { font-size: 20px; color: var(--mc); margin-bottom: 6px; }
-        .fin-metric-lbl { font-size: 8.5px; font-weight: 700; text-transform: uppercase; 
+        .fin-metric-icon { font-size: 20px; color: var(--mc);

@@ -532,7 +532,7 @@ onAuthStateChanged(auth, async (user) => {
 
         // Verifica acesso no servidor antes de carregar — ignora cache
         try {
-            const res = await fetch('https://us-central1-sistema-authon.cloudfunctions.net/verificarAcesso', {
+            const res = await fetch('https://verificaracesso-ndsydp7hna-uc.a.run.app', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ uid: user.uid })

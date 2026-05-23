@@ -910,3 +910,241 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
+
+
+// ══════════════════════════════════════════════════════
+// ONBOARDING — Configuração inicial da oficina
+// ══════════════════════════════════════════════════════
+window.mostrarOnboarding = function() {
+    if (document.getElementById('onboarding-modal')) return;
+
+    const steps = [
+        {
+            icon: '⚡',
+            title: 'Bem-vindo ao Sistema Authon!',
+            subtitle: 'Vamos configurar sua oficina em menos de 1 minuto.',
+            field: null,
+            skip: true
+        },
+        {
+            icon: '🏢',
+            title: 'Nome da Oficina',
+            subtitle: 'Como se chama sua oficina ou empresa? Aparece nos PDFs.',
+            field: { id: 'ob-nome', placeholder: 'Ex: Auto Center Silva', target: 'cfgName', required: true }
+        },
+        {
+            icon: '📋',
+            title: 'CNPJ ou CPF',
+            subtitle: 'Seu CNPJ ou CPF para o cabeçalho dos orçamentos.',
+            field: { id: 'ob-cnpj', placeholder: 'Ex: 12.345.678/0001-90', target: 'cfgCnpj', required: false }
+        },
+        {
+            icon: '📍',
+            title: 'Endereço',
+            subtitle: 'O endereço da sua oficina para constar no PDF.',
+            field: { id: 'ob-addr', placeholder: 'Ex: Rua das Flores, 142 — Petrolina/PE', target: 'cfgAddr', required: false }
+        },
+        {
+            icon: '📱',
+            title: 'Telefone',
+            subtitle: 'Telefone ou WhatsApp de contato.',
+            field: { id: 'ob-phone', placeholder: 'Ex: (87) 99999-0001', target: 'cfgPhone', required: false }
+        }
+    ];
+
+    let currentStep = 0;
+    const values = {};
+
+    const modal = document.createElement('div');
+    modal.id = 'onboarding-modal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: rgba(7,13,22,0.95); backdrop-filter: blur(12px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px; font-family: 'Poppins', sans-serif;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    function render() {
+        const step = steps[currentStep];
+        const isLast = currentStep === steps.length - 1;
+        const isFirst = currentStep === 0;
+        const progress = Math.round((currentStep / (steps.length - 1)) * 100);
+
+        modal.innerHTML = `
+            <div style="background:#111d2e;border:1px solid rgba(255,255,255,0.08);
+                        border-radius:24px;padding:36px 28px;max-width:420px;
+                        width:100%;animation:slideUp 0.3s ease;">
+
+                <!-- Progresso -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+                    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);
+                                text-transform:uppercase;letter-spacing:1px;">
+                        ${isFirst ? 'Início' : \`Passo \${currentStep} de \${steps.length - 1}\`}
+                    </div>
+                    <button onclick="window.fecharOnboarding()"
+                        style="background:transparent;border:none;color:rgba(255,255,255,0.25);
+                               font-size:18px;cursor:pointer;padding:4px 8px;
+                               font-family:'Poppins',sans-serif;">✕ Pular</button>
+                </div>
+
+                <!-- Barra de progresso -->
+                \${!isFirst ? \`
+                <div style="height:3px;background:rgba(255,255,255,0.08);border-radius:3px;margin-bottom:28px;">
+                    <div style="height:100%;width:\${progress}%;background:var(--primary,#D92525);
+                                border-radius:3px;transition:width 0.4s ease;"></div>
+                </div>\` : ''}
+
+                <!-- Ícone e título -->
+                <div style="text-align:center;margin-bottom:28px;">
+                    <div style="font-size:52px;margin-bottom:12px;">\${step.icon}</div>
+                    <h2 style="font-family:'Oswald',sans-serif;font-size:24px;color:white;
+                               text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+                        \${step.title}
+                    </h2>
+                    <p style="color:rgba(255,255,255,0.45);font-size:13px;line-height:1.6;">
+                        \${step.subtitle}
+                    </p>
+                </div>
+
+                <!-- Campo -->
+                \${step.field ? \`
+                <input id="\${step.field.id}" type="text"
+                    placeholder="\${step.field.placeholder}"
+                    value="\${values[step.field.target] || ''}"
+                    style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);
+                           border:1px solid rgba(255,255,255,0.12);border-radius:12px;
+                           color:white;font-size:14px;font-family:'Poppins',sans-serif;
+                           margin-bottom:20px;box-sizing:border-box;outline:none;
+                           transition:border 0.2s;"
+                    oninput="this.style.borderColor='rgba(217,37,37,0.6)'"
+                    onkeydown="if(event.key==='Enter') document.getElementById('ob-next-btn').click()">
+                \` : ''}
+
+                <!-- Botões -->
+                <div style="display:flex;gap:10px;">
+                    \${!isFirst ? \`
+                    <button onclick="window.obBack()"
+                        style="padding:13px 20px;background:rgba(255,255,255,0.06);
+                               border:1px solid rgba(255,255,255,0.1);border-radius:12px;
+                               color:rgba(255,255,255,0.5);font-size:13px;font-weight:700;
+                               font-family:'Poppins',sans-serif;cursor:pointer;">
+                        ← Voltar
+                    </button>\` : ''}
+                    <button id="ob-next-btn" onclick="window.obNext()"
+                        style="flex:1;padding:14px;background:#D92525;color:white;
+                               border:none;border-radius:12px;font-size:15px;font-weight:700;
+                               font-family:'Poppins',sans-serif;cursor:pointer;
+                               box-shadow:0 6px 20px rgba(217,37,37,0.35);
+                               transition:all 0.2s;">
+                        \${isFirst ? '🚀 Começar' : isLast ? '✅ Salvar e Começar' : 'Próximo →'}
+                    </button>
+                </div>
+
+                \${step.field && !step.field.required ? \`
+                <div style="text-align:center;margin-top:12px;">
+                    <span onclick="window.obSkipField()"
+                        style="font-size:12px;color:rgba(255,255,255,0.25);cursor:pointer;
+                               text-decoration:underline;">
+                        Pular este campo
+                    </span>
+                </div>\` : ''}
+            </div>
+        `;
+
+        setTimeout(() => {
+            const input = step.field ? document.getElementById(step.field.id) : null;
+            if (input) input.focus();
+        }, 100);
+    }
+
+    window.obNext = function() {
+        const step = steps[currentStep];
+
+        if (step.field) {
+            const input = document.getElementById(step.field.id);
+            if (step.field.required && !input?.value.trim()) {
+                input.style.borderColor = '#e74c3c';
+                input.placeholder = 'Este campo é obrigatório!';
+                setTimeout(() => {
+                    input.style.borderColor = 'rgba(255,255,255,0.12)';
+                    input.placeholder = step.field.placeholder;
+                }, 2000);
+                return;
+            }
+            if (input?.value.trim()) {
+                values[step.field.target] = input.value.trim();
+            }
+        }
+
+        if (currentStep < steps.length - 1) {
+            currentStep++;
+            render();
+        } else {
+            salvarOnboarding();
+        }
+    };
+
+    window.obBack = function() {
+        if (currentStep > 0) { currentStep--; render(); }
+    };
+
+    window.obSkipField = function() {
+        currentStep++;
+        render();
+    };
+
+    window.fecharOnboarding = function() {
+        modal.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => modal.remove(), 200);
+    };
+
+    async function salvarOnboarding() {
+        const btn = document.getElementById('ob-next-btn');
+        if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
+
+        try {
+            const docId = localStorage.getItem('authon_config_doc_id');
+            if (!docId) throw new Error('Doc ID não encontrado');
+
+            const updateData = {};
+            if (values.cfgName)  updateData.name  = values.cfgName;
+            if (values.cfgCnpj)  updateData.cnpj  = values.cfgCnpj;
+            if (values.cfgAddr)  updateData.addr   = values.cfgAddr;
+            if (values.cfgPhone) updateData.phone  = values.cfgPhone;
+
+            await window.updateDoc(window.doc(window.db, 'configuracoes', docId), updateData);
+
+            if (values.cfgName)  { const el = document.getElementById('cfgName');  if(el) el.value = values.cfgName; }
+            if (values.cfgCnpj)  { const el = document.getElementById('cfgCnpj');  if(el) el.value = values.cfgCnpj; }
+            if (values.cfgAddr)  { const el = document.getElementById('cfgAddr');   if(el) el.value = values.cfgAddr; }
+            if (values.cfgPhone) { const el = document.getElementById('cfgPhone');  if(el) el.value = values.cfgPhone; }
+
+            window.fecharOnboarding();
+            Toast.success('✅ Configuração salva! Bem-vindo ao Sistema Authon!');
+
+        } catch(e) {
+            console.error('Onboarding save error:', e);
+            Toast.error('Erro ao salvar. Tente novamente.');
+            if (btn) { btn.textContent = '✅ Salvar e Começar'; btn.disabled = false; }
+        }
+    }
+
+    if (!document.getElementById('ob-styles')) {
+        const s = document.createElement('style');
+        s.id = 'ob-styles';
+        s.textContent = `
+            @keyframes slideUp {
+                from { opacity:0; transform:translateY(20px); }
+                to   { opacity:1; transform:translateY(0); }
+            }
+            @keyframes fadeOut {
+                to { opacity:0; }
+            }
+        `;
+        document.head.appendChild(s);
+    }
+
+    document.body.appendChild(modal);
+    render();
+};

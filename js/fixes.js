@@ -910,3 +910,103 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 
+
+// ══════════════════════════════════════════════════════
+// ONBOARDING — Configuração inicial da oficina
+// ══════════════════════════════════════════════════════
+window.mostrarOnboarding = function() {
+    if (document.getElementById('onboarding-modal')) return;
+
+    const steps = [
+        { icon: '⚡', title: 'Bem-vindo ao Sistema Authon!', subtitle: 'Vamos configurar sua oficina em menos de 1 minuto.', field: null },
+        { icon: '🏢', title: 'Nome da Oficina', subtitle: 'Como se chama sua oficina ou empresa? Aparece nos PDFs.', field: { id: 'ob-nome', placeholder: 'Ex: Auto Center Silva', target: 'cfgName', required: true } },
+        { icon: '📋', title: 'CNPJ ou CPF', subtitle: 'Seu CNPJ ou CPF para o cabeçalho dos orçamentos.', field: { id: 'ob-cnpj', placeholder: 'Ex: 12.345.678/0001-90', target: 'cfgCnpj', required: false } },
+        { icon: '📍', title: 'Endereço', subtitle: 'O endereço da sua oficina para constar no PDF.', field: { id: 'ob-addr', placeholder: 'Ex: Rua das Flores, 142 — Petrolina/PE', target: 'cfgAddr', required: false } },
+        { icon: '📱', title: 'Telefone', subtitle: 'Telefone ou WhatsApp de contato.', field: { id: 'ob-phone', placeholder: 'Ex: (87) 99999-0001', target: 'cfgPhone', required: false } }
+    ];
+
+    let step = 0;
+    const vals = {};
+
+    const modal = document.createElement('div');
+    modal.id = 'onboarding-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,13,22,0.96);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Poppins,sans-serif;';
+
+    function render() {
+        const s = steps[step];
+        const isFirst = step === 0;
+        const isLast  = step === steps.length - 1;
+        const pct     = Math.round((step / (steps.length - 1)) * 100);
+
+        modal.innerHTML = '<div style="background:#111d2e;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:36px 28px;max-width:420px;width:100%;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">' +
+                '<span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;">' + (isFirst ? 'Início' : 'Passo ' + step + ' de ' + (steps.length-1)) + '</span>' +
+                '<button onclick="window.fecharOnboarding()" style="background:transparent;border:none;color:rgba(255,255,255,0.25);font-size:16px;cursor:pointer;padding:4px 8px;">✕ Pular</button>' +
+            '</div>' +
+            (!isFirst ? '<div style="height:3px;background:rgba(255,255,255,0.08);border-radius:3px;margin-bottom:24px;"><div style="height:100%;width:' + pct + '%;background:#D92525;border-radius:3px;transition:width 0.4s;"></div></div>' : '') +
+            '<div style="text-align:center;margin-bottom:28px;">' +
+                '<div style="font-size:48px;margin-bottom:12px;">' + s.icon + '</div>' +
+                '<h2 style="font-family:Oswald,sans-serif;font-size:22px;color:white;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">' + s.title + '</h2>' +
+                '<p style="color:rgba(255,255,255,0.45);font-size:13px;line-height:1.6;margin:0;">' + s.subtitle + '</p>' +
+            '</div>' +
+            (s.field ? '<input id="' + s.field.id + '" type="text" placeholder="' + s.field.placeholder + '" value="' + (vals[s.field.target]||'') + '" onkeydown="if(event.key===\'Enter\')document.getElementById(\'ob-btn\').click()" style="width:100%;padding:14px 16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:14px;font-family:Poppins,sans-serif;margin-bottom:20px;box-sizing:border-box;outline:none;">' : '') +
+            '<div style="display:flex;gap:10px;">' +
+                (!isFirst ? '<button onclick="window.obBack()" style="padding:13px 18px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:rgba(255,255,255,0.5);font-size:13px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;">← Voltar</button>' : '') +
+                '<button id="ob-btn" onclick="window.obNext()" style="flex:1;padding:14px;background:#D92525;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:Poppins,sans-serif;cursor:pointer;box-shadow:0 6px 20px rgba(217,37,37,0.35);">' + (isFirst ? '🚀 Começar' : isLast ? '✅ Salvar' : 'Próximo →') + '</button>' +
+            '</div>' +
+            (s.field && !s.field.required ? '<div style="text-align:center;margin-top:12px;"><span onclick="window.obSkip()" style="font-size:12px;color:rgba(255,255,255,0.25);cursor:pointer;text-decoration:underline;">Pular este campo</span></div>' : '') +
+        '</div>';
+
+        setTimeout(() => { const el = s.field ? document.getElementById(s.field.id) : null; if(el) el.focus(); }, 100);
+    }
+
+    window.obNext = function() {
+        const s = steps[step];
+        if (s.field) {
+            const el = document.getElementById(s.field.id);
+            if (s.field.required && !el?.value.trim()) {
+                el.style.borderColor = '#e74c3c';
+                setTimeout(() => { el.style.borderColor = 'rgba(255,255,255,0.12)'; }, 2000);
+                return;
+            }
+            if (el?.value.trim()) vals[s.field.target] = el.value.trim();
+        }
+        if (step < steps.length - 1) { step++; render(); }
+        else { obSalvar(); }
+    };
+
+    window.obBack = function() { if (step > 0) { step--; render(); } };
+    window.obSkip = function() { step++; render(); };
+
+    window.fecharOnboarding = function() {
+        modal.remove();
+    };
+
+    async function obSalvar() {
+        const btn = document.getElementById('ob-btn');
+        if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
+        try {
+            const docId = localStorage.getItem('authon_config_doc_id');
+            if (!docId) throw new Error('ID não encontrado');
+            const data = {};
+            if (vals.cfgName)  data.name  = vals.cfgName;
+            if (vals.cfgCnpj)  data.cnpj  = vals.cfgCnpj;
+            if (vals.cfgAddr)  data.addr   = vals.cfgAddr;
+            if (vals.cfgPhone) data.phone  = vals.cfgPhone;
+            await window.updateDoc(window.doc(window.db, 'configuracoes', docId), data);
+            if (vals.cfgName)  { const el = document.getElementById('cfgName');  if(el) el.value = vals.cfgName; }
+            if (vals.cfgCnpj)  { const el = document.getElementById('cfgCnpj');  if(el) el.value = vals.cfgCnpj; }
+            if (vals.cfgAddr)  { const el = document.getElementById('cfgAddr');   if(el) el.value = vals.cfgAddr; }
+            if (vals.cfgPhone) { const el = document.getElementById('cfgPhone');  if(el) el.value = vals.cfgPhone; }
+            window.fecharOnboarding();
+            Toast.success('✅ Configuração salva! Bem-vindo ao Sistema Authon!');
+        } catch(e) {
+            console.error(e);
+            Toast.error('Erro ao salvar. Tente nas Configurações.');
+            if (btn) { btn.textContent = '✅ Salvar'; btn.disabled = false; }
+        }
+    }
+
+    document.body.appendChild(modal);
+    render();
+};

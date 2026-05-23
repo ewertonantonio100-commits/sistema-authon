@@ -1891,8 +1891,8 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         h1, h2, h3 { color: var(--dark); margin: 0; }
         label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); margin-bottom: 5px; display: block; }
 
-        .brand-header { padding: 25px 20px 10px 20px; text-align: center; }
-        .brand-logo { font-family: 'Oswald', sans-serif; font-size: 26px; color: var(--dark); text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-bottom: 3px solid var(--primary); padding-bottom: 5px; }
+        .brand-header { padding: 25px 20px 10px 20px; text-align: center; background: linear-gradient(145deg, #1e272e, #2d3436); }
+        .brand-logo { font-family: 'Oswald', sans-serif; font-size: 26px; color: white; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-bottom: 3px solid var(--primary); padding-bottom: 5px; }
 
         .container { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; margin: 15px; border: 1px solid rgba(0,0,0,0.02); animation: fadeIn 0.4s ease-out; }
         .header-title { text-align: center; margin-bottom: 20px; }

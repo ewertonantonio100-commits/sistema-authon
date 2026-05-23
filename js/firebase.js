@@ -485,11 +485,6 @@ function iniciarSistema() {
             setVal('cfgTeam', cfg.team);
 
             if (window.updateSellerSelect) window.updateSellerSelect();
-
-            // Dispara onboarding se nome da oficina estiver vazio
-            if (!cfg.name && user.email !== ADMIN_EMAIL) {
-                setTimeout(() => window.mostrarOnboarding?.(), 1000);
-            }
         });
     });
 

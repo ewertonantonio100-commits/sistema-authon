@@ -386,6 +386,7 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
 #tab-new .header-title {
     background: linear-gradient(145deg, #1e272e 0%, #2d3436 60%, #1a252f 100%);
     padding: 18px 20px 20px;
+    margin-top: 0 !important;
     margin-bottom: 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -1891,7 +1892,7 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         h1, h2, h3 { color: var(--dark); margin: 0; }
         label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); margin-bottom: 5px; display: block; }
 
-        .brand-header { padding: 25px 20px 10px 20px; text-align: center; background: linear-gradient(145deg, #1e272e, #2d3436); }
+        .brand-header { padding: 16px 20px 0px 20px; text-align: center; background: linear-gradient(145deg, #1e272e, #2d3436); margin-bottom: 0 !important; }
         .brand-logo { font-family: 'Oswald', sans-serif; font-size: 26px; color: white; text-transform: uppercase; letter-spacing: 2px; display: inline-block; border-bottom: 3px solid var(--primary); padding-bottom: 5px; }
 
         .container { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 25px; margin: 15px; border: 1px solid rgba(0,0,0,0.02); animation: fadeIn 0.4s ease-out; }
@@ -2311,5 +2312,4 @@ body.employee-mode i[onclick*="delCatalog"] { display: none !important; }
         .fin-section-label i { color: #bdc3c7; font-size: 12px; }
         .fin-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; }
         .fin-metric-card { background: white; border-radius: 16px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.05); border-top: 3px solid var(--mc); cursor: default; transition: transform 0.15s; position: relative; overflow: hidden; }
-        .fin-metric-card:active { transform: scale(0.97); }
         .fin-metric-icon { font-size: 20px; color: var(--mc);

@@ -394,10 +394,12 @@ function iniciarSistema() {
         if (window.renderExpensesList)  window.renderExpensesList();
     });
 
-    // Configurações
+    // Configurações — forçar busca do servidor para status sempre atualizado
     const qConfig = query(collection(db, 'configuracoes'), where('uid', '==', user.uid));
-    onSnapshot(qConfig, (snapshot) => {
+    onSnapshot(qConfig, { includeMetadataChanges: true }, (snapshot) => {
         snapshot.forEach((docSnap) => {
+            // Ignora dados do cache quando há dados do servidor disponíveis
+            if (snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites) return;
             const cfg = docSnap.data();
             const hoje = new Date();
 
@@ -418,7 +420,7 @@ function iniciarSistema() {
             // Bloqueio
             if (cfg.status === 'bloqueado' && user.email !== ADMIN_EMAIL) {
                 Toast.error('Acesso suspenso. Entre em contato com o suporte.');
-                setTimeout(() => window.auth.signOut().then(() => location.reload()), 3000);
+                window.auth.signOut().then(() => location.reload());
                 return;
             }
 

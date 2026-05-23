@@ -394,12 +394,10 @@ function iniciarSistema() {
         if (window.renderExpensesList)  window.renderExpensesList();
     });
 
-    // Configurações — forçar busca do servidor para status sempre atualizado
+    // Configurações
     const qConfig = query(collection(db, 'configuracoes'), where('uid', '==', user.uid));
-    onSnapshot(qConfig, { includeMetadataChanges: true }, (snapshot) => {
+    onSnapshot(qConfig, (snapshot) => {
         snapshot.forEach((docSnap) => {
-            // Ignora dados do cache quando há dados do servidor disponíveis
-            if (snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites) return;
             const cfg = docSnap.data();
             const hoje = new Date();
 
@@ -420,7 +418,7 @@ function iniciarSistema() {
             // Bloqueio
             if (cfg.status === 'bloqueado' && user.email !== ADMIN_EMAIL) {
                 Toast.error('Acesso suspenso. Entre em contato com o suporte.');
-                window.auth.signOut().then(() => location.reload());
+                setTimeout(() => window.auth.signOut().then(() => location.reload()), 3000);
                 return;
             }
 
@@ -530,6 +528,31 @@ onAuthStateChanged(auth, async (user) => {
             mostrarToastSucesso();
             await new Promise(r => setTimeout(r, 3000));
             await verificarAssinaturaAposRetorno(user);
+        }
+
+        // Verifica acesso no servidor antes de carregar — ignora cache
+        try {
+            const res = await fetch('https://verificaracesso-ndsydp7hna-uc.a.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid: user.uid })
+            });
+            const data = await res.json();
+            if (data.bloqueado) {
+                if (data.motivo === 'pendente') {
+                    const snap = await getDocs(query(collection(db, 'configuracoes'), where('uid', '==', user.uid)));
+                    if (!snap.empty) {
+                        const cfg = snap.docs[0].data();
+                        window.mostrarTelaPendente(cfg.plano, cfg.periodicidade);
+                    }
+                } else {
+                    window.mostrarTelaUpgrade(null, true);
+                }
+                await signOut(auth);
+                return;
+            }
+        } catch(e) {
+            console.warn('Verificação de acesso falhou, continuando com verificação local:', e.message);
         }
 
         iniciarSistema();

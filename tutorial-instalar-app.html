@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instalar App | Sistema Authon</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d1b2a;
+  --red: #D92525;
+  --green: #00b894;
+  --gold: #f0a500;
+  --light: #f4f6f9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+/* HEADER */
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px; font-weight: 900;
+  color: white; letter-spacing: 3px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.logo span { color: var(--red); }
+.header h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(36px, 8vw, 64px);
+  font-weight: 900; text-transform: uppercase;
+  color: white; line-height: 0.95;
+  letter-spacing: -1px; margin-bottom: 12px;
+}
+.header h1 em { color: var(--red); font-style: normal; }
+.header p {
+  color: rgba(255,255,255,0.45);
+  font-size: 15px; line-height: 1.6;
+  max-width: 460px; margin: 0 auto;
+}
+
+/* CARDS CONTAINER */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  max-width: 760px;
+  width: 100%;
+  margin-bottom: 48px;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 24px 24px 20px;
+  display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.card-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.card-icon.android { background: rgba(52,199,89,0.15); }
+.card-icon.iphone  { background: rgba(10,132,255,0.15); }
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 900;
+  text-transform: uppercase; color: white;
+  letter-spacing: 0.5px; line-height: 1;
+}
+.card-sub {
+  font-size: 12px; color: rgba(255,255,255,0.35);
+  margin-top: 3px;
+}
+
+.card-body { padding: 20px 24px 24px; }
+
+/* STEPS */
+.step {
+  display: flex; gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.step:last-child { border-bottom: none; padding-bottom: 0; }
+
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--red); color: white;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.step-text {
+  font-size: 13px; color: rgba(255,255,255,0.7);
+  line-height: 1.6; flex: 1;
+}
+.step-text strong { color: white; font-weight: 600; }
+.step-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(255,255,255,0.1);
+  font-size: 11px; color: white; margin: 0 2px;
+  vertical-align: middle;
+}
+
+/* ALERT */
+.alert {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: rgba(240,165,0,0.08);
+  border: 1px solid rgba(240,165,0,0.2);
+  border-radius: 12px; padding: 12px 14px;
+  margin-top: 16px;
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+}
+.alert i { color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+.alert strong { color: var(--gold); }
+
+/* BENEFIT STRIP */
+.benefits {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center;
+  max-width: 760px; width: 100%;
+  margin-bottom: 40px;
+}
+.benefit {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px; padding: 8px 16px;
+  font-size: 12px; color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+.benefit i { color: var(--green); font-size: 12px; }
+
+/* CTA */
+.cta {
+  text-align: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px; padding: 28px 32px;
+  max-width: 460px; width: 100%;
+}
+.cta p { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 14px; }
+.cta a {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--red); color: white;
+  padding: 12px 28px; border-radius: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(217,37,37,0.35);
+}
+
+@media (max-width: 480px) {
+  .cards { grid-template-columns: 1fr; }
+  body { padding: 28px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">AUTH<span>ON</span></div>
+  <h1>Instale o app<br><em>no seu celular</em></h1>
+  <p>Acesse o Sistema Authon direto da tela inicial — rápido como um app, sem ocupar espaço no celular.</p>
+</div>
+
+<!-- BENEFITS -->
+<div class="benefits">
+  <div class="benefit"><i class="fas fa-bolt"></i> Acesso rápido</div>
+  <div class="benefit"><i class="fas fa-expand"></i> Tela cheia</div>
+  <div class="benefit"><i class="fas fa-cloud"></i> Dados na nuvem</div>
+  <div class="benefit"><i class="fas fa-download"></i> Sem instalar nada</div>
+</div>
+
+<!-- CARDS -->
+<div class="cards">
+
+  <!-- ANDROID -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon android">
+        <i class="fab fa-android" style="color:#34c759;"></i>
+      </div>
+      <div>
+        <div class="card-title">Android</div>
+        <div class="card-sub">Google Chrome</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Abra o <strong>Google Chrome</strong> e acesse <strong>sistemaauthon.com.br/app.html</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Toque nos <strong>3 pontinhos</strong> <span class="step-icon"><i class="fas fa-ellipsis-v"></i></span> no canto superior direito</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Toque em <strong>"Adicionar à tela inicial"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Confirme o nome e toque em <strong>"Adicionar"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">✅ Pronto! O ícone do Authon aparece na sua tela inicial</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IPHONE -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon iphone">
+        <i class="fab fa-apple" style="color:#0a84ff;"></i>
+      </div>
+      <div>
+        <div class="card-title">iPhone</div>
+        <div class="card-sub">Safari — obrigatório</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Abra o <strong>Safari</strong> e acesse <strong>sistemaauthon.com.br/app.html</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Toque no ícone de <strong>compartilhar</strong> <span class="step-icon"><i class="fas fa-arrow-up-from-bracket"></i></span> na barra inferior</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Role a lista e toque em <strong>"Adicionar à Tela de Início"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Confirme o nome e toque em <strong>"Adicionar"</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text">✅ Pronto! O ícone do Authon aparece na sua tela inicial</div>
+      </div>
+      <div class="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div><strong>Atenção:</strong> No iPhone use sempre o <strong>Safari</strong>. No Chrome do iPhone essa opção não está disponível.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <p>Ainda não tem conta? Comece agora com 7 dias grátis</p>
+  <a href="https://sistemaauthon.com.br">
+    <i class="fas fa-bolt"></i> Acessar o Sistema
+  </a>
+</div>
+
+</body>
+</html>
